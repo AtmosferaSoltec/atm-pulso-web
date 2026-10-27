@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { catalogOf, createAccount, createStaff, enrollMember, isoDaysFromToday, PASSWORD, uniqueDni } from './support/api';
+import { catalogOf, createAccount, createStaff, enrollMember, isoDaysFromToday, PASSWORD, setMembershipPrices, uniqueDni } from './support/api';
 import { navigate, signIn } from './support/ui';
 
 test('the owner enrolls a member and gets the numbered receipt', async ({ page }) => {
   const account = await createAccount(['Sede Central']);
+  await setMembershipPrices(account, [
+    { months: 1, amount: '100.00' },
+    { months: 3, amount: '270.00' },
+  ]);
   const dni = uniqueDni();
   await signIn(page, account.ownerDni, PASSWORD);
   await navigate(page, 'Miembros');
@@ -25,6 +29,7 @@ test('the owner enrolls a member and gets the numbered receipt', async ({ page }
 
 test('a duplicate document is refused with the server message', async ({ page }) => {
   const account = await createAccount();
+  await setMembershipPrices(account, [{ months: 1, amount: '100.00' }]);
   const existing = await enrollMember(account.ownerToken, account.branches[0].id);
   await signIn(page, account.ownerDni, PASSWORD);
   await navigate(page, 'Miembros');
@@ -38,6 +43,10 @@ test('a duplicate document is refused with the server message', async ({ page })
 
 test('the owner renews an expired member and can reprint the earlier receipt', async ({ page }) => {
   const account = await createAccount();
+  await setMembershipPrices(account, [
+    { months: 1, amount: '100.00' },
+    { months: 2, amount: '190.00' },
+  ]);
   const member = await enrollMember(account.ownerToken, account.branches[0].id, { months: 1, startsOn: isoDaysFromToday(-60) });
   await signIn(page, account.ownerDni, PASSWORD);
   await navigate(page, 'Miembros');
@@ -105,13 +114,22 @@ test('the dashboard shows real figures, not samples', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Ingresos del mes\s*S\/\s*100\.00/ })).toBeVisible();
 });
 
-test('the day pass price and the identity are saved on the server', async ({ page }) => {
+test('the gym prices, the day pass price and the identity are saved on the server', async ({ page }) => {
   const account = await createAccount();
   await signIn(page, account.ownerDni, PASSWORD);
   await navigate(page, 'Tarifas');
+  await page.getByRole('button', { name: 'Agregar tarifa' }).click();
+  await page.getByLabel('Precio (S/)').first().fill('100');
+  await page.getByRole('button', { name: 'Agregar tarifa' }).click();
+  await page.getByLabel('Duración (meses)').nth(1).fill('2');
+  await page.getByLabel('Precio (S/)').nth(1).fill('180');
   await page.getByLabel(/Pase del día/).fill('22.50');
   await page.getByRole('button', { name: 'Guardar tarifas' }).click();
-  await expect(page.getByText('Tarifa actualizada.')).toBeVisible();
+  await expect(page.getByText('Tarifas actualizadas.')).toBeVisible();
+  expect((await catalogOf(account.ownerToken)).gyms[0].membership_prices).toEqual([
+    { months: 1, amount: '100.00' },
+    { months: 2, amount: '180.00' },
+  ]);
   await navigate(page, 'Identidad');
   await page.getByLabel('Nombre visible').fill('Fuerza Total');
   await page.getByRole('button', { name: 'Cobre' }).click();
@@ -123,17 +141,10 @@ test('the day pass price and the identity are saved on the server', async ({ pag
   expect(gym.brand_color).toBe('#ad522a');
 });
 
-test('the owner turns branch sharing off and resets a receptionist password', async ({ page }) => {
+test('the owner resets a receptionist password and deactivates them', async ({ page }) => {
   const account = await createAccount(['Norte', 'Sur'], true);
   const reception = await createStaff(account, 'receptionist', [account.branches[0].id]);
   await signIn(page, account.ownerDni, PASSWORD);
-  await navigate(page, 'Gimnasios y reglas');
-  const sharing = page.getByLabel(`Acceso entre sedes de ${account.gymName}`);
-  await sharing.click();
-  await expect(sharing).not.toBeChecked();
-  await expect(page.getByText(/Acceso entre sedes desactivado/)).toBeVisible();
-  expect((await catalogOf(account.ownerToken)).gyms[0].branch_sharing).toBe(false);
-
   await navigate(page, 'Usuarios');
   await page.getByRole('button', { name: `Restablecer contraseña de ${reception.name}` }).click();
   await page.getByRole('button', { name: 'Restablecer', exact: true }).click();

@@ -1,13 +1,6 @@
 import type { EnrollmentTerms } from '@/features/members/types/enrollment.types';
 
 export const MAX_MONTHS = 24;
-/** Quick prices offered in the form. They are suggestions only: the amount typed is what is charged. */
-export const durationPresets = [
-  { months: 1, amount: 100 },
-  { months: 2, amount: 190 },
-  { months: 3, amount: 270 },
-  { months: 6, amount: 500 },
-];
 
 /**
  * Preview of the end date shown while typing: calendar months from the start, clamping a day missing in

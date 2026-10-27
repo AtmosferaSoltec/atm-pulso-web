@@ -139,7 +139,14 @@ export async function enrollMember(token: string, branchId: string, options: Enr
   return { dni, name, receipt: sale.receipt.number };
 }
 
-export async function catalogOf(token: string): Promise<{ gyms: { id: string; day_pass_price: string; brand_color: string; display_name: string | null; branch_sharing: boolean }[] }> {
+/** Sets the gym's base price per membership length, as its administrator does in Tarifas. */
+export async function setMembershipPrices(account: Account, prices: { months: number; amount: string }[]): Promise<void> {
+  await call('PATCH', `/gyms/${await gymId(account)}`, account.ownerToken, { membership_prices: prices });
+}
+
+export async function catalogOf(token: string): Promise<{
+  gyms: { id: string; day_pass_price: string; brand_color: string; display_name: string | null; branch_sharing: boolean; membership_prices: { months: number; amount: string }[] }[];
+}> {
   return call('GET', '/catalog', token);
 }
 

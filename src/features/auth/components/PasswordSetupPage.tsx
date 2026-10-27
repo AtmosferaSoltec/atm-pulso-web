@@ -50,7 +50,7 @@ export function PasswordSetupPage(): ReactElement {
             <Field label="Nueva contraseña" required hint={`Al menos ${MIN_PASSWORD_LENGTH} caracteres.`}>
               <div className="password-field">
                 <Input required type={show ? 'text' : 'password'} autoComplete="new-password" value={next} onChange={(event) => { setNext(event.target.value); setError(''); }} />
-                <IconButton icon={show ? 'eyeOff' : 'eye'} label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={() => setShow(!show)} />
+                <IconButton icon={show ? 'eyeOff' : 'eye'} label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={() => setShow(!show)} tabIndex={-1} />
               </div>
             </Field>
             <Field label="Repetir contraseña" required>

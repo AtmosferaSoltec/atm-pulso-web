@@ -292,7 +292,11 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 @media(max-width:760px){.payments-filters{padding:4px 16px 16px}.date-range{flex-wrap:wrap}.metrics.payment-metrics{grid-template-columns:1fr 1fr;gap:10px}.payment-metrics .metric{padding:12px 14px}.payment-metrics .metric-icon{display:none}.payment-metrics .metric-value{font-size:19px}}
 
 /* Tarifas and the day pass dialog. */
-.pricing-form{max-width:520px}
+.pricing-form{max-width:560px}
+.price-rows{display:flex;flex-direction:column;gap:12px}
+.price-heading{font-size:14px;color:#3f5d6f}
+.price-row{display:grid;grid-template-columns:1fr 1fr 38px;gap:10px;align-items:end}
+.price-row .icon-button{margin-bottom:0}
 .pricing-fields{display:flex;flex-direction:column;gap:18px;padding:0 24px 24px}
 .day-pass-price{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px;border-radius:14px;background:var(--brand-soft);text-align:center;color:var(--brand-ink)}
 .day-pass-price span{font-size:12px;color:#5f7686}
@@ -350,11 +354,6 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .color-hex-field{display:flex;align-items:center;gap:4px;padding:0 10px;height:38px;border:1px solid #dce6ec;border-radius:8px;color:#8097a5}
 .color-hex-field:focus-within{border-color:var(--primary)}
 .color-hex-field input{width:84px;border:0;outline:0;background:transparent;font:inherit;font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#33505f}
-
-/* Gimnasios y reglas: one column of gyms, each with its own rule. */
-.organization-single{display:flex;flex-direction:column;gap:20px;max-width:760px}
-.gym-rule{margin-top:14px;border:1px solid #e4edf1;border-radius:12px;padding:14px 16px}
-.gym-rule-message{margin:12px 24px 0}
 
 /* Free plan: the note for the team, the client's plan chip and the confirmation for extras. */
 .plan-note{display:flex;align-items:flex-start;gap:14px;padding:16px 20px;margin-bottom:20px;border-color:#cfe3e8;background:var(--brand-soft,#f0f8f9)}

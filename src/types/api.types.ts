@@ -46,6 +46,7 @@ export interface Session {
 
 export type Catalog = Schemas['Catalog'];
 export type CatalogGym = Schemas['Gym'];
+export type CatalogMembershipPrice = Schemas['MembershipPrice'];
 export type CatalogBranch = CatalogGym['branches'][number];
 export type PlatformClient = Schemas['Client'];
 export type ClientSummary = Schemas['ClientSummary'];

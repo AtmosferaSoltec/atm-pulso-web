@@ -76,7 +76,6 @@ Hay **cuatro roles**. Cada persona tiene un solo usuario y su **DNI es su identi
 | Miembros | Sí | Sí | Sí | Consulta |
 | Control de acceso | Sí | Sí | Sí | Consulta (sin botones de verificar) |
 | Pagos e ingresos | Sí | Sí | Sí, **sin indicadores (KPIs)** | Consulta |
-| Gimnasios y reglas | Todos los gimnasios | Su gimnasio | No | Consulta |
 | Usuarios | Todos | Recepción de su gimnasio y él mismo | No | Consulta |
 | Tarifas | Todos los gimnasios | Su gimnasio | No | Consulta |
 | Identidad | Todos los gimnasios | Su gimnasio | No | Consulta |
@@ -94,12 +93,12 @@ Hay **cuatro roles**. Cada persona tiene un solo usuario y su **DNI es su identi
 **Propietario**
 - Ve y administra todo su negocio: todos los gimnasios y sedes.
 - **Es el único que crea administradores.** También crea y gestiona recepción.
-- Configura tarifas, identidad y reglas de cada gimnasio.
+- Configura tarifas e identidad de cada gimnasio.
 - No puede crear gimnasios ni sedes (eso lo acuerda con Atmósfera).
 - Nadie, salvo el superadmin, puede modificar a un propietario.
 
 **Administrador**
-- Gestiona **un solo gimnasio**: sus sedes, su equipo de recepción, tarifas, identidad y reglas.
+- Gestiona **un solo gimnasio**: sus sedes, su equipo de recepción, tarifas e identidad.
 - **Solo crea personal de recepción**, y solo para sedes de su gimnasio. Nunca otros administradores.
 - No se edita a sí mismo (ni su rol ni su alcance).
 
@@ -205,22 +204,19 @@ Recepción digita el documento del miembro (teclado numérico) y el sistema resp
 ### 6.9 Resumen (dashboard)
 Para la sede activa: **miembros activos**, **ingresos del mes** (incluye pases del día), **por vencer** y los primeros cinco por vencer con sus acciones rápidas. Solo se muestran datos reales, nunca cifras de ejemplo.
 
-### 6.10 Gimnasios y reglas
-Por gimnasio: la regla de **acceso entre sedes** (solo se muestra si la organización tiene más de una sede). El directorio compartido es fijo y no se puede cambiar. Ya no existen reglas globales de la cuenta.
+### 6.10 Tarifas
+La **lista de precios** de cada gimnasio: una tarifa por duración (de 1 a 24 meses; por ejemplo 1 mes S/ 100, 2 meses S/ 180) y el precio del **pase del día**. Las define el dueño o el administrador del gimnasio. Al inscribir o renovar, la tarifa se propone como importe base y quien cobra puede cambiarlo; lo que se cobra queda registrado en el pago y en la boleta. Si el gimnasio aún no tiene tarifas, el importe se escribe a mano.
 
-### 6.11 Tarifas
-El precio del pase del día de cada gimnasio.
-
-### 6.12 Identidad
+### 6.11 Identidad
 Por gimnasio: **nombre visible**, **color de marca** (selector con código hexadecimal) y logo. El color tiñe botones, elementos seleccionados y boletas. Las sedes de un gimnasio comparten la identidad. *(La subida de logo está diferida; ver sección 9.)*
 
-### 6.13 Usuarios y permisos
+### 6.12 Usuarios y permisos
 Alta, edición, activación y desactivación del equipo, con las reglas de cada rol de la sección 4. Cada usuario tiene nombre completo, DNI, rol, gimnasio (administradores) o sedes (recepción) y estado.
 
-### 6.14 Perfil
+### 6.13 Perfil
 Disponible **para todos los roles** (incluida recepción y el superadmin): ver sus datos, editar nombre y celular, cambiar contraseña. DNI, rol y alcance son de solo lectura.
 
-### 6.15 Panel de plataforma (solo superadmin)
+### 6.14 Panel de plataforma (solo superadmin)
 - Lista de **clientes** con su propietario, gimnasios (nombre y RUC), sedes, estado del plan y si está activo. Búsqueda por cliente, gimnasio o RUC.
 - Métricas: clientes, gimnasios, sedes y usuarios de clientes.
 - **Crear cliente**: documento del propietario (con botón de búsqueda), nombres y apellidos, correo, celular, y sus gimnasios con sedes (con búsqueda de RUC). No se pide "tipo de cliente". El nombre del cliente es el nombre del propietario.

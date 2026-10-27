@@ -93,6 +93,7 @@ export function LoginPage(): ReactElement {
                   icon={showPassword ? 'eyeOff' : 'eye'}
                   label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
                 />
               </div>
             </Field>

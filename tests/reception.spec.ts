@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createAccount, createStaff, enrollMember, gymId, isoDaysFromToday, PASSWORD, uniqueDni } from './support/api';
+import { createAccount, createStaff, enrollMember, gymId, isoDaysFromToday, PASSWORD, setMembershipPrices, uniqueDni } from './support/api';
 import { navigate, signIn } from './support/ui';
 
 test('reception verifies entries on the server and logs them', async ({ page }) => {
@@ -53,6 +53,7 @@ test('reception sells a day pass at the gym price and sees payments without KPIs
 
 test('reception enrolls only at its own branches and cannot open settings', async ({ page }) => {
   const account = await createAccount(['Norte', 'Sur']);
+  await setMembershipPrices(account, [{ months: 1, amount: '100.00' }]);
   const reception = await createStaff(account, 'receptionist', [account.branches[0].id]);
   await signIn(page, reception.dni, PASSWORD);
   await navigate(page, 'Miembros');

@@ -16,7 +16,7 @@ import type { Sale } from '@/types/api.types';
 import { ProfileDialog } from '@/features/auth';
 import { TeamPage } from '@/features/team';
 import { BrandingPage, brandTheme, brandFavicon } from '@/features/branding';
-import { useCatalog, gymTitle, OrganizationPage } from '@/features/organization';
+import { useCatalog, gymTitle } from '@/features/organization';
 
 interface WorkspaceProps {
   /** Present when the superadmin is looking at a client: goes back to the client list. */
@@ -165,7 +165,6 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
             <AccessPage key={branch.id} branchId={branch.id} branchName={branchLabel(branch.id)} dayPassPrice={branch.dayPassPrice} readOnly={readOnly} />
           )}
           {page === 'payments' && <PaymentsPage key={branch.id} branchId={branch.id} showSummary={user.role !== 'receptionist'} />}
-          {page === 'organization' && <OrganizationPage readOnly={readOnly} />}
           {page === 'team' && <TeamPage readOnly={readOnly} />}
           {page === 'pricing' && <PricingPage key={gym.id} gym={gym} readOnly={readOnly} />}
           {page === 'branding' && <BrandingPage key={gym.id} gym={gym} readOnly={readOnly} />}

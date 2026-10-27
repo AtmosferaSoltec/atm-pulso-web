@@ -2246,6 +2246,8 @@ export interface components {
             day_pass_price: string;
             day_pass_price_is_default: boolean;
             branch_sharing: boolean;
+            /** @description Base price per duration, ordered by months. Empty until the gym sets them. */
+            membership_prices: components["schemas"]["MembershipPrice"][];
             branches: {
                 /** Format: uuid */
                 id: string;
@@ -2309,6 +2311,13 @@ export interface components {
             /** @example 15.00 */
             day_pass_price?: string | null;
             branch_sharing?: boolean;
+            /** @description Replaces the whole list. One price per duration, 1 to 24 months, at most 24 entries. */
+            membership_prices?: components["schemas"]["MembershipPrice"][];
+        };
+        MembershipPrice: {
+            months: number;
+            /** @example 100.00 */
+            amount: string;
         };
         BranchName: {
             /** Format: uuid */

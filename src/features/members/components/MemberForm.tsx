@@ -42,11 +42,14 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
   const [accessScope, setAccessScope] = useState<AccessScope>('branch');
   const [accessBranchIds, setAccessBranchIds] = useState<string[]>([homeBranchId]);
   const today = todayInLima();
+  const gymPrices = gyms.find((gym) => gym.id === homeBranch?.gymId)?.membership_prices ?? [];
+  const oneMonth = gymPrices.find((price) => price.months === 1);
   const [terms, setTerms] = useState<EnrollmentTerms>({
     months: 1,
     // A hint only: the server starts a renewal where the current period ends, or today.
     start: member && member.ends_on > today ? member.ends_on : today,
-    amount: 100,
+    // The gym's one-month price when it has one; otherwise the receptionist types it.
+    amount: oneMonth ? Number(oneMonth.amount) : NaN,
     method: 'yape_plin',
   });
   const rule = documentRules[documentType];
@@ -59,7 +62,7 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
     network: countLabel(branches.length),
   };
   const scopeOptions: Option<AccessScope>[] = accessScopeOptions.map((option) => ({ ...option, description: scopeDescriptions[option.value] }));
-  // The gym's administrator decides in "Gimnasios y reglas" whether its members may enter other branches.
+  // A gym may turn branch sharing off through the API; its members then stay at their own gym.
   const crossBranch = gyms.find((gym) => gym.id === homeBranch?.gymId)?.branch_sharing !== false;
   const pickerBranches = (accessScope === 'gym' ? gymBranches : branches).map((branch) => ({
     id: branch.id,
@@ -183,7 +186,7 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
             )}
           </Field>
         )}
-        <EnrollmentFields value={terms} onChange={setTerms} />
+        <EnrollmentFields value={terms} onChange={setTerms} prices={gymPrices} />
         {error && (
           <p role="alert" className="error full">
             {error}
