@@ -103,3 +103,16 @@ The generic login retains Pulso. Authenticated screens use the active gym's disp
 The system stays light even when the primary color changes. Primary-action text contrast is selected based on the color luminance. Identity settings have a draft preview and only apply after saving. Images stay in in-memory data URLs; no upload endpoint or external write is involved. A real branded domain or tenant-specific login has not been configured.
 
 The additional role suite verifies superadmin consultation restrictions, repeated-RUC onboarding, dynamic administrator login, user assignment/deactivation, reception route guards, branding uploads and propagation, and mobile platform layouts.
+
+## Deployment
+
+Only a push to the `production` branch deploys (`.github/workflows/deploy.yml`):
+lint, build, unit and e2e tests → Docker image published to GHCR → the server pulls
+it and restarts the container. It can also be rerun from the Actions tab.
+
+- URL: https://pulso.atmosferast.com
+- Server: `/opt/pulso-web` (compose file copied on each deploy), container `pulso-web` on `127.0.0.1:3080`
+- Host nginx: `/etc/nginx/sites-available/pulso.atmosferast.com` (wildcard origin certificate)
+- Repository secrets: `SSH_HOST`, `SSH_USER`, `SSH_KEY`
+
+Flow: commit to `main`, then fast-forward `production` and push it.
