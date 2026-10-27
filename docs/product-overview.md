@@ -263,10 +263,9 @@ Los clientes son dueños de gimnasio y recepcionistas, no usuarios de software. 
 
 | Área | Estado |
 |---|---|
-| **Web** | **Maqueta completa y navegable**, con todos los módulos de la sección 6, trabajando con datos de demostración en memoria. Desplegada. |
-| **API: base** | **Hecha y desplegada**: inicio de sesión con DNI y contraseña, perfil, búsqueda de DNI/RUC, seguridad, pruebas. Aún sin usuarios: el primer superadmin se inserta a mano. |
-| **API: funcionalidad de negocio** | **Pendiente.** Clientes y equipo, miembros y pagos, accesos y pases del día, reportes. |
-| **Web conectada a la API real** | **Pendiente.** Hoy solo el login/perfil tiene respaldo en API. |
+| **API** | **Completa en local** (planes API-01 a 06): sesión y perfil, clientes y equipo, miembros y boletas, accesos y pases del día, pagos y resumen. Contrato en `openapi.yaml`, probada con pruebas de integración. La parte de sesión y búsqueda de DNI/RUC ya está desplegada; el resto espera el despliegue. |
+| **Web** | **Conectada a la API real** (planes WEB-01 a 06): ya no hay datos de demostración. Probada con 21 pruebas de extremo a extremo contra la API real. Falta desplegar. |
+| **Despliegue** | **Pendiente.** Hay que desplegar primero la API (migraciones 00003 a 00006), insertar el primer superadmin a mano y luego la web (la imagen necesita la dirección de la API al construirse). |
 
 ### 8.3 Primer superadmin
 No hay cuentas de ejemplo ni código de "seed" en el backend. El primer superadmin lo inserta **el dueño del producto a mano** en la base de datos, con el script `scripts/first-superadmin`, que genera el `INSERT` con la contraseña ya protegida. A partir de él se crea todo lo demás desde la propia aplicación.
@@ -275,19 +274,19 @@ No hay cuentas de ejemplo ni código de "seed" en el backend. El primer superadm
 
 ## 9. Hoja de ruta
 
-### 9.1 En curso: dar funcionalidad real (planes ya escritos)
-El trabajo se hace **local** y en orden, y al terminar se despliega. Cada paso de la API habilita su pareja en la web.
+### 9.1 Hecho en local, a la espera del despliegue
+Los seis pasos de la API y de la web están implementados y probados localmente. Los detalles de entrega están en
+`atm-pulso-api/docs/RELEASE.md` y `atm-pulso-web/docs/RELEASE.md`. Lo siguiente es **desplegar** (API primero, luego la web)
+y hacer la prueba de humo en producción.
 
 | Orden | API | Web | Resultado |
 |---|---|---|---|
-| 0 | API-01 *(hecho)* | | Login, perfil, búsqueda DNI/RUC |
-| 1 | API-02 Clientes, gimnasios, sedes y equipo | WEB-01 y WEB-02 | Login y perfil reales; el superadmin crea clientes; equipo y ajustes de gimnasio |
-| 2 | API-03 Miembros, inscripción, boletas y pagos | WEB-03 | Miembros y boletas con datos reales |
-| 3 | API-04 Accesos y pases del día | WEB-04 | Control de acceso y pase del día reales |
-| 4 | API-05 Reportes | WEB-05 | Pagos, descarga y resumen con datos reales |
-| 5 | API-06 Endurecimiento y entrega | WEB-06 | Revisión de seguridad, índices, contrato completo, limpieza del código demo |
-
-Planes detallados: `atm-pulso-api/docs/plans/` y `atm-pulso-web/docs/plans/`.
+| 0 | API-01 | | Login, perfil, búsqueda DNI/RUC |
+| 1 | API-02 | WEB-01 y WEB-02 | Login y perfil reales; el superadmin crea clientes; equipo y ajustes de gimnasio |
+| 2 | API-03 | WEB-03 | Miembros y boletas con datos reales |
+| 3 | API-04 | WEB-04 | Control de acceso y pase del día reales |
+| 4 | API-05 | WEB-05 | Pagos, descarga y resumen con datos reales |
+| 5 | API-06 | WEB-06 | Revisión de seguridad, contrato verificado, limpieza del código demo |
 
 ### 9.2 Ya decidido para más adelante
 - **Logo del gimnasio y subida de imágenes**: diferido hasta terminar la funcionalidad real; el almacenamiento futuro previsto es **Cloudflare R2**. Mientras tanto se usan el color y el monograma.
