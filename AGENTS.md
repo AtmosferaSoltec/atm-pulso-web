@@ -1,5 +1,7 @@
 # AGENTS.md — Development Rules & Architecture Guidelines
 
+> Connecting to the real API? Start at `docs/README.md` (implementation plans) before changing code.
+
 Welcome to **atm-pulso-web**. All agents, assistants, and developers working on this codebase must adhere strictly to the following rules, conventions, and architectural patterns.
 
 ---
@@ -143,7 +145,7 @@ Our clients are gym owners and reception staff, not software users. Teach once, 
 
 ## 6. Business Rules to Remember
 
-- **Pulso is free, with limits**: 1 gym and up to 3 branches per gym per client. The limits live in `src/config/freePlan.ts`; do not hardcode them elsewhere.
+- **Pulso is free, with limits**: 1 gym and up to 1 branch per gym per client. The limits live in `src/config/freePlan.ts`; do not hardcode them elsewhere.
 - Extra gyms or branches are **agreed directly with Atmósfera**, which creates and charges for them. Owners and admins never add gyms or branches themselves; only the superadmin does, and must confirm the extra agreement.
 - The member directory is always shared across an owner's gyms and branches. "Access between branches" is a per-gym rule set by that gym's administrator.
 - Only an owner creates administrators; an administrator creates reception staff.

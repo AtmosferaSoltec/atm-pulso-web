@@ -5,7 +5,7 @@
  */
 export const FREE_PLAN = {
   maxGyms: 1,
-  maxBranchesPerGym: 3,
+  maxBranchesPerGym: 1,
 } as const;
 
 export interface PlanExtras {
@@ -35,4 +35,4 @@ export function describeExtras({ extraGyms, extraBranches }: PlanExtras): string
 }
 
 /** The plan in one sentence, for notes shown to the team and to clients. */
-export const FREE_PLAN_SUMMARY = `${FREE_PLAN.maxGyms} gimnasio y hasta ${FREE_PLAN.maxBranchesPerGym} sedes por gimnasio`;
+export const FREE_PLAN_SUMMARY = `${FREE_PLAN.maxGyms} gimnasio y hasta ${FREE_PLAN.maxBranchesPerGym} ${FREE_PLAN.maxBranchesPerGym === 1 ? 'sede' : 'sedes'} por gimnasio`;
