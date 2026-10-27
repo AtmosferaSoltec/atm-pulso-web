@@ -21,3 +21,7 @@ receipt shows the number returned by the API, double-click on submit creates one
 ## Acceptance
 
 No member/membership data comes from `src/store`; status colours match business-rules; amounts displayed exactly as returned (strings).
+
+## Completion — 2026-10-27
+
+Implemented and verified against the real API; see `docs/RELEASE.md` for what changed, the tests and the open points.

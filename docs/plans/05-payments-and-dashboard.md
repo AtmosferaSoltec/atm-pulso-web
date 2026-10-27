@@ -16,3 +16,7 @@ Totals match the visible rows, filters combine, download contains the same row c
 ## Acceptance
 
 No sample data anywhere; KPIs equal API totals.
+
+## Completion — 2026-10-27
+
+Implemented and verified against the real API; see `docs/RELEASE.md` for what changed, the tests and the open points.

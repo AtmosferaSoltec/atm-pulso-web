@@ -204,18 +204,17 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .lookup-input .input{padding-right:52px}
 .lookup-input .icon-button{position:absolute;right:5px;top:50%;transform:translateY(-50%)}
 
-/* Demo shortcuts under the access form. */
-.demo-examples{border-top:1px dashed #d4e1e7;margin-top:28px;padding-top:20px}
-.demo-badge{display:inline-block;margin-bottom:14px;padding:4px 10px;border-radius:10px;background:#f1f5f8;color:#6b8394;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
-.demo-buttons{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
-.demo-buttons .status-chip{height:38px}
-.demo-buttons .status-chip-name{color:#3f5a6b}
-.status-chip.scenario-valid{color:#3f9162}
-.status-chip.scenario-expiring{color:#d19a2b}
-.status-chip.scenario-expired{color:#cf6b52}
-.status-chip.scenario-scheduled{color:#5d84b8}
-.status-chip.scenario-branch{color:#8a65b8}
-.status-chip.scenario-unknown{color:#8497a3}
+
+
+
+
+
+.status-chip
+.status-chip
+.status-chip
+.status-chip
+.status-chip
+.status-chip
 
 /* Scrollbars: thin, rounded and quiet, in every scrollable area. */
 *{scrollbar-width:thin;scrollbar-color:#c3d3db transparent}

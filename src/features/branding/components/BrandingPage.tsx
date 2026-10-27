@@ -1,22 +1,116 @@
-import { useState, type ChangeEvent, type FormEvent, type ReactElement } from 'react';
-import { useDemoStore } from '@/store/demoStore';
+import { useState, type FormEvent, type ReactElement } from 'react';
+import { useCurrentUser } from '@/store/authStore';
 import { canManageGym } from '@/features/auth';
-import type { Gym } from '@/features/organization';
+import { describeError } from '@/config/errorMessages';
+import { gymTitle, useUpdateGym } from '@/features/organization';
+import type { CatalogGym } from '@/types/api.types';
 import { GymBrand } from '@/features/branding/components/GymBrand';
 import { brandTheme } from '@/features/branding/services/brandTheme';
 import { Button } from '@/components/ui/button';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-const colors = [{ value: '#17677b', label: 'Petróleo' }, { value: '#356443', label: 'Bosque' }, { value: '#234ba3', label: 'Azul' }, { value: '#7751a3', label: 'Violeta' }, { value: '#ad522a', label: 'Cobre' }, { value: '#414951', label: 'Grafito' }];
-export function BrandingPage({ gym, readOnly = false }: { gym: Gym; readOnly?: boolean }): ReactElement {
- const { setState, currentUser } = useDemoStore(); const [draft, setDraft] = useState(gym); const [message, setMessage] = useState(''); const [error, setError] = useState(''); const [reading, setReading] = useState(false);
- function save(event: FormEvent<HTMLFormElement>): void { event.preventDefault(); if (readOnly || !canManageGym(currentUser, gym.id)) return; if (!draft.displayName?.trim() && draft.displayName !== undefined) { setError('Ingresa un nombre visible.'); return; } setState(current => ({ ...current, gyms: current.gyms.map(item => item.id === gym.id ? { ...item, displayName: draft.displayName?.trim(), brandColor: draft.brandColor, logoUrl: draft.logoUrl } : item) })); setMessage('Identidad actualizada en todas las sedes de este gimnasio.'); setError(''); }
- async function loadLogo(event: ChangeEvent<HTMLInputElement>): Promise<void> {
-  const file = event.target.files?.[0]; if (!file || readOnly) return;
-  if (!['image/png','image/jpeg','image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) { setError('Selecciona un archivo PNG, JPG o WebP de hasta 2 MB.'); event.target.value = ''; return; }
-  setReading(true); setError('');
-  try { const dataUrl = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Invalid image')); reader.onerror = reject; reader.readAsDataURL(file); }); await new Promise<void>((resolve, reject) => { const image = new Image(); image.onload = () => resolve(); image.onerror = reject; image.src = dataUrl; }); setDraft(current => ({ ...current, logoUrl: dataUrl })); setMessage(''); } catch { setError('No se pudo leer esta imagen. Prueba con otro archivo.'); } finally { setReading(false); }
- }
- return <div className="branding-grid"><form className="card branding-form" onSubmit={save}><div className="card-heading"><div><h2>Identidad de {gym.name}</h2><p>Se aplica a las sedes de este gimnasio.</p></div></div><div className="branding-fields"><label>Nombre visible<Input disabled={readOnly} required value={draft.displayName ?? gym.name} onChange={event => setDraft({ ...draft, displayName: event.target.value })} /></label><label>Logo del gimnasio<Input type="file" disabled={readOnly || reading} accept="image/png,image/jpeg,image/webp" onChange={event => { void loadLogo(event); }} /><small>PNG, JPG o WebP · Hasta 2 MB.</small></label>{draft.logoUrl && !readOnly && <Button variant="ghost" onClick={() => setDraft({ ...draft, logoUrl: undefined })}>Quitar logo</Button>}<fieldset className="color-options"><legend>Color principal</legend>{colors.map(color => <Button key={color.value} disabled={readOnly} variant="secondary" aria-pressed={draft.brandColor === color.value} onClick={() => setDraft({ ...draft, brandColor: color.value })}>{color.label}</Button>)}</fieldset><Field label="Color personalizado" as="div"><ColorPicker label="Color personalizado" disabled={readOnly} value={draft.brandColor ?? '#17677b'} onChange={brandColor => setDraft({ ...draft, brandColor })} /></Field>{error && <p role="alert" className="error">{error}</p>}{message && <p role="status" className="notice">{message}</p>}{!readOnly && <Button type="submit" disabled={reading}>{reading ? 'Leyendo imagen...' : 'Guardar identidad'}</Button>}</div></form><section className="card brand-preview tenant-theme" style={brandTheme(draft.brandColor ?? '#17677b')}><span className="eyebrow">VISTA PREVIA</span><GymBrand gym={draft} /><div className="brand-preview-nav"><span>Resumen</span><span className="selected">Miembros</span><span>Control de acceso</span></div><div className="preview-card"><span>Miembros</span><strong>Gestión del gimnasio</strong><span className="preview-action">Nuevo miembro</span></div><p>El nombre y el logo aparecen en la navegación y en las fichas imprimibles. El sistema mantiene un fondo claro.</p><small>Tecnología de Atmósfera</small></section></div>;
+
+const colors = [
+  { value: '#17677b', label: 'Petróleo' },
+  { value: '#356443', label: 'Bosque' },
+  { value: '#234ba3', label: 'Azul' },
+  { value: '#7751a3', label: 'Violeta' },
+  { value: '#ad522a', label: 'Cobre' },
+  { value: '#414951', label: 'Grafito' },
+];
+
+interface BrandingPageProps {
+  gym: CatalogGym;
+  readOnly?: boolean;
+}
+
+/** Name and colour of a gym; they apply to all its branches. (The logo upload comes later.) */
+export function BrandingPage({ gym, readOnly = false }: BrandingPageProps): ReactElement {
+  const user = useCurrentUser();
+  const update = useUpdateGym(gym.id);
+  const [name, setName] = useState(gymTitle(gym));
+  const [color, setColor] = useState(gym.brand_color);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const editable = !readOnly && canManageGym(user, gym.id);
+
+  async function save(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    if (!editable) return;
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError('Ingresa un nombre visible.');
+      return;
+    }
+    try {
+      await update.mutateAsync({ display_name: trimmed === gym.name ? null : trimmed, brand_color: color });
+      setError('');
+      setMessage('Identidad actualizada en todas las sedes de este gimnasio.');
+    } catch (failure) {
+      setError(describeError(failure));
+      setMessage('');
+    }
+  }
+
+  return (
+    <div className="branding-grid">
+      <form className="card branding-form" onSubmit={(event) => void save(event)}>
+        <div className="card-heading">
+          <div>
+            <h2>Identidad de {gymTitle(gym)}</h2>
+            <p>Se aplica a las sedes de este gimnasio.</p>
+          </div>
+        </div>
+        <div className="branding-fields">
+          <label>
+            Nombre visible
+            <Input disabled={!editable} required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} />
+          </label>
+          <fieldset className="color-options">
+            <legend>Color principal</legend>
+            {colors.map((option) => (
+              <Button key={option.value} disabled={!editable} variant="secondary" aria-pressed={color === option.value} onClick={() => setColor(option.value)}>
+                {option.label}
+              </Button>
+            ))}
+          </fieldset>
+          <Field label="Color personalizado" as="div">
+            <ColorPicker label="Color personalizado" disabled={!editable} value={color} onChange={setColor} />
+          </Field>
+          {error && (
+            <p role="alert" className="error">
+              {error}
+            </p>
+          )}
+          {message && (
+            <p role="status" className="notice">
+              {message}
+            </p>
+          )}
+          {editable && (
+            <Button type="submit" disabled={update.isPending}>
+              Guardar identidad
+            </Button>
+          )}
+        </div>
+      </form>
+      <section className="card brand-preview tenant-theme" style={brandTheme(color)}>
+        <span className="eyebrow">VISTA PREVIA</span>
+        <GymBrand name={name.trim() || gymTitle(gym)} />
+        <div className="brand-preview-nav">
+          <span>Resumen</span>
+          <span className="selected">Miembros</span>
+          <span>Control de acceso</span>
+        </div>
+        <div className="preview-card">
+          <span>Miembros</span>
+          <strong>Gestión del gimnasio</strong>
+          <span className="preview-action">Nuevo miembro</span>
+        </div>
+        <p>El nombre aparece en la navegación y en las fichas imprimibles. El sistema mantiene un fondo claro.</p>
+        <small>Tecnología de Atmósfera</small>
+      </section>
+    </div>
+  );
 }

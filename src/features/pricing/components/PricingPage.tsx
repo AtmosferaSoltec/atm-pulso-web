@@ -1,26 +1,28 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { useDemoStore } from '@/store/demoStore';
+import { useCurrentUser } from '@/store/authStore';
 import { canManageGym } from '@/features/auth';
-import type { Gym } from '@/features/organization';
-import { dayPassPrice } from '@/features/dayPasses';
+import { describeError } from '@/config/errorMessages';
+import { gymTitle, useUpdateGym } from '@/features/organization';
+import type { CatalogGym } from '@/types/api.types';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 
 interface PricingPageProps {
-  gym: Gym;
+  gym: CatalogGym;
   readOnly?: boolean;
 }
 
 /** Prices a gym's administrator controls. For now only the single-entry pass. */
 export function PricingPage({ gym, readOnly = false }: PricingPageProps): ReactElement {
-  const { setState, currentUser } = useDemoStore();
-  const [price, setPrice] = useState(String(dayPassPrice(gym)));
+  const user = useCurrentUser();
+  const update = useUpdateGym(gym.id);
+  const [price, setPrice] = useState(gym.day_pass_price);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const editable = !readOnly && canManageGym(currentUser, gym.id);
+  const editable = !readOnly && canManageGym(user, gym.id);
 
-  function save(event: FormEvent<HTMLFormElement>): void {
+  async function save(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (!editable) return;
     const value = Number(price);
@@ -29,15 +31,20 @@ export function PricingPage({ gym, readOnly = false }: PricingPageProps): ReactE
       setMessage('');
       return;
     }
-    setState((current) => ({ ...current, gyms: current.gyms.map((item) => (item.id === gym.id ? { ...item, dayPassPrice: value } : item)) }));
-    setError('');
-    setMessage('Tarifa actualizada. Se cobra desde Control de acceso.');
+    try {
+      await update.mutateAsync({ day_pass_price: value.toFixed(2) });
+      setError('');
+      setMessage('Tarifa actualizada. Se cobra desde Control de acceso.');
+    } catch (failure) {
+      setError(describeError(failure));
+      setMessage('');
+    }
   }
 
   return (
-    <form className="card pricing-form" onSubmit={save}>
+    <form className="card pricing-form" onSubmit={(event) => void save(event)}>
       <div className="card-heading">
-        <h2>Tarifas de {gym.name}</h2>
+        <h2>Tarifas de {gymTitle(gym)}</h2>
       </div>
       <div className="pricing-fields">
         <Field label="Pase del día (S/)" required hint="Una sola entrada, sin membresía.">
@@ -64,7 +71,11 @@ export function PricingPage({ gym, readOnly = false }: PricingPageProps): ReactE
             {message}
           </p>
         )}
-        {editable && <Button type="submit">Guardar tarifas</Button>}
+        {editable && (
+          <Button type="submit" disabled={update.isPending}>
+            Guardar tarifas
+          </Button>
+        )}
       </div>
     </form>
   );

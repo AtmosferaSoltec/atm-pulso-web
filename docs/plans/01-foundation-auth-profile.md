@@ -28,3 +28,7 @@ Log in as the manually-created superadmin against the local API and see the supe
 ## Gaps and questions
 
 Q-PASSWORD-RESET: there is no recovery (by design); the login page says nothing about it. Confirm with the owner only if asked.
+
+## Completion — 2026-10-27
+
+Implemented and verified against the real API; see `docs/RELEASE.md` for what changed, the tests and the open points.

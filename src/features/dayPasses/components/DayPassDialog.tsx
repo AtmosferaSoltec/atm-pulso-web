@@ -1,7 +1,9 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
+import { describeError } from '@/config/errorMessages';
 import type { DayPassSale } from '@/features/dayPasses/types/dayPass.types';
 import { documentRules, documentTypeOptions, type DocumentType } from '@/config/documentTypes';
 import { paymentMethodOptions } from '@/config/paymentMethods';
+import type { PaymentMethod } from '@/types/api.types';
 import { lookupPerson } from '@/services/documentLookup';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
@@ -13,42 +15,58 @@ import { OptionCards } from '@/components/ui/option-cards';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 interface DayPassDialogProps {
-  price: number;
+  /** The gym's price, as the API sends it ("15.00"). */
+  price: string;
   branchName: string;
-  onConfirm: (sale: DayPassSale) => void;
+  /** Sells through the API; rejects with its error, which the dialog shows. */
+  onConfirm: (sale: DayPassSale) => Promise<void>;
   onClose: () => void;
 }
 
 /** Charges a single entry. Paying is all that is needed; customer data is optional, for future promotions. */
 export function DayPassDialog({ price, branchName, onConfirm, onClose }: DayPassDialogProps): ReactElement {
-  const [method, setMethod] = useState('Efectivo');
+  const [method, setMethod] = useState<PaymentMethod>('cash');
   const [withData, setWithData] = useState(false);
   const [documentType, setDocumentType] = useState<DocumentType>('dni');
   const [document, setDocument] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [searching, setSearching] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const rule = documentRules[documentType];
 
-  // MOCKUP: fills the name with fictional data, see src/services/documentLookup.ts.
   async function searchDocument(): Promise<void> {
     setError('');
     setSearching(true);
-    const person = await lookupPerson(documentType, document);
-    setSearching(false);
-    if (!person) return setError(`Ingresa un ${rule.label} válido para buscar.`);
-    setName(`${person.firstName} ${person.lastName}`);
+    try {
+      const person = await lookupPerson(documentType, document);
+      if (!person) {
+        setError(documentType === 'ce' ? 'El carné de extranjería se escribe a mano.' : 'No se encontraron datos. Escribe el nombre a mano.');
+        return;
+      }
+      setName(`${person.firstName} ${person.lastName}`);
+    } catch (failure) {
+      setError(describeError(failure));
+    } finally {
+      setSearching(false);
+    }
   }
 
-  function submit(event: FormEvent<HTMLFormElement>): void {
+  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    onConfirm({ method, documentType, document, name, phone });
+    setSaving(true);
+    try {
+      await onConfirm({ method, documentType, document, name, phone });
+    } catch (failure) {
+      setError(describeError(failure));
+      setSaving(false);
+    }
   }
 
   return (
     <Dialog title="Pase del día" onClose={onClose}>
-      <form className="form-grid" onSubmit={submit}>
+      <form className="form-grid" onSubmit={(event) => void submit(event)}>
         <div className="day-pass-price full">
           <span>Una entrada · {branchName}</span>
           <strong>{formatCurrency(price)}</strong>
@@ -85,7 +103,7 @@ export function DayPassDialog({ price, branchName, onConfirm, onClose }: DayPass
                 searchLabel={`Buscar ${rule.label}`}
                 searching={searching}
                 onChange={(event) => setDocument(event.target.value.replace(/\D/g, ''))}
-                onSearch={searchDocument}
+                onSearch={() => void searchDocument()}
               />
             </Field>
             <Field label="Celular (+51)">
@@ -105,7 +123,9 @@ export function DayPassDialog({ price, branchName, onConfirm, onClose }: DayPass
           <Button variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit">Cobrar {formatCurrency(price)}</Button>
+          <Button type="submit" disabled={saving}>
+            Cobrar {formatCurrency(price)}
+          </Button>
         </div>
       </form>
     </Dialog>

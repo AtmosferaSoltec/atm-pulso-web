@@ -1,6 +1,8 @@
-export type { Organization, Gym, Branch, AccessScope } from '@/features/organization/types/organization.types';
-export { initialOrganizations, gyms, branches, organizationBranches, branchLabel } from '@/features/organization/services/organizationData';
+export type { Gym, AccessScope, BranchOption } from '@/features/organization/types/organization.types';
+export { gymTitle, flattenBranches, branchTitle } from '@/features/organization/services/catalog';
 export { BranchSwitcher } from '@/features/organization/components/BranchSwitcher';
 export { OrganizationPage } from '@/features/organization/components/OrganizationPage';
-export { useOrganizationCatalog } from '@/features/organization/hooks/useOrganizationCatalog';
+export { CatalogProvider } from '@/features/organization/components/CatalogProvider';
+export { useCatalog } from '@/features/organization/hooks/useCatalog';
+export { useUpdateGym, type GymChanges } from '@/features/organization/hooks/useUpdateGym';
 export { accessScopeOptions } from '@/features/organization/services/accessScopes';

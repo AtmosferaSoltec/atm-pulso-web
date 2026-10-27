@@ -1,7 +1,6 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import type { DemoUser } from '@/features/auth/types/auth.types';
-import { demoUsers, DEMO_PASSWORD } from '@/features/auth/services/authData';
-import { useDemoStore } from '@/store/demoStore';
+import { useAuth } from '@/store/authStore';
+import { describeError } from '@/config/errorMessages';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { IconButton } from '@/components/ui/icon-button';
@@ -9,28 +8,24 @@ import { Input } from '@/components/ui/input';
 import { BrandMark } from '@/components/ui/brand-mark';
 import { Icon } from '@/components/ui/icon';
 
-const demoRoleLabels = (user: DemoUser, gymName?: string): string => {
-  if (user.role === 'superadmin') return 'Superadmin · Atmósfera';
-  if (user.role === 'admin') return `Administrador · ${gymName ?? 'un gimnasio'}`;
-  if (user.role === 'receptionist') return 'Recepción · 2 sedes asignadas';
-  return user.organizationId === 'central' ? 'Propietario · Una sola sede' : 'Propietario · Red de gimnasios';
-};
-
-export function LoginPage({ onLogin }: { onLogin: (user: DemoUser) => void }): ReactElement {
-  const { state } = useDemoStore();
+export function LoginPage(): ReactElement {
+  const { login, notice } = useAuth();
   const [dni, setDni] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  function submit(event: FormEvent<HTMLFormElement>): void {
+  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    const user = state.users.find((item) => item.dni === dni.trim() && item.active !== false);
-    if (!user || password !== (user.password ?? DEMO_PASSWORD)) {
-      setError('DNI o contraseña incorrectos. Usa una de las cuentas de prueba.');
-      return;
+    setBusy(true);
+    try {
+      const user = await login(dni.trim(), password);
+      if (!user.must_change_password) window.location.hash = user.role === 'receptionist' ? 'access' : user.role === 'superadmin' ? 'clients' : 'dashboard';
+    } catch (failure) {
+      setError(describeError(failure));
+      setBusy(false);
     }
-    onLogin(user);
   }
 
   return (
@@ -60,6 +55,11 @@ export function LoginPage({ onLogin }: { onLogin: (user: DemoUser) => void }): R
           </span>
           <h2>Iniciar sesión</h2>
           <p>Ingresa con tu DNI y contraseña.</p>
+          {notice && (
+            <p className="notice" role="status">
+              {notice}
+            </p>
+          )}
           <form onSubmit={submit} className="login-form">
             <Field label="DNI">
               <Input
@@ -101,33 +101,10 @@ export function LoginPage({ onLogin }: { onLogin: (user: DemoUser) => void }): R
                 {error}
               </p>
             )}
-            <Button type="submit">
+            <Button type="submit" disabled={busy}>
               Ingresar <Icon name="arrow" size={17} />
             </Button>
           </form>
-          <div className="demo-accounts">
-            <span className="eyebrow">CUENTAS FICTICIAS PARA PROBAR</span>
-            <p>Selecciona un perfil para completar sus credenciales.</p>
-            {demoUsers.map((user) => (
-              <Button
-                key={user.id}
-                variant="secondary"
-                className="demo-account"
-                onClick={() => {
-                  setDni(user.dni);
-                  setPassword(state.users.find((item) => item.id === user.id)?.password ?? DEMO_PASSWORD);
-                  setError('');
-                }}
-              >
-                <span>
-                  <strong>{demoRoleLabels(user, state.gyms.find((gym) => gym.id === user.gymId)?.name)}</strong>
-                  <small>DNI {user.dni}</small>
-                </span>
-                <Icon name="arrow" size={16} />
-              </Button>
-            ))}
-            <small>Contraseña de prueba: {DEMO_PASSWORD} · Sin registro público.</small>
-          </div>
         </div>
       </section>
     </div>

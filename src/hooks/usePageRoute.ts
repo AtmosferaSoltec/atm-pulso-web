@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { pageDetails } from '@/config/pages';
-import { canVisitPage, type DemoUser } from '@/features/auth';
+import { canVisitPage } from '@/features/auth';
+import type { SessionUser } from '@/types/api.types';
 import type { Page } from '@/types/navigation.types';
 
 function pageFromHash(): Page | null {
@@ -10,7 +11,7 @@ function pageFromHash(): Page | null {
 }
 
 /** Keeps the current page in sync with the URL hash, honouring the user's permissions. */
-export function usePageRoute(user: DemoUser): { page: Page; goTo: (next: Page) => void } {
+export function usePageRoute(user: SessionUser): { page: Page; goTo: (next: Page) => void } {
   const fallback: Page = user.role === 'receptionist' ? 'access' : 'dashboard';
   const resolve = (): Page => {
     const requested = pageFromHash();

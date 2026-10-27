@@ -1,7 +1,10 @@
 import { useRef, useState, type ReactElement, type FormEvent } from 'react';
+import { describeError } from '@/config/errorMessages';
 import { Avatar } from '@/features/members';
-import { DayPassDialog, type DayPass, type DayPassSale } from '@/features/dayPasses';
-import type { AccessEntry, AccessResult, DemoScenario } from '@/features/access/types/access.types';
+import { DayPassDialog, useSellDayPass } from '@/features/dayPasses';
+import { useAccessCheck, useAccessEvents } from '@/features/access/hooks/useAccess';
+import { checkText, eventText, timeInLima } from '@/features/access/services/accessReasons';
+import type { AccessResult } from '@/features/access/types/access.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/icon';
@@ -11,43 +14,42 @@ import { formatCurrency } from '@/utils/formatCurrency';
 const MAX_DOCUMENT_LENGTH = 12;
 
 interface AccessPageProps {
+  branchId: string;
+  branchName: string;
+  /** The gym's single-entry price ("15.00"). */
+  dayPassPrice: string;
   readOnly?: boolean;
-  entries: AccessEntry[];
-  /** DEMO ONLY: shortcuts that verify a document for each kind of outcome. */
-  scenarios?: DemoScenario[];
-  /** Single-entry sale. Missing when the user cannot sell passes. */
-  dayPass?: { price: number; branchName: string; onSell: (sale: DayPassSale) => DayPass | null };
-  onCheck: (dni: string) => AccessResult;
 }
 
-export function AccessPage({ entries, scenarios = [], dayPass, onCheck, readOnly = false }: AccessPageProps): ReactElement {
+export function AccessPage({ branchId, branchName, dayPassPrice, readOnly = false }: AccessPageProps): ReactElement {
   const [dni, setDni] = useState('');
   const [result, setResult] = useState<AccessResult | null>(null);
   const [sellingPass, setSellingPass] = useState(false);
   const dniInput = useRef<HTMLInputElement>(null);
+  const events = useAccessEvents(branchId);
+  const check = useAccessCheck(branchId);
+  const sellPass = useSellDayPass(branchId);
+  const entries = events.data ?? [];
 
   // Reception types on a numeric keypad: Enter verifies, then the field clears and keeps focus for the next document.
-  function verify(value: string): void {
-    setResult(onCheck(value));
-    setDni('');
-    dniInput.current?.focus();
-  }
-
-  function sellPass(sale: DayPassSale): void {
-    const pass = dayPass?.onSell(sale);
-    setSellingPass(false);
-    setResult(
-      pass
-        ? { allowed: true, name: pass.name, reason: `Pase del día ${pass.receiptNumber} cobrado: ${formatCurrency(pass.amount)}. Puede ingresar.` }
-        : { allowed: false, reason: 'Operación no disponible.' },
-    );
-    setDni('');
-    dniInput.current?.focus();
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>): void {
+  async function verify(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    verify(dni);
+    try {
+      const answer = await check.mutateAsync(dni);
+      setResult({ allowed: answer.allowed, name: answer.member?.full_name, reason: checkText(answer) });
+    } catch (failure) {
+      setResult({ allowed: false, reason: describeError(failure) });
+    }
+    setDni('');
+    dniInput.current?.focus();
+  }
+
+  async function sell(sale: Parameters<typeof sellPass.mutateAsync>[0]): Promise<void> {
+    const pass = await sellPass.mutateAsync(sale);
+    setSellingPass(false);
+    setResult({ allowed: true, name: pass.visitor_name ?? undefined, reason: `Pase del día ${pass.receipt.number} cobrado: ${formatCurrency(pass.amount)}. Puede ingresar.` });
+    setDni('');
+    dniInput.current?.focus();
   }
 
   return (
@@ -58,7 +60,7 @@ export function AccessPage({ entries, scenarios = [], dayPass, onCheck, readOnly
             <Icon name="access" size={32} />
           </span>
           <h2>Verificar ingreso</h2>
-          <form onSubmit={submit}>
+          <form onSubmit={(event) => void verify(event)}>
             <Input
               ref={dniInput}
               autoFocus
@@ -75,7 +77,7 @@ export function AccessPage({ entries, scenarios = [], dayPass, onCheck, readOnly
               required
               maxLength={MAX_DOCUMENT_LENGTH}
             />
-            <Button type="submit">
+            <Button type="submit" disabled={check.isPending}>
               Verificar acceso <Icon name="arrow" size={18} />
             </Button>
           </form>
@@ -87,33 +89,11 @@ export function AccessPage({ entries, scenarios = [], dayPass, onCheck, readOnly
               <p>{result.reason}</p>
             </div>
           )}
-          {dayPass && (
-            <div className="day-pass-action">
-              <Button variant="secondary" onClick={() => setSellingPass(true)}>
-                <Icon name="plus" size={16} /> Pase del día · {formatCurrency(dayPass.price)}
-              </Button>
-            </div>
-          )}
-          {scenarios.length > 0 && (
-            <div className="demo-examples">
-              <span className="demo-badge">Demo · probar un caso</span>
-              <div className="demo-buttons">
-                {scenarios.map((scenario) => (
-                  <button
-                    key={scenario.id}
-                    type="button"
-                    className={`status-chip scenario-${scenario.id}`}
-                    aria-label={`Probar caso: ${scenario.label}`}
-                    title={`${scenario.hint} · ${scenario.dni}`}
-                    onClick={() => verify(scenario.dni)}
-                  >
-                    <i />
-                    <span className="status-chip-name">{scenario.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="day-pass-action">
+            <Button variant="secondary" onClick={() => setSellingPass(true)}>
+              <Icon name="plus" size={16} /> Pase del día · {formatCurrency(dayPassPrice)}
+            </Button>
+          </div>
         </section>
       )}
       <section className="card">
@@ -122,30 +102,29 @@ export function AccessPage({ entries, scenarios = [], dayPass, onCheck, readOnly
           <span className="live-dot">{entries.length} consultas</span>
         </div>
         <div className="access-log">
-          {entries.slice(0, 12).map((entry) => (
+          {entries.map((entry) => (
             <div className="log-entry" key={entry.id}>
-              <Avatar name={entry.name} />
+              <Avatar name={entry.display_name} />
               <div>
-                <strong>{entry.name}</strong>
+                <strong>{entry.display_name}</strong>
                 <small>
-                  {entry.allowed ? 'Ingreso permitido' : 'Ingreso denegado'} · {entry.reason}
+                  {entry.allowed ? 'Ingreso permitido' : 'Ingreso denegado'} · {eventText(entry)}
                 </small>
               </div>
-              <span>{entry.time}</span>
+              <span>{timeInLima(entry.checked_at)}</span>
               <span className={`status-dot ${entry.allowed ? 'allowed' : 'denied'}`} />
             </div>
           ))}
-          {entries.length === 0 && (
+          {!events.isPending && entries.length === 0 && (
             <div className="empty">
               <Icon name="access" size={26} />
               <p>Aún no hay consultas.</p>
             </div>
           )}
+          {events.isPending && <div className="empty">Cargando…</div>}
         </div>
       </section>
-      {sellingPass && dayPass && (
-        <DayPassDialog price={dayPass.price} branchName={dayPass.branchName} onConfirm={sellPass} onClose={() => setSellingPass(false)} />
-      )}
+      {sellingPass && <DayPassDialog price={dayPassPrice} branchName={branchName} onConfirm={sell} onClose={() => setSellingPass(false)} />}
     </div>
   );
 }

@@ -22,3 +22,7 @@ receptionist sees no team page, deactivated user cannot log in, password reset w
 ## Acceptance
 
 All role views match the prototype; no demo store use in these screens; grep proves `useDemoStore` is not imported by platform, organization, branding or team.
+
+## Completion — 2026-10-27
+
+Implemented and verified against the real API; see `docs/RELEASE.md` for what changed, the tests and the open points.

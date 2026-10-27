@@ -41,8 +41,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm build
       - run: pnpm test:unit
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
+      # The e2e suite needs the real API and a database (see tests/README.md), so it is a local
+      # pre-release check, not a step of this job.
 
   build-and-push:
     needs: check
@@ -59,12 +59,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # No build-args: the web has no configuration, the same image runs anywhere.
+      # The API address is inlined into the bundle at build time.
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          build-args: |
+            VITE_API_URL=https://pulso-api.atmosferast.com/api/v1
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:sha-${{ github.sha }}

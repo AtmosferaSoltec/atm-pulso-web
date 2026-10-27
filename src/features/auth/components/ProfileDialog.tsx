@@ -1,14 +1,14 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import type { DemoUser } from '@/features/auth/types/auth.types';
+import { useCurrentUser } from '@/store/authStore';
+import type { Role } from '@/types/api.types';
 import { MIN_PASSWORD_LENGTH, useProfile } from '@/features/auth/hooks/useProfile';
-import { useOrganizationCatalog } from '@/features/organization';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
 import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 
-const roleLabels: Record<DemoUser['role'], string> = {
+const roleLabels: Record<Role, string> = {
   superadmin: 'Superadmin',
   owner: 'Propietario',
   admin: 'Administrador',
@@ -16,16 +16,15 @@ const roleLabels: Record<DemoUser['role'], string> = {
 };
 
 interface ProfileDialogProps {
-  user: DemoUser;
   onClose: () => void;
 }
 
 /** "Mi perfil": every user can see their data, edit the non-sensitive ones and change their password. */
-export function ProfileDialog({ user, onClose }: ProfileDialogProps): ReactElement {
+export function ProfileDialog({ onClose }: ProfileDialogProps): ReactElement {
+  const user = useCurrentUser();
   const { updateProfile, changePassword } = useProfile();
-  const { gyms, branchLabel } = useOrganizationCatalog();
 
-  const [name, setName] = useState(user.name);
+  const [name, setName] = useState(user.full_name);
   const [phone, setPhone] = useState(user.phone ?? '');
   const [dataError, setDataError] = useState('');
   const [dataSaved, setDataSaved] = useState(false);
@@ -43,19 +42,19 @@ export function ProfileDialog({ user, onClose }: ProfileDialogProps): ReactEleme
       : user.role === 'owner'
         ? 'Todos tus gimnasios y sedes'
         : user.role === 'admin'
-          ? `${gyms.find((gym) => gym.id === user.gymId)?.name ?? 'Tu gimnasio'} · todas las sedes`
-          : user.branchIds.map(branchLabel).join(', ');
+          ? `${user.gym?.name ?? 'Tu gimnasio'} · todas las sedes`
+          : user.branches.map((branch) => `${branch.gym_name} · ${branch.name}`).join(', ');
 
-  function saveData(event: FormEvent<HTMLFormElement>): void {
+  async function saveData(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    const error = updateProfile({ name, phone });
+    const error = await updateProfile({ name, phone });
     setDataError(error ?? '');
     setDataSaved(!error);
   }
 
-  function savePassword(event: FormEvent<HTMLFormElement>): void {
+  async function savePassword(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    const error = changePassword(current, next, confirm);
+    const error = await changePassword(current, next, confirm);
     setPasswordError(error ?? '');
     setPasswordSaved(!error);
     if (!error) {
@@ -69,7 +68,7 @@ export function ProfileDialog({ user, onClose }: ProfileDialogProps): ReactEleme
 
   return (
     <Dialog title="Mi perfil" onClose={onClose}>
-      <form className="form-grid profile-form" onSubmit={saveData}>
+      <form className="form-grid profile-form" onSubmit={(event) => void saveData(event)}>
         <h3 className="profile-heading full">Mis datos</h3>
         <Field label="Nombre completo" required className="full">
           <Input
@@ -98,7 +97,7 @@ export function ProfileDialog({ user, onClose }: ProfileDialogProps): ReactEleme
         <dl className="profile-readonly full">
           <div>
             <dt>DNI</dt>
-            <dd>{user.dni}</dd>
+            <dd>{user.document_number}</dd>
           </div>
           <div>
             <dt>Rol</dt>
@@ -127,7 +126,7 @@ export function ProfileDialog({ user, onClose }: ProfileDialogProps): ReactEleme
         </div>
       </form>
 
-      <form className="form-grid profile-form profile-password" onSubmit={savePassword}>
+      <form className="form-grid profile-form profile-password" onSubmit={(event) => void savePassword(event)}>
         <div className="profile-heading-row full">
           <h3 className="profile-heading">Cambiar contraseña</h3>
           <IconButton

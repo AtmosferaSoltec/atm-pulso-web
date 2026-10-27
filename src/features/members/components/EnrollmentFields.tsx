@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import type { EnrollmentTerms } from '@/features/members/types/enrollment.types';
 import { MAX_MONTHS, durationPresets, enrollmentEnd } from '@/features/members/services/enrollment';
-import { DEMO_DATE } from '@/features/members/services/memberData';
+import { todayInLima } from '@/utils/limaDate';
 import { paymentMethodOptions } from '@/config/paymentMethods';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -49,7 +49,7 @@ export function EnrollmentFields({ value, onChange }: EnrollmentFieldsProps): Re
         />
       </Field>
       <Field label="Fecha de inicio" required as="div">
-        <DatePicker label="Fecha de inicio" today={DEMO_DATE} value={value.start} onChange={(start) => onChange({ ...value, start })} />
+        <DatePicker label="Fecha de inicio" today={todayInLima()} value={value.start} onChange={(start) => onChange({ ...value, start })} />
       </Field>
       <Field label="Fecha de vencimiento">
         <Input readOnly value={end ? formatDate(end) : 'Completa la duración y la fecha'} />

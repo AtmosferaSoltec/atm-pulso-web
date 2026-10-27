@@ -1,4 +1,20 @@
-export type AccessScope = 'branch' | 'gym' | 'network';
-export interface Organization { contactName?: string; contactDni?: string; contactEmail?: string; contactPhone?: string; id: string; name: string; }
-export interface Gym { id: string; organizationId: string; name: string; taxId: string; displayName?: string; brandColor?: string; /** Price of a single-entry pass, set by the gym's administrator in "Tarifas". */ dayPassPrice?: number; /** Whether members of this gym may enter its other branches. Allowed unless set to false by the gym's administrator. */ branchSharing?: boolean; logoUrl?: string; }
-export interface Branch { id: string; gymId: string; name: string; address: string; }
+import type { AccessScope as ApiAccessScope, CatalogGym } from '@/types/api.types';
+
+export type AccessScope = ApiAccessScope;
+
+/** A branch with the data of its gym, flattened for pickers and labels. */
+export interface BranchOption {
+  id: string;
+  name: string;
+  address: string | null;
+  /** Whether the signed-in user may work in it. */
+  accessible: boolean;
+  gymId: string;
+  gymName: string;
+  taxId: string | null;
+  brandColor: string;
+  branchSharing: boolean;
+  dayPassPrice: string;
+}
+
+export type Gym = CatalogGym;

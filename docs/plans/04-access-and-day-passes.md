@@ -18,3 +18,7 @@ Allowed, expired, not started, other-branch denied, document not found, expiring
 ## Acceptance
 
 Every check shows server time; no member status logic remains in `features/access`.
+
+## Completion — 2026-10-27
+
+Implemented and verified against the real API; see `docs/RELEASE.md` for what changed, the tests and the open points.

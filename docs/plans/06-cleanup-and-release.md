@@ -14,3 +14,7 @@
 ## Do not
 
 Do not push, deploy or edit the GitHub workflow beyond what `RELEASE.md` requests; the deployer will wire `VITE_API_URL` into the build.
+
+## Completion — 2026-10-27
+
+Implemented and verified against the real API; see `docs/RELEASE.md` for what changed, the tests and the open points.

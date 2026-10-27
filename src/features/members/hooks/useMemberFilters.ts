@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import type { Member, MemberStatus } from '@/features/members/types/member.types';
-import { memberStatus } from '@/features/members/services/memberData';
+import type { MemberStatus } from '@/features/members/types/member.types';
 
 export type StatusFilter = MemberStatus | 'all';
 
@@ -11,35 +10,42 @@ export interface MemberFilters {
   setSearch: (value: string) => void;
   filter: StatusFilter;
   setFilter: (value: StatusFilter) => void;
+  page: number;
+  setPage: (value: number) => void;
+  pageSize: number;
+  setPageSize: (value: number) => void;
   reset: (filter?: StatusFilter) => void;
-  visible: Member[];
-  counts: Record<StatusFilter, number>;
 }
 
-/** Search text and status filter over a list of members, with per-status counts. */
-export function useMemberFilters(members: Member[]): MemberFilters {
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<StatusFilter>('all');
+/** What the member list is filtered by. The server does the filtering and the counting. */
+export function useMemberFilters(): MemberFilters {
+  const [search, setSearchValue] = useState('');
+  const [filter, setFilterValue] = useState<StatusFilter>('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSizeValue] = useState(25);
 
-  const needle = search.toLocaleLowerCase('es');
-  const visible = members.filter(
-    (member) =>
-      (filter === 'all' || memberStatus(member) === filter) &&
-      `${member.name} ${member.dni}`.toLocaleLowerCase('es').includes(needle),
-  );
-  const counts: Record<StatusFilter, number> = {
-    all: members.length,
-    active: 0,
-    expiring: 0,
-    expired: 0,
-    scheduled: 0,
+  return {
+    search,
+    setSearch: (value) => {
+      setSearchValue(value);
+      setPage(1);
+    },
+    filter,
+    setFilter: (value) => {
+      setFilterValue(value);
+      setPage(1);
+    },
+    page,
+    setPage,
+    pageSize,
+    setPageSize: (value) => {
+      setPageSizeValue(value);
+      setPage(1);
+    },
+    reset: (next = 'all') => {
+      setSearchValue('');
+      setFilterValue(next);
+      setPage(1);
+    },
   };
-  for (const member of members) counts[memberStatus(member)] += 1;
-
-  function reset(next: StatusFilter = 'all'): void {
-    setSearch('');
-    setFilter(next);
-  }
-
-  return { search, setSearch, filter, setFilter, reset, visible, counts };
 }

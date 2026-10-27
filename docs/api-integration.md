@@ -4,7 +4,7 @@
 
 - Dependencies: `@tanstack/react-query`, `openapi-typescript` (dev), nothing else for HTTP (use `fetch`).
 - Script: `"api:types": "openapi-typescript ../atm-pulso-api/docs/openapi.yaml -o src/types/api.generated.ts"`. Regenerate whenever the contract changes. Commit the generated file.
-- Env: `VITE_API_URL` (default `http://localhost:3001/api/v1`); document it in `.env.example`. Production value is set by the deployer at build time (do not hardcode URLs).
+- Env: `VITE_API_URL` (default `http://localhost:3001/api/v1`; use the API's real port); document it in `.env.example`. Production value is set by the deployer at build time (do not hardcode URLs).
 - Client in `src/config/apiClient.ts` (or `src/services/`): a typed `request<T>(method, path, {body, query, signal})` that
   - adds `Authorization: Bearer <token>` from the auth store (memory),
   - sends `X-Organization-Id` only when a superadmin is inspecting a client (GET only),

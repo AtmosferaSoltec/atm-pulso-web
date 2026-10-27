@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 import type { Member } from '@/features/members/types/member.types';
-import { memberStatus, daysRemaining, whatsappLink } from '@/features/members/services/memberData';
-import { useOrganizationCatalog } from '@/features/organization';
+import { whatsappLink } from '@/features/members/services/memberData';
 import { IconButton } from '@/components/ui/icon-button';
 import { Icon } from '@/components/ui/icon';
 import { formatDate } from '@/utils/formatDate';
@@ -23,9 +22,8 @@ const statusLabels = {
 } as const;
 
 function dueNote(member: Member): string {
-  const status = memberStatus(member);
-  if (status === 'scheduled') return `Inicia ${formatDate(member.start)}`;
-  const days = daysRemaining(member.end);
+  if (member.status === 'scheduled') return `Inicia ${formatDate(member.starts_on)}`;
+  const days = member.days_remaining;
   if (days < 0) return `Venció hace ${-days} ${days === -1 ? 'día' : 'días'}`;
   if (days === 0) return 'Vence hoy';
   return `En ${days} ${days === 1 ? 'día' : 'días'}`;
@@ -33,6 +31,7 @@ function dueNote(member: Member): string {
 
 interface MemberTableProps {
   members: Member[];
+  loading?: boolean;
   onSelect: (member: Member) => void;
   /** Quick actions are omitted from the row when their handler is not provided. */
   onEdit?: (member: Member) => void;
@@ -43,13 +42,13 @@ interface MemberTableProps {
 
 export function MemberTable({
   members,
+  loading = false,
   onSelect,
   onEdit,
   onRenew,
   showBranch = false,
   allowReminders = true,
 }: MemberTableProps): ReactElement {
-  const { branchLabel } = useOrganizationCatalog();
   return (
     <div className="table-scroll">
       <table className="member-table">
@@ -66,24 +65,24 @@ export function MemberTable({
         </thead>
         <tbody>
           {members.map((member) => {
-            const status = memberStatus(member);
+            const status = member.status;
             const needsContact = status === 'expiring' || status === 'expired';
             return (
               <tr key={member.id} className={`row-${status}`}>
                 <td>
                   <div className="person">
-                    <Avatar name={member.name} />
+                    <Avatar name={member.full_name} />
                     <div>
-                      <strong>{member.name}</strong>
+                      <strong>{member.full_name}</strong>
                       <small>
-                        {member.plan} · {documentLabel(member.documentType, member.dni)}
+                        {member.plan_label} · {documentLabel(member.document_type, member.document_number)}
                       </small>
                     </div>
                   </div>
                 </td>
-                {showBranch && <td className="col-secondary">{branchLabel(member.homeBranchId)}</td>}
+                {showBranch && <td className="col-secondary">{member.home_branch.gym_name} · {member.home_branch.name}</td>}
                 <td className="col-secondary">
-                  {formatDate(member.end)}
+                  {formatDate(member.ends_on)}
                   <small>{dueNote(member)}</small>
                 </td>
                 <td className="col-status">
@@ -101,7 +100,7 @@ export function MemberTable({
                           href={whatsappLink(member)}
                           target="_blank"
                           rel="noreferrer"
-                          aria-label={`Avisar a ${member.name} por WhatsApp`}
+                          aria-label={`Avisar a ${member.full_name} por WhatsApp`}
                           title="Avisar por WhatsApp"
                         >
                           <Icon name="message" size={18} />
@@ -112,7 +111,7 @@ export function MemberTable({
                       {onRenew && needsContact && (
                         <IconButton
                           icon="renewals"
-                          label={`Renovar a ${member.name}`}
+                          label={`Renovar a ${member.full_name}`}
                           onClick={() => onRenew(member)}
                         />
                       )}
@@ -121,7 +120,7 @@ export function MemberTable({
                       <span className="action-slot col-secondary">
                         <IconButton
                           icon="edit"
-                          label={`Editar a ${member.name}`}
+                          label={`Editar a ${member.full_name}`}
                           onClick={() => onEdit(member)}
                         />
                       </span>
@@ -129,7 +128,7 @@ export function MemberTable({
                     <span className="action-slot">
                       <IconButton
                         icon="eye"
-                        label={`Ver ficha de ${member.name}`}
+                        label={`Ver ficha de ${member.full_name}`}
                         onClick={() => onSelect(member)}
                       />
                     </span>
@@ -140,7 +139,8 @@ export function MemberTable({
           })}
         </tbody>
       </table>
-      {members.length === 0 && (
+      {loading && <div className="empty">Cargando…</div>}
+      {!loading && members.length === 0 && (
         <div className="empty">
           <Icon name="search" size={24} />
           <p>No hay miembros con este filtro.</p>

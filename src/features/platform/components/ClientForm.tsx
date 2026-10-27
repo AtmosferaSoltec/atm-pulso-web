@@ -1,7 +1,6 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { useDemoStore } from '@/store/demoStore';
+import { describeError } from '@/config/errorMessages';
 import type { ClientDraft, GymDraft } from '@/features/platform/types/platform.types';
-import type { Branch } from '@/features/organization';
 import { lookupDni, lookupRuc } from '@/services/documentLookup';
 import { hasExtras, planExtras } from '@/config/freePlan';
 import { PlanExtraNotice } from '@/features/platform/components/PlanExtraNotice';
@@ -16,7 +15,7 @@ function emptyGym(): GymDraft {
   return { id: crypto.randomUUID(), name: '', taxId: '', branches: [{ id: crypto.randomUUID(), name: '', address: '' }] };
 }
 
-const emptyDraft: ClientDraft = { contactDni: '', firstName: '', lastName: '', contactEmail: '', contactPhone: '', gyms: [] };
+const newDraft = (): ClientDraft => ({ id: crypto.randomUUID(), contactDni: '', firstName: '', lastName: '', contactEmail: '', contactPhone: '', gyms: [emptyGym()] });
 
 const onlyDigits = (value: string): string => value.replace(/\D/g, '');
 
@@ -25,24 +24,25 @@ interface ClientFormProps {
   organizationName?: string;
   /** Branch counts of the client's existing gyms, so adding one counts against the free plan. */
   existingGymBranchCounts?: number[];
-  onSave: (draft: ClientDraft) => void;
+  /** Saves through the API; rejects with the API's error, which the form shows. */
+  onSave: (draft: ClientDraft, agreedExtra: boolean) => Promise<void>;
   onClose: () => void;
 }
 
 export function ClientForm({ organizationName, existingGymBranchCounts = [], onSave, onClose }: ClientFormProps): ReactElement {
-  const { state } = useDemoStore();
   const [error, setError] = useState('');
-  const [draft, setDraft] = useState<ClientDraft>({ ...emptyDraft, gyms: [emptyGym()] });
+  const [draft, setDraft] = useState<ClientDraft>(newDraft);
   /** Which search button is waiting for its (mock) answer: "dni" or "ruc-<gym id>". */
   const [searching, setSearching] = useState<string | null>(null);
   const [extraConfirmed, setExtraConfirmed] = useState(false);
+  const [saving, setSaving] = useState(false);
   const extras = planExtras([...existingGymBranchCounts, ...draft.gyms.map((gym) => gym.branches.length)]);
 
   function changeGym(id: string, patch: Partial<GymDraft>): void {
     setDraft((current) => ({ ...current, gyms: current.gyms.map((gym) => (gym.id === id ? { ...gym, ...patch } : gym)) }));
   }
 
-  function changeBranch(gymId: string, branchId: string, patch: Partial<Branch>): void {
+  function changeBranch(gymId: string, branchId: string, patch: Partial<{ name: string; address: string }>): void {
     setDraft((current) => ({
       ...current,
       gyms: current.gyms.map((gym) =>
@@ -56,10 +56,17 @@ export function ClientForm({ organizationName, existingGymBranchCounts = [], onS
   async function searchDni(): Promise<void> {
     setError('');
     setSearching('dni');
-    const person = await lookupDni(draft.contactDni);
+    let person;
+    try {
+      person = await lookupDni(draft.contactDni);
+    } catch (failure) {
+      setSearching(null);
+      setError(describeError(failure));
+      return;
+    }
     setSearching(null);
     if (!person) {
-      setError('Ingresa un DNI de 8 dígitos para buscar.');
+      setError('No se encontraron datos. Escríbelos a mano.');
       return;
     }
     setDraft((current) => ({ ...current, firstName: person.firstName, lastName: person.lastName }));
@@ -68,10 +75,17 @@ export function ClientForm({ organizationName, existingGymBranchCounts = [], onS
   async function searchRuc(gym: GymDraft): Promise<void> {
     setError('');
     setSearching(`ruc-${gym.id}`);
-    const company = await lookupRuc(gym.taxId);
+    let company;
+    try {
+      company = await lookupRuc(gym.taxId);
+    } catch (failure) {
+      setSearching(null);
+      setError(describeError(failure));
+      return;
+    }
     setSearching(null);
     if (!company) {
-      setError('Ingresa un RUC de 11 dígitos para buscar.');
+      setError('No se encontraron datos. Escríbelos a mano.');
       return;
     }
     const [firstBranch] = gym.branches;
@@ -83,22 +97,24 @@ export function ClientForm({ organizationName, existingGymBranchCounts = [], onS
     });
   }
 
-  function submit(event: FormEvent<HTMLFormElement>): void {
+  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!organizationName && state.users.some((user) => user.dni === draft.contactDni.trim())) {
-      setError('Ya existe un usuario con este DNI.');
-      return;
-    }
     if (draft.gyms.some((gym) => !gym.name.trim() || gym.branches.some((branch) => !branch.name.trim()))) {
       setError('Completa los nombres de los gimnasios y sus sedes.');
       return;
     }
-    onSave(draft);
+    setSaving(true);
+    try {
+      await onSave(draft, extraConfirmed);
+    } catch (failure) {
+      setError(describeError(failure));
+      setSaving(false);
+    }
   }
 
   return (
     <Dialog title={organizationName ? `Añadir gimnasio a ${organizationName}` : 'Nuevo cliente'} wide onClose={onClose}>
-      <form onSubmit={submit} className="form-grid">
+      <form onSubmit={(event) => void submit(event)} className="form-grid">
         {!organizationName && (
           <>
             <Field label="DNI" required>
@@ -113,7 +129,7 @@ export function ClientForm({ organizationName, existingGymBranchCounts = [], onS
                 searchLabel="Buscar DNI"
                 searching={searching === 'dni'}
                 onChange={(event) => setDraft({ ...draft, contactDni: onlyDigits(event.target.value) })}
-                onSearch={searchDni}
+                onSearch={() => void searchDni()}
               />
             </Field>
             <Field label="Celular (+51)" required>
@@ -170,7 +186,7 @@ export function ClientForm({ organizationName, existingGymBranchCounts = [], onS
                   searchLabel={`Buscar RUC del gimnasio ${index + 1}`}
                   searching={searching === `ruc-${gym.id}`}
                   onChange={(event) => changeGym(gym.id, { taxId: onlyDigits(event.target.value) })}
-                  onSearch={() => searchRuc(gym)}
+                  onSearch={() => void searchRuc(gym)}
                 />
               </Field>
               <Field label="Nombre del gimnasio" required>
@@ -237,7 +253,9 @@ export function ClientForm({ organizationName, existingGymBranchCounts = [], onS
           <Button variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit">{organizationName ? 'Guardar gimnasio' : 'Crear cliente y administrador'}</Button>
+          <Button type="submit" disabled={saving}>
+            {organizationName ? 'Guardar gimnasio' : 'Crear cliente'}
+          </Button>
         </div>
       </form>
     </Dialog>

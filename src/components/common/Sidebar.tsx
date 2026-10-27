@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from 'react';
-import { BranchSwitcher, type Branch, type Gym } from '@/features/organization';
-import { canVisitPage, type DemoUser } from '@/features/auth';
+import { BranchSwitcher, type BranchOption } from '@/features/organization';
+import { canVisitPage } from '@/features/auth';
+import type { Role, SessionUser } from '@/types/api.types';
 import { GymBrand } from '@/features/branding';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
@@ -12,16 +13,17 @@ interface SidebarProps {
   page: Page;
   onNavigate: (page: Page) => void;
   open: boolean;
-  user: DemoUser;
-  branches: Branch[];
+  user: SessionUser;
+  branches: BranchOption[];
   branchId: string;
   onBranchChange: (id: string) => void;
   onLogout: () => void;
   onOpenProfile: () => void;
-  gym: Gym;
+  /** Visible name of the gym being worked in. */
+  gymName: string;
 }
 
-const roleLabels: Record<DemoUser['role'], string> = {
+const roleLabels: Record<Role, string> = {
   superadmin: 'Superadmin',
   owner: 'Propietario',
   admin: 'Administrador',
@@ -38,7 +40,7 @@ export function Sidebar({
   onBranchChange,
   onLogout,
   onOpenProfile,
-  gym,
+  gymName,
 }: SidebarProps): ReactElement {
   const isReceptionist = user.role === 'receptionist';
   const home: Page = isReceptionist ? 'access' : 'dashboard';
@@ -66,7 +68,7 @@ export function Sidebar({
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
       <a className="tenant-brand-link" href={`#${home}`} onClick={() => onNavigate(home)}>
-        <GymBrand gym={gym} />
+        <GymBrand name={gymName} />
       </a>
       <BranchSwitcher branches={branches} activeBranchId={branchId} onChange={onBranchChange} />
       <nav aria-label="Navegación principal">
@@ -89,9 +91,9 @@ export function Sidebar({
       <div className="sidebar-bottom">
         <div className="profile">
           <button type="button" className="profile-button" aria-label="Mi perfil" title="Mi perfil" onClick={onOpenProfile}>
-            <span className="profile-avatar">{user.name.split(' ').map((part) => part[0]).join('')}</span>
+            <span className="profile-avatar">{user.full_name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span>
             <span className="profile-text">
-              <strong>{user.name}</strong>
+              <strong>{user.full_name}</strong>
               <small>{roleLabels[user.role]}</small>
             </span>
           </button>

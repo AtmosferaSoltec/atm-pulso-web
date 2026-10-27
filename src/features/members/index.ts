@@ -1,12 +1,9 @@
 export type { Member, MemberStatus } from '@/features/members/types/member.types';
-export { useMembers } from '@/features/members/hooks/useMembers';
 export { MemberTable, Avatar } from '@/features/members/components/MemberTable';
 export { MemberForm } from '@/features/members/components/MemberForm';
 export { MemberSheet } from '@/features/members/components/MemberSheet';
-export { memberStatus, daysRemaining, whatsappLink } from '@/features/members/services/memberData';
-export { nextReceiptNumber } from '@/features/members/services/receipt';
-export { hasBranchAccess, defaultAccessBranchIds } from '@/features/members/services/memberScope';
-export { DEMO_DATE, initialMembers } from '@/features/members/services/memberData';
 export { MemberEditForm } from '@/features/members/components/MemberEditForm';
 export { MembersPage } from '@/features/members/components/MembersPage';
+export { whatsappLink } from '@/features/members/services/memberData';
 export { useMemberFilters, type MemberFilters, type StatusFilter } from '@/features/members/hooks/useMemberFilters';
+export { useMemberList, useMemberDetail } from '@/features/members/hooks/useMembers';
