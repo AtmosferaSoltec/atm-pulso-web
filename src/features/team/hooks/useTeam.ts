@@ -6,7 +6,7 @@ export function useTeam(organizationId: string): { users: DemoUser[]; saveUser: 
   if (!canManageAccount(currentUser, organizationId) || user.organizationId !== organizationId || user.role === 'superadmin' || user.id === currentUser?.id) return;
   setState(current => {
    const allowedIds = current.branches.filter(branch => current.gyms.some(gym => gym.id === branch.gymId && gym.organizationId === organizationId)).map(branch => branch.id);
-   if (user.branchIds.some(id => !allowedIds.includes(id)) || (user.role === 'receptionist' && user.branchIds.length === 0) || current.users.some(item => item.id !== user.id && item.email.toLowerCase() === user.email.toLowerCase())) return current;
+   if (user.branchIds.some(id => !allowedIds.includes(id)) || (user.role === 'receptionist' && user.branchIds.length === 0) || current.users.some(item => item.id !== user.id && item.dni === user.dni)) return current;
    return { ...current, users: current.users.some(item => item.id === user.id) ? current.users.map(item => item.id === user.id ? user : item) : [...current.users, user] };
   });
  }

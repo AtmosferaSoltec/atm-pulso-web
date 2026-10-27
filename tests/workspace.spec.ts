@@ -25,14 +25,12 @@ async function access(page: Page, dni: string, allowed: boolean): Promise<void> 
 test('login validation, password visibility, recovery, and logout', async ({ page }) => {
  await page.goto('/#members');
  await expect(page.getByRole('heading', { name: 'Iniciar sesión' })).toBeVisible();
- await page.getByLabel('Correo electrónico', { exact: true }).fill('dueno@atlas.example');
+ await page.getByLabel('DNI', { exact: true }).fill('10000002');
  await page.locator('input[autocomplete="current-password"]').fill('invalid');
  await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
  await expect(page.getByRole('alert')).toContainText('incorrectos');
  await page.getByRole('button', { name: 'Mostrar contraseña' }).click();
  await expect(page.locator('input[autocomplete="current-password"]')).toHaveAttribute('type', 'text');
- await page.getByRole('button', { name: '¿Necesitas recuperar el acceso?' }).click();
- await expect(page.getByRole('status')).toContainText('no envía correos');
  await page.getByRole('button', { name: /Propietario · Red/ }).click();
  await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
  await page.getByRole('button', { name: 'Cerrar sesión' }).click();

@@ -25,14 +25,14 @@ The browser suite starts Vite on port 4175 or reuses an existing server there. G
 
 The login page can populate each fictional account. The password for all accounts is `Pulso2026!`.
 
-| Email | Profile | Assigned locations |
+| DNI | Profile | Assigned locations |
 | --- | --- | --- |
-| equipo@atmosfera.example | Atmósfera superadmin | All client accounts |
-| dueno@atlas.example | Network administrator | Four branches across three gyms |
-| recepcion@atlas.example | Reception | Atlas Miraflores and Barranco |
-| dueno@central.example | Single-site administrator | Central only |
+| 10000001 | Atmósfera superadmin | All client accounts |
+| 10000002 | Network administrator | Four branches across three gyms |
+| 10000003 | Reception | Atlas Miraflores and Barranco |
+| 10000004 | Single-site administrator | Central only |
 
-There is no public registration. The Atmósfera superadmin creates client accounts, their initial administrators, gyms, and branches through the platform panel. Recovery displays instructions and sends no email.
+There is no public registration. The Atmósfera superadmin creates client accounts, their initial administrators, gyms, and branches through the platform panel. Users sign in with DNI and password; there is no account recovery flow.
 
 ## Organization model
 

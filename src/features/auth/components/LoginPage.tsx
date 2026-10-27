@@ -3,12 +3,135 @@ import type { DemoUser } from '@/features/auth/types/auth.types';
 import { demoUsers, DEMO_PASSWORD } from '@/features/auth/services/authData';
 import { useDemoStore } from '@/store/demoStore';
 import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/field';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { BrandMark } from '@/components/ui/brand-mark';
 import { Icon } from '@/components/ui/icon';
+
+const demoRoleLabels = (user: DemoUser): string => {
+  if (user.role === 'superadmin') return 'Superadmin · Atmósfera';
+  if (user.role === 'receptionist') return 'Recepción · 2 sedes asignadas';
+  return user.organizationId === 'central' ? 'Propietario · Una sola sede' : 'Propietario · Red de gimnasios';
+};
+
 export function LoginPage({ onLogin }: { onLogin: (user: DemoUser) => void }): ReactElement {
- const { state } = useDemoStore();
- const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [showPassword, setShowPassword] = useState(false); const [error, setError] = useState(''); const [recovery, setRecovery] = useState(false);
- function submit(event: FormEvent<HTMLFormElement>): void { event.preventDefault(); const user = password === DEMO_PASSWORD ? state.users.find(item => item.email.toLowerCase() === email.trim().toLowerCase() && item.active !== false) : undefined; if (!user) { setError('Correo o contraseña incorrectos. Usa una de las cuentas de prueba.'); return; } onLogin(user); }
- return <div className="login-page"><section className="login-context"><a className="brand" href="#login"><BrandMark size={50} />pulso<span className="brand-dot">.</span></a><span className="login-company">POR ATMÓSFERA</span><div className="login-overview"><h1>Administración<br />de <span className="login-accent">gimnasios</span></h1><p>Miembros, accesos y pagos de todas tus sedes, en una sola cuenta.</p></div><small>Acceso exclusivo para propietarios y personal autorizado.</small></section><section className="login-form-panel"><div className="login-form-wrap"><span className="login-lock"><Icon name="shield" size={24} /></span><h2>Iniciar sesión</h2><p>Ingresa con la cuenta asignada a tu gimnasio.</p><form onSubmit={submit} className="login-form"><label>Correo electrónico<Input type="email" autoComplete="username" value={email} onChange={event => { setEmail(event.target.value); setError(''); }} placeholder="nombre@gimnasio.com" required /></label><label>Contraseña<div className="password-field"><Input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => { setPassword(event.target.value); setError(''); }} placeholder="Ingresa tu contraseña" required /><Button variant="ghost" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>{showPassword ? 'Ocultar' : 'Ver'}</Button></div></label>{error && <p className="error" role="alert">{error}</p>}<Button type="submit">Ingresar <Icon name="arrow" size={17} /></Button><Button variant="ghost" onClick={() => setRecovery(!recovery)}>¿Necesitas recuperar el acceso?</Button>{recovery && <p className="notice" role="status">Solicita al administrador de tu gimnasio que coordine el restablecimiento con Atmósfera. Esta maqueta no envía correos.</p>}</form><div className="demo-accounts"><span className="eyebrow">CUENTAS FICTICIAS PARA PROBAR</span><p>Selecciona un perfil para completar sus credenciales.</p>{demoUsers.map(user => <Button key={user.id} variant="secondary" className="demo-account" onClick={() => { setEmail(user.email); setPassword(DEMO_PASSWORD); setError(''); }}><span><strong>{user.role === 'superadmin' ? 'Superadmin · Atmósfera' : user.role === 'receptionist' ? 'Recepción · 2 sedes asignadas' : user.organizationId === 'central' ? 'Propietario · Una sola sede' : 'Propietario · Red de gimnasios'}</strong><small>{user.email}</small></span><Icon name="arrow" size={16} /></Button>)}<small>Contraseña de prueba: {DEMO_PASSWORD} · Sin registro público.</small></div></div></section></div>;
+  const { state } = useDemoStore();
+  const [dni, setDni] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+
+  function submit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    const user =
+      password === DEMO_PASSWORD
+        ? state.users.find((item) => item.dni === dni.trim() && item.active !== false)
+        : undefined;
+    if (!user) {
+      setError('DNI o contraseña incorrectos. Usa una de las cuentas de prueba.');
+      return;
+    }
+    onLogin(user);
+  }
+
+  return (
+    <div className="login-page">
+      <section className="login-context">
+        <a className="brand" href="#login">
+          <BrandMark size={50} />
+          pulso<span className="brand-dot">.</span>
+        </a>
+        <span className="login-company">POR ATMÓSFERA</span>
+        <div className="login-overview">
+          <h1>
+            Administra tu gym<br />
+            en una <span className="login-accent">sola operación</span>
+          </h1>
+          <p>Miembros, accesos y pagos de todas tus sedes, en un solo lugar.</p>
+        </div>
+        <footer className="login-footer">
+          <span>Desarrollado por</span>
+          <img src="/brand/atmosfera-logo.png" alt="Atmósfera Soluciones Tecnológicas" />
+        </footer>
+      </section>
+      <section className="login-form-panel">
+        <div className="login-form-wrap">
+          <span className="login-lock">
+            <Icon name="shield" size={24} />
+          </span>
+          <h2>Iniciar sesión</h2>
+          <p>Ingresa con tu DNI y contraseña.</p>
+          <form onSubmit={submit} className="login-form">
+            <Field label="DNI">
+              <Input
+                inputMode="numeric"
+                autoComplete="username"
+                pattern="[0-9]{8}"
+                maxLength={8}
+                value={dni}
+                onChange={(event) => {
+                  setDni(event.target.value.replace(/\D/g, ''));
+                  setError('');
+                }}
+                placeholder="8 dígitos"
+                required
+              />
+            </Field>
+            <Field label="Contraseña">
+              <div className="password-field">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    setError('');
+                  }}
+                  placeholder="Ingresa tu contraseña"
+                  required
+                />
+                <IconButton
+                  icon={showPassword ? 'eyeOff' : 'eye'}
+                  label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  onClick={() => setShowPassword(!showPassword)}
+                />
+              </div>
+            </Field>
+            {error && (
+              <p className="error" role="alert">
+                {error}
+              </p>
+            )}
+            <Button type="submit">
+              Ingresar <Icon name="arrow" size={17} />
+            </Button>
+          </form>
+          <div className="demo-accounts">
+            <span className="eyebrow">CUENTAS FICTICIAS PARA PROBAR</span>
+            <p>Selecciona un perfil para completar sus credenciales.</p>
+            {demoUsers.map((user) => (
+              <Button
+                key={user.id}
+                variant="secondary"
+                className="demo-account"
+                onClick={() => {
+                  setDni(user.dni);
+                  setPassword(DEMO_PASSWORD);
+                  setError('');
+                }}
+              >
+                <span>
+                  <strong>{demoRoleLabels(user)}</strong>
+                  <small>DNI {user.dni}</small>
+                </span>
+                <Icon name="arrow" size={16} />
+              </Button>
+            ))}
+            <small>Contraseña de prueba: {DEMO_PASSWORD} · Sin registro público.</small>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }

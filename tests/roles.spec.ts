@@ -1,10 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
-async function signIn(page: Page, email: string): Promise<void> {
- await page.getByLabel('Correo electrónico', { exact: true }).fill(email);
+async function signIn(page: Page, dni: string): Promise<void> {
+ await page.getByLabel('DNI', { exact: true }).fill(dni);
  await page.locator('input[autocomplete="current-password"]').fill('Pulso2026!');
  await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
 }
-async function start(page: Page, email: string): Promise<void> { await page.goto('/'); await signIn(page, email); }
+async function start(page: Page, dni: string): Promise<void> { await page.goto('/'); await signIn(page, dni); }
 async function navigate(page: Page, label: string): Promise<void> {
  const nav = page.getByRole('navigation');
  const target = nav.getByRole('button', { name: label, exact: true });
@@ -14,7 +14,7 @@ async function navigate(page: Page, label: string): Promise<void> {
 async function logout(page: Page): Promise<void> { await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click(); }
 
 test('superadmin consults every account without operational actions', async ({ page }) => {
- await start(page, 'equipo@atmosfera.example');
+ await start(page, '10000001');
  await expect(page.getByRole('heading', { name: 'Clientes y gimnasios' })).toBeVisible();
  await page.getByRole('button', { name: 'Consultar Grupo Atlas' }).click();
  await expect(page.getByRole('button', { name: 'Nuevo miembro', exact: true })).toHaveCount(0);
@@ -42,12 +42,12 @@ test('superadmin consults every account without operational actions', async ({ p
 });
 
 test('platform creates multiple gyms with a repeated RUC and a working administrator login', async ({ page }) => {
- await start(page, 'equipo@atmosfera.example');
+ await start(page, '10000001');
  await page.getByRole('button', { name: 'Nuevo cliente', exact: true }).click();
  await page.getByLabel('Nombre del cliente o grupo').fill('Grupo Prueba');
  await page.getByRole('radio', { name: 'Persona' }).click();
  await page.getByLabel('Nombre del administrador').fill('Administrador Prueba');
- await page.getByLabel('Correo del administrador').fill('admin@prueba.example');
+ await page.getByLabel('DNI del administrador').fill('20000001');
  await page.getByLabel('Nombre del gimnasio 1', { exact: true }).fill('Fuerza Uno');
  await page.getByLabel('RUC del gimnasio 1', { exact: true }).fill('DEMO-REPETIDO');
  await page.getByLabel('Sede 1 del gimnasio 1', { exact: true }).fill('Centro');
@@ -71,7 +71,7 @@ test('platform creates multiple gyms with a repeated RUC and a working administr
  await page.getByLabel('Nombre de la sede', { exact: true }).fill('Este');
  await page.getByRole('button', { name: 'Guardar sede', exact: true }).click();
  await logout(page);
- await signIn(page, 'admin@prueba.example');
+ await signIn(page, '20000001');
  await expect(page.getByRole('heading', { name: 'Resumen del gimnasio' })).toBeVisible();
  await expect(page.locator('.tenant-brand-link')).toContainText('Fuerza Uno');
  await page.getByRole('button', { name: 'Cambiar sede', exact: true }).click();
@@ -85,18 +85,18 @@ test('platform creates multiple gyms with a repeated RUC and a working administr
 });
 
 test('administrator creates, reassigns, and deactivates reception users within the account', async ({ page }) => {
- await start(page, 'dueno@atlas.example');
+ await start(page, '10000002');
  await navigate(page, 'Usuarios');
  await page.getByRole('button', { name: 'Nuevo usuario', exact: true }).click();
  await page.getByLabel('Nombre completo', { exact: true }).fill('Recepción Prueba');
- await page.getByLabel('Correo electrónico', { exact: true }).fill('nuevo@atlas.example');
+ await page.getByLabel('DNI', { exact: true }).fill('20000002');
  await expect(page.getByRole('radio', { name: 'Superadmin' })).toHaveCount(0);
  await page.getByRole('button', { name: 'Guardar usuario' }).click();
  await expect(page.getByRole('alert')).toContainText('al menos una sede');
  await page.getByLabel('Norte Gym · Los Olivos', { exact: true }).check();
  await page.getByRole('button', { name: 'Guardar usuario' }).click();
  await logout(page);
- await signIn(page, 'nuevo@atlas.example');
+ await signIn(page, '20000002');
  await expect(page.getByRole('heading', { name: 'Control de acceso', exact: true })).toBeVisible();
  await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(3);
  await expect(page.getByRole('button', { name: 'Resumen', exact: true })).toHaveCount(0);
@@ -108,26 +108,26 @@ test('administrator creates, reassigns, and deactivates reception users within t
  await navigate(page, 'Pagos');
  await expect(page.locator('.payment-metrics')).toHaveCount(0);
  await logout(page);
- await signIn(page, 'dueno@atlas.example');
+ await signIn(page, '10000002');
  await navigate(page, 'Usuarios');
  await page.getByRole('button', { name: 'Editar a Recepción Prueba' }).click();
  await page.getByLabel('Norte Gym · Los Olivos', { exact: true }).uncheck();
  await page.getByLabel('Atlas Fitness · Barranco', { exact: true }).check();
  await page.getByRole('button', { name: 'Guardar usuario' }).click();
  await logout(page);
- await signIn(page, 'nuevo@atlas.example');
+ await signIn(page, '20000002');
  await expect(page.locator('.location-label')).toContainText('Barranco');
  await logout(page);
- await signIn(page, 'dueno@atlas.example');
+ await signIn(page, '10000002');
  await navigate(page, 'Usuarios');
  await page.getByRole('button', { name: 'Desactivar a Recepción Prueba' }).click();
  await logout(page);
- await signIn(page, 'nuevo@atlas.example');
+ await signIn(page, '20000002');
  await expect(page.getByRole('alert')).toContainText('incorrectos');
 });
 
 test('tenant branding follows the gym and survives logout within the mock session', async ({ page }) => {
- await start(page, 'dueno@atlas.example');
+ await start(page, '10000002');
  await navigate(page, 'Identidad');
  await page.getByLabel('Nombre visible', { exact: true }).fill('Atlas Club');
  await page.getByRole('button', { name: 'Violeta', exact: true }).click();
@@ -148,14 +148,14 @@ test('tenant branding follows the gym and survives logout within the mock sessio
  await expect(page.locator('.tenant-brand-link')).toContainText('Norte Gym');
  expect(await page.locator('.app-shell').evaluate(element => getComputedStyle(element).getPropertyValue('--tenant-primary'))).toBe('#356443');
  await logout(page);
- await signIn(page, 'recepcion@atlas.example');
+ await signIn(page, '10000003');
  await expect(page.locator('.tenant-brand-link')).toContainText('Atlas Club');
  await expect(page.getByRole('button', { name: 'Identidad', exact: true })).toHaveCount(0);
 });
 
 test('superadmin and tenant customization screens fit mobile', async ({ page }) => {
  await page.setViewportSize({ width: 390, height: 844 });
- await start(page, 'equipo@atmosfera.example');
+ await start(page, '10000001');
  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
  await page.getByRole('button', { name: 'Nuevo cliente', exact: true }).click();
  expect(await page.getByRole('dialog').evaluate(element => element.getBoundingClientRect().width <= innerWidth)).toBe(true);
