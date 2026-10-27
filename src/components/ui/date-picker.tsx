@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { DayPicker } from "react-day-picker";
 import { es } from "react-day-picker/locale";
 import "react-day-picker/style.css";
 import { Icon } from "@/components/ui/icon";
+import { usePopover } from "@/hooks/usePopover";
 import { formatDate } from "@/utils/formatDate";
 
 /** Dates travel as "YYYY-MM-DD" strings; the calendar works with local dates. */
@@ -24,47 +25,19 @@ interface DatePickerProps {
   onChange: (value: string) => void;
   /** Reference "today" (ISO). Defaults to the real current date. */
   today?: string;
+  /** Text shown while no date is chosen. */
+  placeholder?: string;
 }
 
-export function DatePicker({ label, value, onChange, today }: DatePickerProps): ReactElement {
-  const [open, setOpen] = useState(false);
-  const [above, setAbove] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
+export function DatePicker({ label, value, onChange, today, placeholder = "Elegir fecha" }: DatePickerProps): ReactElement {
+  const { open, setOpen, above, root, trigger, close, onKeyDown } = usePopover(CALENDAR_HEIGHT);
   const selected = toDate(value);
   const reference = today ? toDate(today) : new Date();
-
-  // Open upwards when the calendar would not fit below the field.
-  useLayoutEffect(() => {
-    if (!open || !trigger.current) return;
-    const rect = trigger.current.getBoundingClientRect();
-    const needed = CALENDAR_HEIGHT + 16;
-    setAbove(window.innerHeight - rect.bottom < needed && rect.top > window.innerHeight - rect.bottom);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: PointerEvent): void => {
-      if (!root.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [open]);
 
   function choose(date: Date | undefined): void {
     if (!date) return;
     onChange(toIso(date));
-    setOpen(false);
-    trigger.current?.focus();
-  }
-
-  // Escape closes only the calendar, not the dialog that contains it.
-  function onKeyDown(event: KeyboardEvent): void {
-    if (event.key !== "Escape" || !open) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setOpen(false);
-    trigger.current?.focus();
+    close();
   }
 
   return (
@@ -79,7 +52,7 @@ export function DatePicker({ label, value, onChange, today }: DatePickerProps): 
         onClick={() => setOpen(!open)}
       >
         <Icon name="calendar" size={18} />
-        <span>{value ? formatDate(value) : "Elegir fecha"}</span>
+        <span>{value ? formatDate(value) : placeholder}</span>
       </button>
       {open && (
         <div className={`date-popover ${above ? "above" : ""}`} role="dialog" aria-label={label}>

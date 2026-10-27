@@ -1,11 +1,13 @@
 import type { ReactElement } from 'react';
 import { DEMO_DATE, type Member, MemberTable, memberStatus } from '@/features/members';
 import { Icon, type IconName } from '@/components/ui/icon';
+import type { DayPass } from '@/features/dayPasses';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 interface DashboardProps {
   members: Member[];
   payments: Member[];
+  dayPasses: DayPass[];
   readOnly?: boolean;
   onNavigate: (page: 'members' | 'payments') => void;
   onExpiring: () => void;
@@ -28,6 +30,7 @@ const UPCOMING_LIMIT = 5;
 export function Dashboard({
   members,
   payments,
+  dayPasses,
   readOnly = false,
   onNavigate,
   onExpiring,
@@ -40,7 +43,7 @@ export function Dashboard({
   const month = DEMO_DATE.slice(0, 7);
   const monthRevenue = payments
     .filter((payment) => (payment.recordedAt ?? payment.start).startsWith(month))
-    .reduce((sum, payment) => sum + payment.paid, 0);
+    .reduce((sum, payment) => sum + payment.paid, 0) + dayPasses.filter((pass) => pass.date.startsWith(month)).reduce((sum, pass) => sum + pass.amount, 0);
 
   const metrics: Metric[] = [
     { id: 'active', label: 'Vigentes', value: String(active.length), icon: 'members', tone: 'ok', onOpen: () => onNavigate('members') },

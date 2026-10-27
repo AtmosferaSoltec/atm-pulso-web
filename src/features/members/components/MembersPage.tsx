@@ -33,8 +33,8 @@ export function MembersPage({
         <div className="search-field">
           <Icon name="search" size={18} />
           <Input
-            aria-label="Buscar miembro por nombre o DNI"
-            placeholder="Nombre o DNI"
+            aria-label="Buscar miembro por nombre o documento"
+            placeholder="Nombre o documento"
             value={filters.search}
             onChange={(event) => filters.setSearch(event.target.value)}
           />

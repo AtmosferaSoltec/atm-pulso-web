@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { BrandMark } from '@/components/ui/brand-mark';
 import { Icon } from '@/components/ui/icon';
 
-const demoRoleLabels = (user: DemoUser): string => {
+const demoRoleLabels = (user: DemoUser, gymName?: string): string => {
   if (user.role === 'superadmin') return 'Superadmin · Atmósfera';
+  if (user.role === 'admin') return `Administrador · ${gymName ?? 'un gimnasio'}`;
   if (user.role === 'receptionist') return 'Recepción · 2 sedes asignadas';
   return user.organizationId === 'central' ? 'Propietario · Una sola sede' : 'Propietario · Red de gimnasios';
 };
@@ -24,11 +25,8 @@ export function LoginPage({ onLogin }: { onLogin: (user: DemoUser) => void }): R
 
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    const user =
-      password === DEMO_PASSWORD
-        ? state.users.find((item) => item.dni === dni.trim() && item.active !== false)
-        : undefined;
-    if (!user) {
+    const user = state.users.find((item) => item.dni === dni.trim() && item.active !== false);
+    if (!user || password !== (user.password ?? DEMO_PASSWORD)) {
       setError('DNI o contraseña incorrectos. Usa una de las cuentas de prueba.');
       return;
     }
@@ -117,12 +115,12 @@ export function LoginPage({ onLogin }: { onLogin: (user: DemoUser) => void }): R
                 className="demo-account"
                 onClick={() => {
                   setDni(user.dni);
-                  setPassword(DEMO_PASSWORD);
+                  setPassword(state.users.find((item) => item.id === user.id)?.password ?? DEMO_PASSWORD);
                   setError('');
                 }}
               >
                 <span>
-                  <strong>{demoRoleLabels(user)}</strong>
+                  <strong>{demoRoleLabels(user, state.gyms.find((gym) => gym.id === user.gymId)?.name)}</strong>
                   <small>DNI {user.dni}</small>
                 </span>
                 <Icon name="arrow" size={16} />

@@ -1,20 +1,15 @@
 import type { ReactElement } from 'react';
 import type { EnrollmentTerms } from '@/features/members/types/enrollment.types';
-import { durationPresets, enrollmentEnd, enrollmentTotal } from '@/features/members/services/enrollment';
+import { MAX_MONTHS, durationPresets, enrollmentEnd } from '@/features/members/services/enrollment';
 import { DEMO_DATE } from '@/features/members/services/memberData';
 import { paymentMethodOptions } from '@/config/paymentMethods';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { OptionCards, type Option } from '@/components/ui/option-cards';
+import { OptionCards } from '@/components/ui/option-cards';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
-
-const unitOptions: Option<EnrollmentTerms['unit']>[] = [
-  { value: 'months', label: 'Meses' },
-  { value: 'days', label: 'Días' },
-];
 
 interface EnrollmentFieldsProps {
   value: EnrollmentTerms;
@@ -33,33 +28,24 @@ export function EnrollmentFields({ value, onChange }: EnrollmentFieldsProps): Re
           <Button
             key={preset.months}
             variant="secondary"
-            aria-pressed={value.unit === 'months' && value.quantity === preset.months}
-            onClick={() => onChange({ ...value, quantity: preset.months, unit: 'months', amount: preset.amount, discount: 0 })}
+            aria-pressed={value.months === preset.months}
+            onClick={() => onChange({ ...value, months: preset.months, amount: preset.amount })}
           >
             {preset.months} {preset.months === 1 ? 'mes' : 'meses'}
             <small>{formatCurrency(preset.amount)}</small>
           </Button>
         ))}
       </div>
-      <Field label="Duración" required>
+      <Field label="Duración (meses)" required>
         <Input
-          aria-label="Duración"
+          aria-label="Duración (meses)"
           type="number"
           min="1"
-          max={value.unit === 'months' ? 24 : 730}
+          max={MAX_MONTHS}
           step="1"
           required
-          value={value.quantity || ''}
-          onChange={(event) => onChange({ ...value, quantity: Number(event.target.value) })}
-        />
-      </Field>
-      <Field label="Unidad" as="div">
-        <OptionCards
-          label="Unidad"
-          variant="chip"
-          options={unitOptions}
-          value={value.unit}
-          onChange={(unit) => onChange({ ...value, unit })}
+          value={value.months || ''}
+          onChange={(event) => onChange({ ...value, months: Number(event.target.value) })}
         />
       </Field>
       <Field label="Fecha de inicio" required as="div">
@@ -68,7 +54,7 @@ export function EnrollmentFields({ value, onChange }: EnrollmentFieldsProps): Re
       <Field label="Fecha de vencimiento">
         <Input readOnly value={end ? formatDate(end) : 'Completa la duración y la fecha'} />
       </Field>
-      <Field label="Importe acordado (S/)" required hint="Importe total por todo el período.">
+      <Field label="Importe (S/)" required>
         <Input
           type="number"
           min="0"
@@ -76,16 +62,6 @@ export function EnrollmentFields({ value, onChange }: EnrollmentFieldsProps): Re
           required
           value={Number.isNaN(value.amount) ? '' : value.amount}
           onChange={(event) => onChange({ ...value, amount: event.target.value === '' ? NaN : Number(event.target.value) })}
-        />
-      </Field>
-      <Field label="Descuento (%)" hint="Déjalo en 0 si ya acordaste el precio final.">
-        <Input
-          type="number"
-          min="0"
-          max="100"
-          step="0.01"
-          value={value.discount}
-          onChange={(event) => onChange({ ...value, discount: Number(event.target.value) })}
         />
       </Field>
       <Field label="Medio de pago" className="full" as="div">
@@ -98,11 +74,8 @@ export function EnrollmentFields({ value, onChange }: EnrollmentFieldsProps): Re
         />
       </Field>
       <div className="enrollment-total full">
-        <div>
-          <span>Total a registrar</span>
-          <small>{value.discount > 0 ? `Descuento aplicado: ${value.discount}%` : 'Sin descuento adicional'}</small>
-        </div>
-        <strong>{Number.isFinite(value.amount) ? formatCurrency(enrollmentTotal(value)) : '—'}</strong>
+        <span>Total a registrar</span>
+        <strong>{Number.isFinite(value.amount) ? formatCurrency(value.amount) : '—'}</strong>
       </div>
     </>
   );

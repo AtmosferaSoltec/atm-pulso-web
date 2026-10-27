@@ -16,6 +16,7 @@ export const pageDetails: Record<Page, PageDetails> = {
   payments: { title: 'Pagos e ingresos', name: 'Pagos e ingresos', icon: 'payments' },
   organization: { title: 'Gimnasios y reglas', name: 'Gimnasios y reglas', icon: 'shield' },
   team: { title: 'Usuarios y permisos', name: 'Usuarios', icon: 'members' },
+  pricing: { title: 'Tarifas del gimnasio', name: 'Tarifas', icon: 'cash' },
   branding: { title: 'Identidad del gimnasio', name: 'Identidad', icon: 'tag' },
 };
 
@@ -23,7 +24,7 @@ export const pageDetails: Record<Page, PageDetails> = {
 export const mainPages: Page[] = ['dashboard', 'members', 'access', 'payments'];
 
 /** Pages configured once; grouped behind the settings entry. */
-export const settingsPages: Page[] = ['organization', 'team', 'branding'];
+export const settingsPages: Page[] = ['organization', 'team', 'pricing', 'branding'];
 
-/** Pages where registering a new member makes sense. */
-export const enrollmentPages: Page[] = ['dashboard', 'members', 'access', 'payments'];
+/** Pages offering "Nuevo miembro": enrolling happens only from the members module. */
+export const enrollmentPages: Page[] = ['members'];

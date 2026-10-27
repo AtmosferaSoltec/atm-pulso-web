@@ -13,16 +13,17 @@ import {
   MemberForm,
   MemberSheet,
   MemberEditForm,
-  directoryMembers,
-  memberStatus,
+  nextReceiptNumber,
+  DEMO_DATE,
   type Member,
   type StatusFilter,
 } from '@/features/members';
 import { AccessPage, useAccess } from '@/features/access';
 import { PaymentsPage, usePayments } from '@/features/payments';
+import { dayPassPrice, useDayPasses } from '@/features/dayPasses';
+import { PricingPage } from '@/features/pricing';
 import type { Page } from '@/types/navigation.types';
-import { canManageAccount, type DemoUser } from '@/features/auth';
-import { useDemoStore } from '@/store/demoStore';
+import { canAccessBranch, ProfileDialog, type DemoUser } from '@/features/auth';
 import { TeamPage } from '@/features/team';
 import { BrandingPage, brandTheme, brandFavicon } from '@/features/branding';
 import { useOrganizationCatalog, OrganizationPage } from '@/features/organization';
@@ -38,13 +39,12 @@ interface WorkspaceProps {
 
 export function Workspace({ user, organizationId = user.organizationId, onLogout, onBack }: WorkspaceProps): ReactElement {
   const { organizations, gyms, branches: allBranches, organizationBranches, branchLabel } = useOrganizationCatalog();
-  const { setState } = useDemoStore();
   const readOnly = user.role === 'superadmin';
   const { page, goTo } = usePageRoute(user);
 
   const organization = organizations.find((item) => item.id === organizationId)!;
   const availableBranches = organizationBranches(organizationId).filter(
-    (branch) => user.role !== 'receptionist' || user.branchIds.includes(branch.id),
+    (branch) => canAccessBranch(user, branch),
   );
   const [branchId, setBranchId] = useState(availableBranches[0].id);
   const branch = availableBranches.find((item) => item.id === branchId)!;
@@ -52,16 +52,20 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
 
   const { members, saveMember, updateMember } = useMembers(organizationId);
   const { paymentRecords, recordPayment } = usePayments(organizationId);
-  const { entries, checkAccess } = useAccess();
+  const { entries, checkAccess, scenarios } = useAccess();
+  const { dayPasses, sellDayPass } = useDayPasses(organizationId);
 
+  const hasManyBranches = organizationBranches(organizationId).length > 1;
   const [localOnly, setLocalOnly] = useState(false);
-  const directory = readOnly ? members : directoryMembers(members, organization, branchId);
+  // The member directory is shared by every gym and branch of the account: nobody is typed in twice.
+  const directory = members;
   const displayedMembers = localOnly ? directory.filter((member) => member.homeBranchId === branchId) : directory;
   const localMembers = members.filter((member) => member.homeBranchId === branchId);
   const localPayments = paymentRecords.filter((record) => (record.paymentBranchId ?? record.homeBranchId) === branchId);
   const localEntries = entries.filter((entry) => entry.branchId === branchId);
+  const localDayPasses = dayPasses.filter((pass) => pass.branchId === branchId);
+  const passPrice = dayPassPrice(gym);
   const filters = useMemberFilters(displayedMembers);
-  const hasExpiring = localMembers.some((member) => memberStatus(member) === 'expiring');
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [registering, setRegistering] = useState(false);
@@ -69,6 +73,7 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
   const [editing, setEditing] = useState<Member | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
+  const [profileOpen, setProfileOpen] = useState(false);
   const selected = directory.find((member) => member.id === selectedId);
 
   useEffect(() => {
@@ -107,8 +112,10 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
 
   function save(member: Member): void {
     if (readOnly) return;
-    saveMember(member);
-    recordPayment(member, branchId);
+    // Every registration or renewal gets its own receipt number and issue date.
+    const registered: Member = { ...member, receiptNumber: nextReceiptNumber(paymentRecords), recordedAt: DEMO_DATE };
+    saveMember(registered);
+    recordPayment(registered, branchId);
     closeEnrollment();
     setSelectedId(member.id);
     setToast(renewing ? 'Renovación y pago registrados.' : 'Miembro y pago registrados.');
@@ -126,16 +133,6 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
     setToast(`Sede de trabajo: ${branchLabel(id)}`);
   }
 
-  function saveRules(value: typeof organization): void {
-    if (!canManageAccount(user, organizationId)) return;
-    setState((current) => ({
-      ...current,
-      organizations: current.organizations.map((item) => (item.id === value.id ? value : item)),
-    }));
-    setSelectedId(null);
-    setToast('Reglas actualizadas para esta cuenta.');
-  }
-
   const sheetGym =
     selected && gyms.find((item) => item.id === allBranches.find((location) => location.id === selected.homeBranchId)?.gymId);
 
@@ -150,6 +147,10 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
         branchId={branchId}
         onBranchChange={changeBranch}
         onLogout={onLogout}
+        onOpenProfile={() => {
+          setProfileOpen(true);
+          setMobileOpen(false);
+        }}
         gym={gym}
       />
       {mobileOpen && <Button className="sidebar-backdrop" variant="ghost" aria-label="Cerrar menú" onClick={() => setMobileOpen(false)} />}
@@ -157,9 +158,7 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
         <Topbar
           locationLabel={branchLabel(branchId)}
           userName={user.name}
-          hasAlerts={hasExpiring}
           onToggleMenu={() => setMobileOpen(!mobileOpen)}
-          onAlertsClick={() => navigate('members', 'expiring')}
           onBack={onBack}
         />
         <main>
@@ -175,6 +174,7 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
             <Dashboard
               members={localMembers}
               payments={localPayments}
+              dayPasses={localDayPasses}
               readOnly={readOnly}
               onNavigate={navigate}
               onExpiring={() => navigate('members', 'expiring')}
@@ -186,10 +186,10 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
           {page === 'members' && (
             <MembersPage
               filters={filters}
-              showBranch={organization.shareDirectory || readOnly}
+              showBranch={hasManyBranches}
               readOnly={readOnly}
               localOnly={
-                organization.shareDirectory
+                hasManyBranches
                   ? { active: localOnly, branchName: branch.name, onToggle: () => setLocalOnly(!localOnly) }
                   : undefined
               }
@@ -202,17 +202,20 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
             <AccessPage
               key={branchId}
               entries={localEntries}
+              scenarios={scenarios(members, branchId, organization)}
+              dayPass={{ price: passPrice, branchName: branchLabel(branchId), onSell: (sale) => sellDayPass(branchId, passPrice, sale) }}
               readOnly={readOnly}
               onCheck={(dni) => checkAccess(dni, members, branchId, organization)}
             />
           )}
           {page === 'payments' && (
-            <PaymentsPage members={localPayments} showSummary={user.role !== 'receptionist'} />
+            <PaymentsPage members={localPayments} dayPasses={localDayPasses} showSummary={user.role !== 'receptionist'} />
           )}
           {page === 'organization' && (
-            <OrganizationPage key={organization.id} organization={organization} readOnly={readOnly} onSave={saveRules} />
+            <OrganizationPage key={organization.id} organizationId={organizationId} readOnly={readOnly} />
           )}
           {page === 'team' && <TeamPage organizationId={organizationId} readOnly={readOnly} />}
+          {page === 'pricing' && <PricingPage key={gym.id} gym={gym} readOnly={readOnly} />}
           {page === 'branding' && <BrandingPage key={gym.id} gym={gym} readOnly={readOnly} />}
         </main>
       </div>
@@ -244,6 +247,7 @@ export function Workspace({ user, organizationId = user.organizationId, onLogout
           }}
         />
       )}
+      {profileOpen && <ProfileDialog user={user} onClose={() => setProfileOpen(false)} />}
       {toast && (
         <div className="toast" role="status">
           <Icon name="check" size={18} />

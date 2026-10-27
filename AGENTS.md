@@ -138,3 +138,12 @@ Our clients are gym owners and reception staff, not software users. Teach once, 
 - **Never show invented data.** No hardcoded dates or sample charts; derive from `DEMO_DATE` or real records.
 - **Comfortable sizes.** Body text in tables is 14px, touch targets are at least 38px.
 - **Form controls.** Never use a native `<select>` or `<input type="date">`. Short fixed lists use `OptionCards` (`card` or `chip` variant); dates use `DatePicker` (`src/components/ui/`). Every field goes in `Field`; pass `required` to show the red asterisk and leave it off for optional fields, and add the "* Obligatorio" note to the form footer.
+
+---
+
+## 6. Business Rules to Remember
+
+- **Pulso is free, with limits**: 1 gym and up to 3 branches per gym per client. The limits live in `src/config/freePlan.ts`; do not hardcode them elsewhere.
+- Extra gyms or branches are **agreed directly with Atmósfera**, which creates and charges for them. Owners and admins never add gyms or branches themselves; only the superadmin does, and must confirm the extra agreement.
+- The member directory is always shared across an owner's gyms and branches. "Access between branches" is a per-gym rule set by that gym's administrator.
+- Only an owner creates administrators; an administrator creates reception staff.

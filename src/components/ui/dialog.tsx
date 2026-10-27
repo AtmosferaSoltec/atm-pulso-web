@@ -13,11 +13,14 @@ export function Dialog({
   wide?: boolean;
 }): ReactElement {
   const ref = useRef<HTMLDialogElement>(null);
+  const body = useRef<HTMLDivElement>(null);
  const titleId = useId();
   useEffect(() => {
     const dialog = ref.current;
     const previous = document.activeElement;
     dialog?.showModal();
+    // Start on the first field (or the dialog itself) instead of the close button.
+    (body.current?.querySelector<HTMLElement>('input:not([readonly]):not([type=checkbox])') ?? dialog)?.focus();
     return () => {
       dialog?.close();
       if (previous instanceof HTMLElement) previous.focus();
@@ -27,11 +30,11 @@ export function Dialog({
     <dialog
       ref={ref}
       aria-labelledby={titleId}
+      tabIndex={-1}
       className={`dialog ${wide ? "wide" : ""}`}
+      // Clicking the backdrop must not close the dialog: dragging a text selection out of a field
+      // would count as a click there. It closes with the X, the form's own buttons, or Escape.
       onCancel={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
     >
       <div className="dialog-heading">
         <h2 id={titleId}>{title}</h2>
@@ -39,7 +42,9 @@ export function Dialog({
           <Icon name="close" />
         </Button>
       </div>
-      {children}
+      <div className="dialog-body" ref={body}>
+        {children}
+      </div>
     </dialog>
   );
 }

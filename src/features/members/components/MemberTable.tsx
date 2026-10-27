@@ -5,6 +5,7 @@ import { useOrganizationCatalog } from '@/features/organization';
 import { IconButton } from '@/components/ui/icon-button';
 import { Icon } from '@/components/ui/icon';
 import { formatDate } from '@/utils/formatDate';
+import { documentLabel } from '@/config/documentTypes';
 
 export function Avatar({ name }: { name: string }): ReactElement {
   return (
@@ -75,7 +76,7 @@ export function MemberTable({
                     <div>
                       <strong>{member.name}</strong>
                       <small>
-                        {member.plan} · DNI {member.dni}
+                        {member.plan} · {documentLabel(member.documentType, member.dni)}
                       </small>
                     </div>
                   </div>

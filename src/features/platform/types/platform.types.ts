@@ -1,2 +1,2 @@
 export interface GymDraft { id: string; name: string; taxId: string; branches: { id: string; name: string; address: string }[]; }
-export interface ClientDraft { name: string; accountType: 'business' | 'individual'; contactName: string; contactDni: string; gyms: GymDraft[]; }
+export interface ClientDraft { contactDni: string; firstName: string; lastName: string; contactEmail: string; contactPhone: string; gyms: GymDraft[]; }

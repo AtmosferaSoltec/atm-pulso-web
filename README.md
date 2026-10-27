@@ -25,30 +25,42 @@ The browser suite starts Vite on port 4175 or reuses an existing server there. G
 
 The login page can populate each fictional account. The password for all accounts is `Pulso2026!`.
 
-| DNI | Profile | Assigned locations |
+| DNI | Role | Scope |
 | --- | --- | --- |
-| 10000001 | Atmósfera superadmin | All client accounts |
-| 10000002 | Network administrator | Four branches across three gyms |
-| 10000003 | Reception | Atlas Miraflores and Barranco |
-| 10000004 | Single-site administrator | Central only |
+| 10000001 | Superadmin (Atmósfera) | All client accounts, read-only |
+| 10000002 | Owner | Every gym and branch of Grupo Atlas |
+| 10000005 | Admin | Atlas Fitness only (two branches) |
+| 10000003 | Receptionist | Atlas Miraflores and Barranco |
+| 10000004 | Owner | Gimnasio Central (single site) |
 
-There is no public registration. The Atmósfera superadmin creates client accounts, their initial administrators, gyms, and branches through the platform panel. Users sign in with DNI and password; there is no account recovery flow.
+There is no public registration. The Atmósfera superadmin creates each client (an owner) together with their gyms and branches through the platform panel. Users sign in with DNI and password; there is no account recovery flow.
+
+## Roles
+
+| Role | Created by | Sees | Can manage |
+| --- | --- | --- | --- |
+| `superadmin` | Atmósfera | Every account, read-only | Clients, gyms and branches |
+| `owner` | Superadmin | Every gym and branch of the account | All users, rules and identity of every gym |
+| `admin` | Owner | One gym (`gymId`) and its branches | Reception users, rules, prices and identity of that gym only |
+| `receptionist` | Owner or admin | Only the assigned branches (`branchIds`) | Members, payments and access control |
+
+Only the owner creates administrators; an administrator creates reception staff. Permission helpers live in `src/features/auth/services/permissions.ts`.
 
 ## Organization model
 
 - **Organization**: an owner's isolated account. Member lookup, policies, and users belong to it.
 - **Gym**: a named business with its own fictional RUC (`DEMO-001`, etc.).
 - **Branch**: a gym's operating location. The active branch determines where access events and payments are recorded.
-- **User**: belongs to one account and has assigned branches. Administrators manage their account rules, branding, and users. Reception is restricted to members, access, and payment operations; its home page is access control.
+- **User**: belongs to one account and has assigned branches. Owners and administrators manage the rules, prices, branding and users of the gyms they control. Reception is restricted to members, access, and payment operations; its home page is access control.
 - **Member**: belongs to one account, has a home branch, and a membership access scope. A DNI is unique within its owner's account.
 
 The prototype includes Atlas Fitness with two branches sharing one RUC, two other gyms with distinct RUCs under the same owner, and a separate single-site account.
 
-### Independent policies
+### Sharing rules
 
-1. **Shared directory** allows staff to view and renew records from other branches within their account. Disabling it limits the directory to the active home branch.
-2. **Cross-branch training access** allows an eligible membership to be used elsewhere. Disabling it restricts members to their home branch, even when the directory remains shared.
-3. **Membership access scope** can be the home branch, branches of the same gym, or the entire owner's network. A valid date alone does not grant branch permission.
+1. **Member directory**: always shared by every gym and branch of the same owner, so nobody is typed in twice. There is no setting for it.
+2. **Access between branches**: a rule per gym, controlled by that gym's administrator (or the owner) in "Gimnasios y reglas". When off, the gym's members only enter their enrollment branch, even if their membership says otherwise.
+3. **Membership access**: chosen per member at enrollment. It starts as "enrollment branch only"; wider access (the gym or the whole network) lists the branches, all selected, and any can be unchecked. A valid date alone does not grant branch permission.
 
 These options model differences as configuration instead of separate applications. A future backend must enforce the same account/branch boundaries and permissions; the mock login is not production authentication.
 
@@ -58,7 +70,9 @@ These options model differences as configuration instead of separate application
 - Branch switcher with only assigned branches; single-site accounts show branch information.
 - Unified members view: all, valid, expiring, expired, and scheduled; name/DNI search and home-branch filter.
 - Editable contact details, WhatsApp reminders, and printable membership sheets.
-- Registration and renewal without a plan catalog. Quick duration/price references can be replaced with custom months/days and a negotiated total. Percentage discounts are optional.
+- Registration and renewal without a plan catalog. Memberships are always sold by the month (1 to 24). Quick duration/price references can be replaced with a custom number of months and a total amount; there are no percentage discounts, any discount is negotiated directly in the amount.
+- **Day pass**: a single-entry sale from Control de acceso. It is not a membership: reception only picks the payment method (customer data is optional, for future promotions), the person is let in and the sale shows in the access log and in Pagos with its own numbering (`D-000001`). The price is fixed per gym and edited by its administrator or owner in "Tarifas".
+- **Pagos** opens on today's payments and offers "Este mes" or a custom *Desde / Hasta* range, with KPIs for the filtered period.
 - Calendar month arithmetic clamps to the last day of the target month. Future renewals preserve current coverage. Future registrations do not grant immediate access.
 - Each renewal adds a separate payment snapshot assigned to the collecting branch. The member's home branch remains unchanged.
 - Payment filters and CSV export; access events persist when switching pages/branches during the session.
@@ -116,3 +130,12 @@ it and restarts the container. It can also be rerun from the Actions tab.
 - Repository secrets: `SSH_HOST`, `SSH_USER`, `SSH_KEY`
 
 Flow: commit to `main`, then fast-forward `production` and push it.
+
+## Business model: free plan
+
+Pulso is **free, within limits**: **1 gym and up to 3 branches per gym** per client (`src/config/freePlan.ts`).
+Owners and administrators cannot add gyms or branches themselves. If a client needs more, it is agreed
+directly with Atmósfera, which creates the extra gyms or branches and charges for them.
+
+In the superadmin panel this is visible as a note, a "Plan gratuito" / "N extras" chip on every client, and
+a required confirmation ("Ya lo acordé con el cliente") whenever something being created goes beyond the plan.

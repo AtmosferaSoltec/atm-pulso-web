@@ -5,18 +5,14 @@ import { IconButton } from '@/components/ui/icon-button';
 interface TopbarProps {
   locationLabel: string;
   userName: string;
-  hasAlerts: boolean;
   onToggleMenu: () => void;
-  onAlertsClick: () => void;
   onBack?: () => void;
 }
 
 export function Topbar({
   locationLabel,
   userName,
-  hasAlerts,
   onToggleMenu,
-  onAlertsClick,
   onBack,
 }: TopbarProps): ReactElement {
   return (
@@ -29,12 +25,6 @@ export function Topbar({
           </Button>
         )}
         <span className="location-label">{locationLabel}</span>
-        <IconButton
-          icon="bell"
-          label="Ver membresías por vencer"
-          className={`notification-button ${hasAlerts ? 'has-alerts' : ''}`}
-          onClick={onAlertsClick}
-        />
         <span className="topbar-avatar">{userName.split(' ').map((part) => part[0]).join('')}</span>
       </div>
     </header>

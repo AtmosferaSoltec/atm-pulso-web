@@ -17,11 +17,13 @@ interface SidebarProps {
   branchId: string;
   onBranchChange: (id: string) => void;
   onLogout: () => void;
+  onOpenProfile: () => void;
   gym: Gym;
 }
 
 const roleLabels: Record<DemoUser['role'], string> = {
   superadmin: 'Superadmin',
+  owner: 'Propietario',
   admin: 'Administrador',
   receptionist: 'Recepción',
 };
@@ -35,6 +37,7 @@ export function Sidebar({
   branchId,
   onBranchChange,
   onLogout,
+  onOpenProfile,
   gym,
 }: SidebarProps): ReactElement {
   const isReceptionist = user.role === 'receptionist';
@@ -85,13 +88,13 @@ export function Sidebar({
       </nav>
       <div className="sidebar-bottom">
         <div className="profile">
-          <span className="profile-avatar">
-            {user.name.split(' ').map((part) => part[0]).join('')}
-          </span>
-          <div>
-            <strong>{user.name}</strong>
-            <small>{roleLabels[user.role]}</small>
-          </div>
+          <button type="button" className="profile-button" aria-label="Mi perfil" title="Mi perfil" onClick={onOpenProfile}>
+            <span className="profile-avatar">{user.name.split(' ').map((part) => part[0]).join('')}</span>
+            <span className="profile-text">
+              <strong>{user.name}</strong>
+              <small>{roleLabels[user.role]}</small>
+            </span>
+          </button>
           <IconButton icon="logout" label="Cerrar sesión" className="logout-icon" onClick={onLogout} />
         </div>
       </div>

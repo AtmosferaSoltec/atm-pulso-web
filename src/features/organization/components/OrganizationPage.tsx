@@ -1,14 +1,86 @@
-import { useState, type FormEvent, type ReactElement } from 'react';
-import type { Organization } from '@/features/organization/types/organization.types';
+import { useState, type ReactElement } from 'react';
+import { useDemoStore } from '@/store/demoStore';
+import { canManageGym } from '@/features/auth';
 import { useOrganizationCatalog } from '@/features/organization/hooks/useOrganizationCatalog';
-import { accessScopeOptions } from '@/features/organization/services/accessScopes';
-import { Input } from '@/components/ui/input';
-import { OptionCards } from '@/components/ui/option-cards';
-import { Button } from '@/components/ui/button';
+import type { Gym } from '@/features/organization/types/organization.types';
 import { Icon } from '@/components/ui/icon';
-export function OrganizationPage({ organization, onSave, readOnly = false }: { organization: Organization; onSave: (organization: Organization) => void; readOnly?: boolean }): ReactElement {
- const { gyms, organizationBranches } = useOrganizationCatalog();
- const [draft, setDraft] = useState(organization); const [saved, setSaved] = useState(false); const locations = organizationBranches(organization.id); const multiple = locations.length > 1;
- function save(event: FormEvent<HTMLFormElement>): void { event.preventDefault(); if (readOnly) return; onSave({ ...draft, defaultAccessScope: draft.crossBranchAccess ? draft.defaultAccessScope : 'branch' }); setSaved(true); }
- return <div className="organization-grid"><section className="card"><div className="card-heading"><div><h2>Gimnasios y sedes</h2><p>{organization.name} · {locations.length} {multiple ? 'sedes' : 'sede'}</p></div><Icon name="dashboard" /></div><div className="gym-list">{gyms.filter(gym => gym.organizationId === organization.id).map(gym => <article key={gym.id}><h3>{gym.name}</h3><small>RUC {gym.taxId}</small><div>{locations.filter(branch => branch.gymId === gym.id).map(branch => <span className="subtle-pill" key={branch.id}>{branch.name}</span>)}</div></article>)}</div><p className="footnote">Para incorporar otro gimnasio o sede, contacta a Atmósfera.</p></section><form className="card settings-form" onSubmit={save}><div className="card-heading"><div><h2>Reglas de la cuenta</h2><p>Configura cómo trabajan las sedes de este propietario.</p></div></div>{multiple ? <><label className="setting-row"><span><strong>Compartir directorio de miembros</strong><small>Permite consultar y renovar fichas de otras sedes de esta cuenta. No concede acceso a entrenar.</small></span><Input disabled={readOnly} type="checkbox" checked={draft.shareDirectory} onChange={event => { setDraft({ ...draft, shareDirectory: event.target.checked }); setSaved(false); }} /></label><label className="setting-row"><span><strong>Permitir acceso entre sedes</strong><small>Habilita el acceso según el alcance contratado por cada miembro. Si se desactiva, solo podrá ingresar en su sede de inscripción.</small></span><Input disabled={readOnly} type="checkbox" checked={draft.crossBranchAccess} onChange={event => { setDraft({ ...draft, crossBranchAccess: event.target.checked, defaultAccessScope: event.target.checked ? draft.defaultAccessScope : 'branch' }); setSaved(false); }} /></label><div className="settings-select"><span className="field-label">Alcance sugerido para nuevas inscripciones</span><OptionCards label="Alcance sugerido para nuevas inscripciones" options={accessScopeOptions} disabled={readOnly || !draft.crossBranchAccess} value={draft.defaultAccessScope} onChange={scope => { setDraft({ ...draft, defaultAccessScope: scope }); setSaved(false); }} /></div><div className="settings-footer">{!readOnly && <Button type="submit">Guardar reglas</Button>}{saved && <span role="status">Cambios guardados.</span>}</div></> : <div className="single-location-note"><Icon name="shield" size={28} /><h3>Operación de una sola sede</h3><p>El directorio, los pagos y los accesos corresponden a {locations[0].name}. No necesitas configurar una red de gimnasios.</p></div>}</form></div>;
+import { FREE_PLAN_SUMMARY } from '@/config/freePlan';
+import { Input } from '@/components/ui/input';
+
+interface OrganizationPageProps {
+  organizationId: string;
+  /** The superadmin only consults: every gym is listed and nothing can be changed. */
+  readOnly?: boolean;
+}
+
+/** Gyms and branches of the account, with the rules each gym's administrator controls. */
+export function OrganizationPage({ organizationId, readOnly = false }: OrganizationPageProps): ReactElement {
+  const { setState, currentUser } = useDemoStore();
+  const { gyms, organizationBranches } = useOrganizationCatalog();
+  const [message, setMessage] = useState('');
+  const accountBranches = organizationBranches(organizationId);
+  // Owners see every gym; an administrator only the one they manage.
+  const visibleGyms = gyms.filter((gym) => gym.organizationId === organizationId && (readOnly || canManageGym(currentUser, gym.id)));
+  const hasManyBranches = accountBranches.length > 1;
+
+  function setBranchSharing(gym: Gym, allowed: boolean): void {
+    if (readOnly || !canManageGym(currentUser, gym.id)) return;
+    setState((current) => ({ ...current, gyms: current.gyms.map((item) => (item.id === gym.id ? { ...item, branchSharing: allowed } : item)) }));
+    setMessage(`Acceso entre sedes ${allowed ? 'activado' : 'desactivado'} en ${gym.name}.`);
+  }
+
+  return (
+    <div className="organization-single">
+      <section className="card">
+        <div className="card-heading">
+          <h2>Gimnasios y sedes</h2>
+        </div>
+        <div className="gym-list">
+          {visibleGyms.map((gym) => (
+            <article key={gym.id}>
+              <h3>{gym.name}</h3>
+              <small>RUC {gym.taxId}</small>
+              <div>
+                {accountBranches
+                  .filter((branch) => branch.gymId === gym.id)
+                  .map((branch) => (
+                    <span className="subtle-pill" key={branch.id}>
+                      {branch.name}
+                    </span>
+                  ))}
+              </div>
+              {hasManyBranches && (
+                <label className="setting-row gym-rule">
+                  <span>
+                    <strong>Acceso entre sedes</strong>
+                    <small>Si lo desactivas, los miembros de este gimnasio solo ingresan a su sede de inscripción.</small>
+                  </span>
+                  <Input
+                    type="checkbox"
+                    aria-label={`Acceso entre sedes de ${gym.name}`}
+                    disabled={readOnly}
+                    checked={gym.branchSharing !== false}
+                    onChange={(event) => setBranchSharing(gym, event.target.checked)}
+                  />
+                </label>
+              )}
+            </article>
+          ))}
+        </div>
+        {message && (
+          <p className="notice gym-rule-message" role="status">
+            {message}
+          </p>
+        )}
+        <p className="footnote">Plan gratuito: {FREE_PLAN_SUMMARY}. Para incorporar más gimnasios o sedes, contacta a Atmósfera.</p>
+      </section>
+      {!hasManyBranches && (
+        <section className="card single-location-note">
+          <Icon name="shield" size={28} />
+          <h3>Operación de una sola sede</h3>
+          <p>Tu cuenta trabaja con una única sede, así que no hay reglas entre sedes que ajustar.</p>
+        </section>
+      )}
+    </div>
+  );
 }
