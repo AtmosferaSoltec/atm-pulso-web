@@ -1,0 +1,1 @@
+export const formatDate = (value: string | Date): string => new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(typeof value === 'string' ? new Date(value.length === 10 ? `${value}T12:00:00Z` : value) : value);

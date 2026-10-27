@@ -1,0 +1,132 @@
+/* Simplification layer: fewer words, more icons, larger touch targets.
+   Loaded after brand.css so it refines the base styles without editing them. */
+
+.visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* Icon-only buttons: one size, one look, everywhere. */
+.icon-button{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex-shrink:0;padding:0;border:1px solid transparent;border-radius:10px;background:transparent;color:#5d7b8b;transition:background .15s,color .15s}
+.icon-button:hover{background:var(--brand-soft,#eef5f7);color:var(--brand-ink,#20586a)}
+.icon-button[aria-pressed=true]{background:var(--brand-soft,#eef5f7);color:var(--brand-ink,#20586a);border-color:var(--primary)}
+.icon-button.whatsapp{background:#eef7f0;color:#3f8a58}
+.icon-button.whatsapp:hover{background:#dcefe1}
+
+/* Sidebar: bigger labels, no section captions. */
+.nav-link{font-size:14px;padding:14px;gap:13px}
+.settings-toggle{margin-top:10px;border-top:1px solid var(--border);border-radius:0 0 8px 8px;padding-top:16px}
+.settings-toggle[aria-expanded=true]{color:var(--brand-ink)}
+.settings-links{display:flex;flex-direction:column;gap:5px;padding-left:14px}
+.settings-links .nav-link{font-size:13px}
+.profile strong{font-size:13px}
+.profile small{font-size:11px}
+.logout-icon{margin-left:auto}
+
+/* Top bar. */
+.topbar{justify-content:flex-end;height:68px}
+.mobile-menu{display:none}
+.location-label{font-size:13px;font-weight:500}
+.notification-button>i{display:none}
+.notification-button.has-alerts::after{content:'';position:absolute;top:7px;right:8px;width:9px;height:9px;border-radius:50%;background:#e0a23a;border:2px solid #fff}
+.topbar-avatar{font-size:11px}
+
+/* Page heading: title and the one primary action. */
+.page-heading{margin-bottom:22px}
+.page-heading h1{font-size:28px}
+.page-heading>.button{font-size:14px;padding:13px 20px}
+
+/* Metrics: one number per tile, whole tile is clickable. */
+.metrics{grid-template-columns:repeat(3,1fr);gap:16px}
+.metrics.payment-metrics{grid-template-columns:repeat(2,1fr)}
+.metric{display:flex;align-items:center;gap:18px;padding:22px 24px;text-align:left;font:inherit;color:inherit;width:100%}
+button.metric{cursor:pointer;transition:transform .15s,box-shadow .15s}
+button.metric:hover{transform:translateY(-2px);box-shadow:0 8px 20px #18354412}
+.metric-icon{width:52px;height:52px;border-radius:14px;flex-shrink:0}
+.metric-text{display:flex;flex-direction:column;gap:4px;min-width:0}
+.metric-label{font-size:14px;color:#5f7686}
+.metric-value{margin:0;font-size:32px;line-height:1.1}
+.metric.tone-ok .metric-icon{background:#eaf7f2;color:#3e9a82}
+.metric.tone-money .metric-icon{background:var(--brand-soft);color:var(--brand-ink)}
+.metric.tone-warn .metric-icon{background:#fff3da;color:#b68422}
+
+/* Upcoming renewals card. */
+.renewal-card{margin-bottom:24px}
+.renewal-card .card-heading{padding:20px 24px 12px}
+.see-all{display:flex;align-items:center;gap:6px;margin:4px 24px 20px auto;border:0;background:none;color:var(--brand-ink);font-size:13px;font-weight:600}
+
+/* Members page. */
+.members-toolbar{display:flex;align-items:center;gap:14px;padding:18px 22px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.members-toolbar .search-field{flex:1 1 220px;max-width:340px;width:auto}
+.members-toolbar .search-field .input{font-size:14px;padding-block:12px}
+.members-toolbar .search-field>svg{top:13px}
+.status-filters{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.status-chip{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 13px;border:1px solid var(--border);border-radius:20px;background:#fff;color:#5d7b8b;font-size:13px;font-weight:600}
+.status-chip i{width:11px;height:11px;border-radius:50%;background:currentColor}
+.status-chip b{font-weight:700}
+.status-chip.active{color:#3f9162}
+.status-chip.expiring{color:#d19a2b}
+.status-chip.expired{color:#cf6b52}
+.status-chip.scheduled{color:#5d84b8}
+.status-chip:hover{background:#f5f9fa}
+.status-chip[aria-pressed=true]{background:var(--brand-soft,#eef5f7);border-color:currentColor}
+.status-chip[aria-pressed=true] .status-chip-name{color:#2f4a5b}
+.status-chip.all[aria-pressed=true]{color:var(--brand-ink)}
+
+/* Tables: readable sizes, sentence-case headers, fixed action slots. */
+th{font-size:12px;letter-spacing:0;font-weight:600;text-transform:none;padding:12px 22px}
+td{font-size:14px;padding:14px 22px}
+.person strong{font-size:14px}
+.person small,td>small{font-size:12px}
+.badge{font-size:12px;padding:6px 10px;border-radius:14px}
+.badge i{width:7px;height:7px}
+.row-actions{gap:4px}
+.table-scroll{position:relative}
+.action-slot{display:inline-flex;width:38px;height:38px}
+.empty{padding:50px 20px}
+.empty p{font-size:14px}
+
+/* Dashboard/payments table cards. */
+.card-heading h2{font-size:18px}
+.table-toolbar{padding:14px 22px}
+.table-toolbar select{font-size:14px;width:230px}
+.count{font-size:12px;padding:3px 8px}
+
+/* Access: the result is the whole point, so make it unmistakable. */
+.access-card .input{font-size:30px}
+.access-card form .button{font-size:16px;padding:17px}
+.access-result{padding:26px;border-radius:16px}
+.access-result svg{width:44px;height:44px}
+.access-result h3{font-size:24px}
+.access-result strong{font-size:18px}
+.access-result p{font-size:14px}
+.access-result.allowed{background:#e3f5ea;color:#2f7a4c}
+.access-result.denied{background:#fde8e1;color:#b24f35}
+.log-entry strong{font-size:14px}
+.log-entry small{font-size:12px}
+.log-entry>span:not(.avatar){font-size:12px}
+
+@media(max-width:1000px){
+ .metrics{grid-template-columns:1fr}
+ .metrics.payment-metrics{grid-template-columns:1fr 1fr}
+ .status-filters{margin-left:0;flex:1 1 auto}
+ .members-toolbar .search-field{max-width:none;flex-basis:100%}
+}
+@media(max-width:760px){
+ .topbar{justify-content:space-between}
+ .mobile-menu{display:inline-flex}
+ .page-heading{flex-wrap:nowrap;align-items:center}
+ .page-heading>div,.page-heading h1{width:auto}
+ .page-heading h1{font-size:22px}
+ .page-heading>.button{margin-top:0;white-space:nowrap}
+ .metrics.payment-metrics{grid-template-columns:1fr}
+ .metric{padding:16px 18px}
+ .member-table{white-space:normal}
+ .member-table .col-secondary,.action-slot:empty,.member-table .col-status{display:none}
+ .member-table .avatar{box-shadow:0 0 0 3px #fff,0 0 0 5px #cfdbe2}
+ .member-table .row-active .avatar{box-shadow:0 0 0 3px #fff,0 0 0 5px #6da785}
+ .member-table .row-expiring .avatar{box-shadow:0 0 0 3px #fff,0 0 0 5px #e0a23a}
+ .member-table .row-expired .avatar{box-shadow:0 0 0 3px #fff,0 0 0 5px #cf6b52}
+ .member-table .row-scheduled .avatar{box-shadow:0 0 0 3px #fff,0 0 0 5px #6385b2}
+ .member-table .person{gap:9px}
+ .member-table th,.member-table td{padding-inline:14px}
+ .row-actions{gap:0}
+}
+.live-dot{font-size:12px}
