@@ -45,7 +45,7 @@ test('platform creates multiple gyms with a repeated RUC and a working administr
  await start(page, 'equipo@atmosfera.example');
  await page.getByRole('button', { name: 'Nuevo cliente', exact: true }).click();
  await page.getByLabel('Nombre del cliente o grupo').fill('Grupo Prueba');
- await page.getByLabel('Tipo de cliente').selectOption('individual');
+ await page.getByRole('radio', { name: 'Persona' }).click();
  await page.getByLabel('Nombre del administrador').fill('Administrador Prueba');
  await page.getByLabel('Correo del administrador').fill('admin@prueba.example');
  await page.getByLabel('Nombre del gimnasio 1', { exact: true }).fill('Fuerza Uno');
@@ -90,7 +90,7 @@ test('administrator creates, reassigns, and deactivates reception users within t
  await page.getByRole('button', { name: 'Nuevo usuario', exact: true }).click();
  await page.getByLabel('Nombre completo', { exact: true }).fill('Recepción Prueba');
  await page.getByLabel('Correo electrónico', { exact: true }).fill('nuevo@atlas.example');
- await expect(page.getByRole('option', { name: 'Superadmin' })).toHaveCount(0);
+ await expect(page.getByRole('radio', { name: 'Superadmin' })).toHaveCount(0);
  await page.getByRole('button', { name: 'Guardar usuario' }).click();
  await expect(page.getByRole('alert')).toContainText('al menos una sede');
  await page.getByLabel('Norte Gym · Los Olivos', { exact: true }).check();

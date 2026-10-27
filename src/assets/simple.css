@@ -130,3 +130,54 @@ td{font-size:14px;padding:14px 22px}
  .row-actions{gap:0}
 }
 .live-dot{font-size:12px}
+
+/* Form fields: label, required asterisk, hint. */
+.field{display:flex;flex-direction:column;gap:8px;font-size:12px;font-weight:550;color:#4e6d7e;min-width:0}
+.field-label{font-size:13px}
+.field.required>.field-label::after{content:' *';color:#c4533d;font-weight:700}
+.field>small{font-weight:400}
+.form-actions{align-items:center}
+.required-note{margin-right:auto;color:#8d9faa}
+input[type=number]{appearance:textfield;-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+
+/* Option cards: single choice among a few fixed options. */
+.option-cards{display:grid;gap:10px}
+.option-cards.chip{display:flex;flex-wrap:wrap;gap:8px}
+.option-card{display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid #dce6ec;background:#fff;color:#5d7b8b;font-size:13px;font-weight:600;text-align:center;line-height:1.3;transition:background .15s,border-color .15s,color .15s,box-shadow .15s}
+.option-cards.card .option-card{flex-direction:column;padding:16px 10px;border-radius:12px;min-height:88px}
+.option-cards.chip .option-card{height:40px;padding:0 16px;border-radius:20px}
+.option-card:hover:not(:disabled){background:#f5f9fa;border-color:#b9d3dc}
+.option-card[aria-checked=true]{background:var(--brand-soft,#edf8f8);border-color:var(--primary);color:var(--brand-ink,#226d7e);box-shadow:0 0 0 1px var(--primary)}
+.option-card:disabled{opacity:.55;cursor:not-allowed}
+.option-cards[aria-disabled=true]{opacity:.8}
+.settings-select{display:flex;flex-direction:column;gap:14px}
+.settings-select .field-label{font-size:13px;font-weight:600}
+
+/* Date picker: field-like trigger and a floating calendar. */
+.date-picker{position:relative}
+.date-trigger{display:flex;align-items:center;gap:10px;width:100%;height:46px;padding:0 14px;border:1px solid #dce6ec;border-radius:8px;background:#fff;color:#3c5668;font-size:14px;text-align:left}
+.date-trigger svg{color:var(--primary);flex-shrink:0}
+.date-trigger:hover,.date-trigger[aria-expanded=true]{border-color:var(--primary)}
+.date-popover{position:absolute;z-index:20;top:calc(100% + 8px);left:0;padding:14px 14px 10px;background:#fff;border:1px solid #dfebef;border-radius:16px;box-shadow:0 18px 50px #16334226}
+/* The library defines its variables on .rdp-root, so they are overridden there. */
+.date-popover .rdp-root{--rdp-accent-color:var(--primary);--rdp-accent-background-color:var(--brand-soft,#edf8f8);--rdp-day-height:40px;--rdp-day-width:40px;--rdp-day_button-height:38px;--rdp-day_button-width:38px;--rdp-day_button-border-radius:50%;--rdp-selected-border:2px solid var(--primary);--rdp-today-color:var(--primary);font-family:'DM Sans',sans-serif}
+/* Neutralise the app's global table styles inside the calendar grid. */
+.date-popover table{width:auto;white-space:normal}
+.date-popover th,.date-popover td{padding:0;border:0;background:transparent;font-size:inherit;letter-spacing:0;color:inherit}
+.date-popover.above{top:auto;bottom:calc(100% + 8px)}
+.date-popover .rdp-root{font-size:14px;font-weight:500;color:#33505f}
+.date-popover .rdp-month_caption{font-family:'Manrope',sans-serif;font-weight:700;text-transform:capitalize;font-size:15px}
+.date-popover .rdp-weekday{font-size:12px;font-weight:600;color:#8aa0ad;text-transform:capitalize}
+.date-popover .rdp-day_button:hover{background:var(--brand-soft,#edf8f8)}
+.date-popover .rdp-selected .rdp-day_button{background:var(--primary);color:var(--tenant-on-primary,#fff);border-color:var(--primary);font-weight:700}
+.date-popover .rdp-today:not(.rdp-selected) .rdp-day_button{color:var(--primary);font-weight:700;border-color:var(--brand-soft,#cfe7ea)}
+.date-popover .rdp-outside{opacity:.35}
+.date-popover .rdp-button_previous,.date-popover .rdp-button_next{border-radius:8px}
+.date-popover .rdp-button_previous:hover,.date-popover .rdp-button_next:hover{background:var(--brand-soft,#edf8f8)}
+.date-footer{display:flex;justify-content:flex-end;border-top:1px solid var(--border);margin-top:8px;padding-top:8px}
+.date-footer button{border:0;background:none;color:var(--brand-ink,#226d7e);font-size:13px;font-weight:700;padding:6px 10px;border-radius:8px}
+.date-footer button:hover{background:var(--brand-soft,#edf8f8)}
+@media(max-width:760px){.option-cards.card{grid-template-columns:1fr!important}.option-cards.card .option-card{flex-direction:row;min-height:56px;justify-content:flex-start;padding:12px 16px}}
+.required-note b{color:#c4533d;margin-right:2px}
+.subtle-pill{font-size:12px;padding:5px 10px}

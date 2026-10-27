@@ -114,7 +114,7 @@ test('custom enrollment, discount, editable renewal, and collection branch', asy
  await page.getByLabel('Celular (+51)', { exact: true }).fill('999222333');
  await page.getByLabel('Duración', { exact: true }).fill('4');
  await page.getByLabel('Importe acordado (S/)', { exact: false }).fill('320');
- await page.getByLabel('Descuento opcional (%)', { exact: false }).fill('10');
+ await page.getByLabel('Descuento (%)', { exact: false }).fill('10');
  await expect(page.locator('.enrollment-total strong')).toContainText('288.00');
  await expect(page.getByLabel('Fecha de vencimiento')).toHaveValue('26 feb. 2027');
  await page.getByRole('button', { name: 'Guardar y ver ficha' }).click();
@@ -132,7 +132,7 @@ test('custom enrollment, discount, editable renewal, and collection branch', asy
  await page.getByRole('button', { name: 'Renovar membresía' }).click();
  await page.getByRole('button', { name: /2 meses/ }).click();
  await page.getByLabel('Importe acordado (S/)', { exact: false }).fill('150');
- await expect(page.getByLabel('Descuento opcional (%)', { exact: false })).toHaveValue('0');
+ await expect(page.getByLabel('Descuento (%)', { exact: false })).toHaveValue('0');
  await page.getByRole('button', { name: 'Registrar renovación' }).click();
  await expect(page.getByRole('dialog')).toContainText('150.00');
  await expect(page.getByRole('dialog')).toContainText('26 abr. 2027');
@@ -172,7 +172,7 @@ test('member filters, contact edits, duplicate DNI and payment export', async ({
  const download = page.waitForEvent('download');
  await page.getByRole('button', { name: 'Exportar CSV' }).click();
  expect((await download).suggestedFilename()).toBe('pagos.csv');
- await page.getByRole('combobox', { name: 'Filtrar por medio de pago' }).selectOption('Plin');
+ await page.getByRole('radiogroup', { name: 'Filtrar por medio de pago' }).getByRole('radio', { name: 'Plin' }).click();
  await expect(page.locator('tbody tr')).toHaveCount(0);
  await expect(page.getByText('No hay pagos con este filtro en la sede seleccionada.')).toBeVisible();
 });
@@ -197,8 +197,11 @@ test('future enrollment remains scheduled and does not grant premature access', 
  await page.getByLabel('Nombre completo').fill('Miembro Futuro');
  await page.getByLabel('DNI', { exact: true }).fill('12349876');
  await page.getByLabel('Celular (+51)', { exact: true }).fill('999333444');
- await page.getByLabel('Fecha de inicio', { exact: true }).fill('2026-11-15');
- await page.getByLabel('Unidad', { exact: true }).selectOption('days');
+ await page.getByRole('button', { name: /^Fecha de inicio/ }).click();
+ await page.getByRole('button', { name: 'Ir al mes siguiente' }).click();
+ await page.getByRole('button', { name: /15 de noviembre/ }).click();
+ await expect(page.getByRole('button', { name: /^Fecha de inicio/ })).toContainText('15 nov. 2026');
+ await page.getByRole('radio', { name: 'Días' }).click();
  await page.getByLabel('Duración', { exact: true }).fill('45');
  await expect(page.getByLabel('Acceso de la membresía')).toBeDisabled();
  await page.getByRole('button', { name: 'Guardar y ver ficha' }).click();
@@ -226,4 +229,20 @@ test('reception can verify several DNIs using only the numeric keypad', async ({
  await page.keyboard.press('Enter');
  await expect(page.locator('.access-result')).toContainText('venció');
  await expect(page.locator('.log-entry')).toHaveCount(2);
+});
+
+test('date picker closes with Escape without closing the form and can pick today', async ({ page }) => {
+ await login(page);
+ await page.getByRole('button', { name: 'Nuevo miembro', exact: true }).click();
+ const trigger = page.getByRole('button', { name: /^Fecha de inicio/ });
+ await trigger.click();
+ await expect(page.getByRole('dialog', { name: 'Fecha de inicio' })).toBeVisible();
+ await page.keyboard.press('Escape');
+ await expect(page.getByRole('dialog', { name: 'Fecha de inicio' })).toHaveCount(0);
+ await expect(page.getByRole('dialog', { name: 'Registrar miembro' })).toBeVisible();
+ await trigger.click();
+ await page.getByRole('button', { name: 'Hoy', exact: true }).click();
+ await expect(trigger).toContainText('26 oct. 2026');
+ await page.getByRole('radio', { name: 'Efectivo' }).click();
+ await expect(page.getByRole('radio', { name: 'Efectivo' })).toHaveAttribute('aria-checked', 'true');
 });

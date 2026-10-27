@@ -137,3 +137,4 @@ Our clients are gym owners and reception staff, not software users. Teach once, 
 - **Daily vs. once.** Daily pages live in the sidebar; one-time configuration (gyms and rules, users, identity) lives under "Configuración". Page lists are in `src/config/pages.ts`.
 - **Never show invented data.** No hardcoded dates or sample charts; derive from `DEMO_DATE` or real records.
 - **Comfortable sizes.** Body text in tables is 14px, touch targets are at least 38px.
+- **Form controls.** Never use a native `<select>` or `<input type="date">`. Short fixed lists use `OptionCards` (`card` or `chip` variant); dates use `DatePicker` (`src/components/ui/`). Every field goes in `Field`; pass `required` to show the red asterisk and leave it off for optional fields, and add the "* Obligatorio" note to the form footer.

@@ -3,3 +3,4 @@ export { initialOrganizations, gyms, branches, organizationBranches, branchLabel
 export { BranchSwitcher } from '@/features/organization/components/BranchSwitcher';
 export { OrganizationPage } from '@/features/organization/components/OrganizationPage';
 export { useOrganizationCatalog } from '@/features/organization/hooks/useOrganizationCatalog';
+export { accessScopeOptions } from '@/features/organization/services/accessScopes';
