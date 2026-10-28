@@ -7,6 +7,8 @@ export interface AuthContextValue {
   inspectedId: string | null;
   /** Set after a forced password change, so the login can say it worked. */
   notice: string;
+  /** True while a stored session is being checked after a reload. */
+  restoring: boolean;
   login: (documentNumber: string, password: string) => Promise<SessionUser>;
   logout: () => void;
   inspect: (organizationId: string | null) => void;

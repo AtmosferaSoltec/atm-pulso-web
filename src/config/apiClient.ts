@@ -1,5 +1,5 @@
 /**
- * The only place that talks HTTP. It adds the bearer token (kept in memory, never in storage),
+ * The only place that talks HTTP. It adds the bearer token (kept in memory; AuthProvider mirrors it in sessionStorage so a reload keeps the session),
  * the inspection header for the superadmin, and turns the API's error shape into `ApiError`.
  */
 const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api/v1').replace(/\/$/, '');
@@ -47,8 +47,15 @@ type Query = Record<string, string | number | boolean | null | undefined>;
 
 interface RequestOptions {
   body?: unknown;
+  /** A file sent as the raw body (the gym logo); mutually exclusive with `body`. */
+  file?: Blob;
   query?: Query;
   signal?: AbortSignal;
+}
+
+/** Absolute address of an API path, for things the browser loads by itself (an image). */
+export function apiUrl(path: string): string {
+  return `${BASE_URL}${path}`;
 }
 
 function buildUrl(path: string, query?: Query): string {
@@ -62,6 +69,7 @@ function buildUrl(path: string, query?: Query): string {
 async function send(method: string, path: string, options: RequestOptions): Promise<Response> {
   const headers: Record<string, string> = {};
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  if (options.file) headers['Content-Type'] = options.file.type;
   if (credentials.token) headers.Authorization = `Bearer ${credentials.token}`;
   if (method === 'GET' && credentials.inspectedOrganizationId) headers['X-Organization-Id'] = credentials.inspectedOrganizationId;
   let response: Response;
@@ -69,7 +77,7 @@ async function send(method: string, path: string, options: RequestOptions): Prom
     response = await fetch(buildUrl(path, options.query), {
       method,
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.file ?? (options.body === undefined ? undefined : JSON.stringify(options.body)),
       signal: options.signal,
     });
   } catch (error) {
@@ -110,4 +118,6 @@ export const api = {
   get: <T>(path: string, query?: Query, signal?: AbortSignal): Promise<T> => request<T>('GET', path, { query, signal }),
   post: <T>(path: string, body?: unknown): Promise<T> => request<T>('POST', path, { body: body ?? {} }),
   patch: <T>(path: string, body: unknown): Promise<T> => request<T>('PATCH', path, { body }),
+  put: <T>(path: string, file: Blob): Promise<T> => request<T>('PUT', path, { file }),
+  delete: <T>(path: string): Promise<T> => request<T>('DELETE', path),
 };

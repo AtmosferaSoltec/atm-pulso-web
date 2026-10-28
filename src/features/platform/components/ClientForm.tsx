@@ -2,8 +2,6 @@ import { useState, type FormEvent, type ReactElement } from 'react';
 import { describeError } from '@/config/errorMessages';
 import type { ClientDraft, GymDraft } from '@/features/platform/types/platform.types';
 import { lookupDni, lookupRuc } from '@/services/documentLookup';
-import { hasExtras, planExtras } from '@/config/freePlan';
-import { PlanExtraNotice } from '@/features/platform/components/PlanExtraNotice';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
@@ -22,21 +20,17 @@ const onlyDigits = (value: string): string => value.replace(/\D/g, '');
 interface ClientFormProps {
   /** When set, the form only adds a gym to this existing client. */
   organizationName?: string;
-  /** Branch counts of the client's existing gyms, so adding one counts against the free plan. */
-  existingGymBranchCounts?: number[];
   /** Saves through the API; rejects with the API's error, which the form shows. */
-  onSave: (draft: ClientDraft, agreedExtra: boolean) => Promise<void>;
+  onSave: (draft: ClientDraft) => Promise<void>;
   onClose: () => void;
 }
 
-export function ClientForm({ organizationName, existingGymBranchCounts = [], onSave, onClose }: ClientFormProps): ReactElement {
+export function ClientForm({ organizationName, onSave, onClose }: ClientFormProps): ReactElement {
   const [error, setError] = useState('');
   const [draft, setDraft] = useState<ClientDraft>(newDraft);
   /** Which search button is waiting for its (mock) answer: "dni" or "ruc-<gym id>". */
   const [searching, setSearching] = useState<string | null>(null);
-  const [extraConfirmed, setExtraConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
-  const extras = planExtras([...existingGymBranchCounts, ...draft.gyms.map((gym) => gym.branches.length)]);
 
   function changeGym(id: string, patch: Partial<GymDraft>): void {
     setDraft((current) => ({ ...current, gyms: current.gyms.map((gym) => (gym.id === id ? { ...gym, ...patch } : gym)) }));
@@ -105,7 +99,7 @@ export function ClientForm({ organizationName, existingGymBranchCounts = [], onS
     }
     setSaving(true);
     try {
-      await onSave(draft, extraConfirmed);
+      await onSave(draft);
     } catch (failure) {
       setError(describeError(failure));
       setSaving(false);
@@ -240,7 +234,6 @@ export function ClientForm({ organizationName, existingGymBranchCounts = [], onS
             <Icon name="plus" size={16} /> Añadir otro gimnasio
           </Button>
         )}
-        {hasExtras(extras) && <PlanExtraNotice extras={extras} confirmed={extraConfirmed} onConfirmedChange={setExtraConfirmed} />}
         {error && (
           <p className="error full" role="alert">
             {error}

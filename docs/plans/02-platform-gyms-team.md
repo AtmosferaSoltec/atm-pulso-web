@@ -5,9 +5,7 @@
 ## Build
 
 1. `useCatalog()` (`GET /catalog`) replaces `useOrganizationCatalog`; the branch/gym pickers, headers and filters read it. `accessible` decides what is selectable.
-2. **Superadmin clients** (`/clients`): list with search and pagination, summary cards from `/clients/summary`, plan chip from `plan.state`
-   ("Plan gratuito" or "N extras" via the wording helper), create-client dialog posting `/clients` with owner (DNI search button), gyms and branches, and the "Ya lo acordé con el cliente"
-   confirmation sending `agreed_extra: true`. A `409 PLAN_LIMIT_EXCEEDED` shows the extras and offers the confirmation. Add gym/branch actions post to `/clients/{id}/gyms` and `/gyms/{id}/branches`.
+2. **Superadmin clients** (`/clients`): list with search and pagination, summary cards from `/clients/summary`, create-client dialog posting `/clients` with owner (DNI search button), gyms and branches (no plan, limit or agreement: removed). Add gym/branch actions post to `/clients/{id}/gyms` and `/gyms/{id}/branches`.
 3. **Inspection**: when the superadmin opens a client, send `X-Organization-Id` on GET requests only; every write control is hidden (read-only banner as today).
 4. **Gym settings** (owner, admin of that gym): display name, brand colour (picker + hex), day pass price, branch sharing toggle through `PATCH /gyms/{id}`. Hide the logo upload (Q-LOGO).
 5. **Team**: `GET /users`, create/edit with `POST/PATCH /users`, activate/deactivate, set password. Role rules in the form: only owners can pick admin. Replace the "contraseña de prueba" notice by a field to type the initial

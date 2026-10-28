@@ -11,7 +11,6 @@ const messages: Record<string, string> = {
   PASSWORD_UNCHANGED: 'La nueva contraseña debe ser distinta de la actual.',
   FORBIDDEN: 'No tienes permiso para hacer esto.',
   NOT_FOUND: 'Este registro ya no existe.',
-  PLAN_LIMIT_EXCEEDED: 'Esto supera el plan gratuito. Confirma que ya lo acordaste con el cliente.',
   USER_DOCUMENT_TAKEN: 'Este DNI ya pertenece a un usuario.',
   MEMBER_DOCUMENT_TAKEN: 'Este documento ya pertenece a un miembro.',
   MEMBER_NOT_FOUND: 'El miembro ya no existe.',
@@ -25,6 +24,7 @@ const messages: Record<string, string> = {
   DOCUMENT_NOT_FOUND: 'No se encontraron datos para este documento.',
   LOOKUP_UNAVAILABLE: 'La búsqueda no está disponible ahora. Escribe los datos a mano.',
   CONFLICT: 'Este registro ya existe.',
+  STORAGE_UNAVAILABLE: 'El almacenamiento de imágenes no está disponible. Inténtalo más tarde.',
 };
 
 const fieldMessages: Record<string, string> = {
@@ -40,6 +40,8 @@ const fieldMessages: Record<string, string> = {
   EMAIL_INVALID: 'El correo no es válido.',
   TAX_ID_INVALID: 'El RUC debe tener 11 dígitos.',
   BRAND_COLOR_INVALID: 'El color no es válido.',
+  LOGO_TYPE_INVALID: 'El logo debe ser una imagen PNG, JPG o WebP.',
+  LOGO_SIZE_INVALID: 'El logo debe pesar como máximo 512 KB.',
   PRICE_INVALID: 'El precio no es válido.',
   BRANCHES_REQUIRED: 'Selecciona al menos una sede.',
   RANGE_INVALID: 'El rango de fechas no es válido (máximo 366 días).',

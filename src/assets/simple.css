@@ -358,15 +358,5 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .color-hex-field:focus-within{border-color:var(--primary)}
 .color-hex-field input{width:84px;border:0;outline:0;background:transparent;font:inherit;font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#33505f}
 
-/* Free plan: the note for the team, the client's plan chip and the confirmation for extras. */
-.plan-note{display:flex;align-items:flex-start;gap:14px;padding:16px 20px;margin-bottom:20px;border-color:#cfe3e8;background:var(--brand-soft,#f0f8f9)}
-.plan-note svg{margin-top:2px;color:var(--brand-ink,#20586a);flex-shrink:0}
-.plan-note strong{font-size:14px;color:#2c4a5b}
-.plan-note p{margin-top:4px;font-size:13px;color:#5b7585;line-height:1.5}
 .client-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.plan-extra{display:flex;gap:12px;padding:14px 16px;border:1px solid #f0d9a8;border-radius:12px;background:#fff8e6;color:#8a6a1f}
-.plan-extra svg{flex-shrink:0;margin-top:2px}
-.plan-extra strong{font-size:13px}
-.plan-extra p{margin:4px 0 10px;font-size:12px;line-height:1.5}
-.form-grid .plan-extra label.plan-confirm{flex-direction:row;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#6d5316}
-.plan-confirm input{width:18px;height:18px;padding:0;accent-color:#b9892a}
+.form-grid 

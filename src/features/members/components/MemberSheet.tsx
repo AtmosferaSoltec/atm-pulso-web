@@ -54,7 +54,7 @@ export function MemberSheet({ member, receiptId, readOnly = false, onClose, onRe
         <article className="receipt tenant-theme" style={brandTheme(data.gym.brand_color)}>
           <header className="receipt-header">
             <div className="receipt-issuer">
-              <GymBrand name={data.gym.name} />
+              <GymBrand name={data.gym.name} logoUrl={data.gym.logo_url} />
               {data.gym.tax_id && <p>RUC {data.gym.tax_id}</p>}
               <p>
                 Sede {data.branch.name}

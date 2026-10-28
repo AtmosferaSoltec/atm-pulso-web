@@ -21,6 +21,7 @@ interface SidebarProps {
   onOpenProfile: () => void;
   /** Visible name of the gym being worked in. */
   gymName: string;
+  gymLogoUrl?: string | null;
 }
 
 const roleLabels: Record<Role, string> = {
@@ -41,6 +42,7 @@ export function Sidebar({
   onLogout,
   onOpenProfile,
   gymName,
+  gymLogoUrl,
 }: SidebarProps): ReactElement {
   const isReceptionist = user.role === 'receptionist';
   const home: Page = isReceptionist ? 'access' : 'dashboard';
@@ -68,7 +70,7 @@ export function Sidebar({
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
       <a className="tenant-brand-link" href={`#${home}`} onClick={() => onNavigate(home)}>
-        <GymBrand name={gymName} />
+        <GymBrand name={gymName} logoUrl={gymLogoUrl} />
       </a>
       <BranchSwitcher branches={branches} activeBranchId={branchId} onChange={onBranchChange} />
       <nav aria-label="Navegación principal">

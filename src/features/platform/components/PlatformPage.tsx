@@ -4,7 +4,6 @@ import { describeError } from '@/config/errorMessages';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useAddBranch, useAddGym, useClients, useClientSummary, useCreateClient } from '@/features/platform/hooks/usePlatform';
 import { ClientForm } from '@/features/platform/components/ClientForm';
-import { PlanExtraNotice } from '@/features/platform/components/PlanExtraNotice';
 import { gymTitle } from '@/features/organization';
 import { ProfileDialog } from '@/features/auth';
 import { Button } from '@/components/ui/button';
@@ -12,22 +11,19 @@ import { Dialog } from '@/components/ui/dialog';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
-import { FREE_PLAN, FREE_PLAN_SUMMARY, describeExtras } from '@/config/freePlan';
 import type { CatalogGym } from '@/types/api.types';
 
 const PAGE_SIZES = [12, 24, 48];
 
 function AddBranchDialog({ gym, onClose, onDone }: { gym: CatalogGym; onClose: () => void; onDone: (message: string) => void }): ReactElement {
   const add = useAddBranch(gym.id);
-  const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState('');
-  const needsAgreement = gym.branches.length >= FREE_PLAN.maxBranchesPerGym;
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     try {
-      await add.mutateAsync({ name: String(data.get('name')), address: String(data.get('address')), agreedExtra: confirmed });
+      await add.mutateAsync({ name: String(data.get('name')), address: String(data.get('address')) });
       onDone('Sede creada.');
     } catch (failure) {
       setError(describeError(failure));
@@ -45,7 +41,6 @@ function AddBranchDialog({ gym, onClose, onDone }: { gym: CatalogGym; onClose: (
           Dirección
           <Input name="address" />
         </label>
-        {needsAgreement && <PlanExtraNotice extras={{ extraGyms: 0, extraBranches: 1 }} confirmed={confirmed} onConfirmedChange={setConfirmed} />}
         {error && (
           <p className="error full" role="alert">
             {error}
@@ -59,22 +54,21 @@ function AddBranchDialog({ gym, onClose, onDone }: { gym: CatalogGym; onClose: (
   );
 }
 
-function AddGymForm({ clientId, clientName, branchCounts, onClose, onDone }: { clientId: string; clientName: string; branchCounts: number[]; onClose: () => void; onDone: (message: string) => void }): ReactElement {
+function AddGymForm({ clientId, clientName, onClose, onDone }: { clientId: string; clientName: string; onClose: () => void; onDone: (message: string) => void }): ReactElement {
   const addGym = useAddGym(clientId);
   return (
     <ClientForm
       organizationName={clientName}
-      existingGymBranchCounts={branchCounts}
       onClose={onClose}
-      onSave={async (draft, agreedExtra) => {
-        await addGym.mutateAsync({ gym: draft.gyms[0], agreedExtra });
+      onSave={async (draft) => {
+        await addGym.mutateAsync({ gym: draft.gyms[0] });
         onDone('Gimnasio creado.');
       }}
     />
   );
 }
 
-/** The superadmin's home: every client with its gyms, branches and plan state. */
+/** The superadmin's home: every client with its gyms and branches. */
 export function PlatformPage({ onInspect }: { onInspect: (organizationId: string) => void }): ReactElement {
   const { logout } = useAuth();
   const createClient = useCreateClient();
@@ -82,7 +76,7 @@ export function PlatformPage({ onInspect }: { onInspect: (organizationId: string
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
   const [creating, setCreating] = useState(false);
-  const [addingGym, setAddingGym] = useState<{ id: string; name: string; counts: number[] } | null>(null);
+  const [addingGym, setAddingGym] = useState<{ id: string; name: string } | null>(null);
   const [addingBranch, setAddingBranch] = useState<CatalogGym | null>(null);
   const [message, setMessage] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
@@ -133,13 +127,6 @@ export function PlatformPage({ onInspect }: { onInspect: (organizationId: string
             <Icon name="plus" size={17} /> Nuevo cliente
           </Button>
         </div>
-        <aside className="card plan-note">
-          <Icon name="tag" size={20} />
-          <div>
-            <strong>Pulso es gratis, con límites</strong>
-            <p>Plan gratuito: {FREE_PLAN_SUMMARY}. Si un cliente necesita más gimnasios o sedes, se acuerda directamente con Atmósfera: tú los creas y cobras el extra.</p>
-          </div>
-        </aside>
         <div className="platform-metrics">
           {metrics.map((metric) => (
             <article className="card metric" key={metric.label}>
@@ -174,15 +161,6 @@ export function PlatformPage({ onInspect }: { onInspect: (organizationId: string
               <div className="client-heading">
                 <h2>{client.name}</h2>
                 <div className="client-chips">
-                  {client.plan.state === 'extras' ? (
-                    <span className="badge expiring" title={`Plan gratuito: ${FREE_PLAN_SUMMARY}`}>
-                      {describeExtras({ extraGyms: client.plan.extra_gyms, extraBranches: client.plan.extra_branches })}
-                    </span>
-                  ) : (
-                    <span className="badge active" title={`Plan gratuito: ${FREE_PLAN_SUMMARY}`}>
-                      Plan gratuito
-                    </span>
-                  )}
                   <span className={`badge ${client.owner.is_active ? 'active' : 'expired'}`}>{client.owner.is_active ? 'Activa' : 'Inactiva'}</span>
                 </div>
               </div>
@@ -209,7 +187,7 @@ export function PlatformPage({ onInspect }: { onInspect: (organizationId: string
               <div className="client-actions">
                 <Button
                   variant="secondary"
-                  onClick={() => setAddingGym({ id: client.id, name: client.name, counts: client.gyms.map((gym) => gym.branches.length) })}
+                  onClick={() => setAddingGym({ id: client.id, name: client.name })}
                 >
                   <Icon name="plus" size={15} /> Añadir gimnasio
                 </Button>
@@ -239,14 +217,14 @@ export function PlatformPage({ onInspect }: { onInspect: (organizationId: string
       {creating && (
         <ClientForm
           onClose={() => setCreating(false)}
-          onSave={async (draft, agreedExtra) => {
-            await createClient.mutateAsync({ draft, agreedExtra });
+          onSave={async (draft) => {
+            await createClient.mutateAsync({ draft });
             setCreating(false);
             setMessage(`Cliente creado. Ingresa con el DNI ${draft.contactDni}; su contraseña inicial es ese mismo DNI y la cambiará al entrar.`);
           }}
         />
       )}
-      {addingGym && <AddGymForm clientId={addingGym.id} clientName={addingGym.name} branchCounts={addingGym.counts} onClose={() => setAddingGym(null)} onDone={done} />}
+      {addingGym && <AddGymForm clientId={addingGym.id} clientName={addingGym.name} onClose={() => setAddingGym(null)} onDone={done} />}
       {addingBranch && <AddBranchDialog gym={addingBranch} onClose={() => setAddingBranch(null)} onDone={done} />}
     </div>
   );

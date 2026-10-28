@@ -30,3 +30,18 @@ export function usePayments(filter: PaymentFilter): UseQueryResult<PaymentList> 
     placeholderData: keepPreviousData,
   });
 }
+
+/** Period totals for the KPIs: they ignore the method filter so they stay put while the list is narrowed. */
+export function usePaymentTotals(filter: Pick<PaymentFilter, 'branchId' | 'from' | 'to'>, enabled: boolean): UseQueryResult<PaymentTotals | undefined> {
+  return useQuery({
+    queryKey: ['payments', 'totals', filter],
+    queryFn: async () => {
+      const result = await requestPage<PaymentRow, PaymentList['meta']>('/payments', {
+        query: { ...paymentQuery({ ...filter, method: 'all' }), page: 1, page_size: 1 },
+      });
+      return result.meta.totals;
+    },
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+}

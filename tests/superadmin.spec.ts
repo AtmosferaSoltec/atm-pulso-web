@@ -22,28 +22,24 @@ test('the superadmin creates a client from the screen and finds it by name', asy
   await page.getByLabel('Buscar cliente, gimnasio o RUC').fill(`Prueba ${dni}`);
   const card = page.locator('article.client-card', { hasText: `Carla Prueba ${dni}` });
   await expect(card).toHaveCount(1);
-  await expect(card.getByText('Plan gratuito')).toBeVisible();
+  await expect(card.getByText('Plan gratuito')).toHaveCount(0);
 });
 
-test('going beyond the free plan needs the agreement and is flagged as extra', async ({ page }) => {
+test('the superadmin creates a client with several branches without any agreement', async ({ page }) => {
   const dni = uniqueDni();
   await signIn(page, superadmin.dni, superadmin.password);
   await page.getByRole('button', { name: 'Nuevo cliente' }).click();
   await page.getByLabel('DNI del cliente').fill(dni);
   await page.getByLabel('Celular (+51)').fill('999000222');
   await page.getByLabel('Nombres', { exact: true }).fill('Diego');
-  await page.getByLabel('Apellidos').fill(`Extra ${dni}`);
+  await page.getByLabel('Apellidos').fill(`Varias ${dni}`);
   await page.getByLabel('Correo electrónico').fill('diego@example.com');
   await page.getByLabel('Nombre del gimnasio 1').fill(`Gym ${dni}`);
   await page.getByLabel('Sede 1 del gimnasio 1').fill('Norte');
   await page.getByRole('button', { name: 'Añadir sede al gimnasio 1' }).click();
   await page.getByRole('textbox', { name: 'Sede 2 del gimnasio 1' }).fill('Sur');
-  await expect(page.getByText('Supera el plan gratuito')).toBeVisible();
-  await page.getByLabel('Ya lo acordé con el cliente').check();
   await page.getByRole('button', { name: 'Crear cliente' }).click();
   await expect(page.getByText(`Cliente creado. Ingresa con el DNI ${dni}`)).toBeVisible();
-  await page.getByLabel('Buscar cliente, gimnasio o RUC').fill(`Extra ${dni}`);
-  await expect(page.locator('article.client-card', { hasText: `Diego Extra ${dni}` }).getByText('1 sede extra')).toBeVisible();
 });
 
 test('the superadmin consults a client without any operational action', async ({ page }) => {
@@ -68,7 +64,8 @@ test('the superadmin consults a client without any operational action', async ({
   await navigate(page, 'Usuarios');
   await expect(page.getByRole('button', { name: 'Nuevo usuario', exact: true })).toHaveCount(0);
   await navigate(page, 'Identidad');
-  await expect(page.getByRole('button', { name: 'Guardar identidad' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Guardar identidad' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Subir logo' })).toBeVisible();
   await page.getByRole('button', { name: 'Volver a clientes' }).click();
   await expect(page.getByRole('heading', { name: 'Clientes y gimnasios' })).toBeVisible();
 });

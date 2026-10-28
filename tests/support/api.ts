@@ -66,14 +66,13 @@ interface ClientAnswer {
   gyms: { name: string; branches: Branch[] }[];
 }
 
-/** A client with one gym and the given branches (extras are agreed, since the free plan has one branch). */
+/** A client with one gym and the given branches (the superadmin may create any number of branches). */
 export async function createAccount(branchNames: string[] = ['Sede Central'], activateOwner = true): Promise<Account> {
   const token = await superadminToken();
   const ownerDni = uniqueDni();
   const gymName = `Gym ${ownerDni}`;
   const client = await call<ClientAnswer>('POST', '/clients', token, {
     id: crypto.randomUUID(),
-    agreed_extra: true,
     owner: { document_number: ownerDni, first_names: 'Olga', last_names: `Dueña ${ownerDni}`, email: 'owner@example.com', phone: '999111222' },
     gyms: [{ name: gymName, tax_id: '20123456789', branches: branchNames.map((name) => ({ name, address: `Av. ${name} 100` })) }],
   });

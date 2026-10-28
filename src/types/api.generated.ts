@@ -220,7 +220,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List clients with gyms and plan state.
+         * List clients with their gyms.
          * @description Superadmin only; organization inspection headers are ignored.
          */
         get: {
@@ -319,7 +319,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description PLAN_LIMIT_EXCEEDED (extra_gyms and extra_branches in details), USER_DOCUMENT_TAKEN, or CONFLICT. */
+                /** @description USER_DOCUMENT_TAKEN or CONFLICT. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -407,7 +407,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Add an agreed gym to a client.
+         * Add a gym to a client.
          * @description Superadmin only; organization inspection headers are ignored.
          */
         post: {
@@ -456,7 +456,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description PLAN_LIMIT_EXCEEDED (extra_gyms and extra_branches in details), USER_DOCUMENT_TAKEN, or CONFLICT. */
+                /** @description USER_DOCUMENT_TAKEN or CONFLICT. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -483,7 +483,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Add an agreed branch to a gym.
+         * Add a branch to a gym.
          * @description Superadmin only; organization inspection headers are ignored.
          */
         post: {
@@ -532,7 +532,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description PLAN_LIMIT_EXCEEDED (extra_gyms and extra_branches in details), USER_DOCUMENT_TAKEN, or CONFLICT. */
+                /** @description USER_DOCUMENT_TAKEN or CONFLICT. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -1010,8 +1010,11 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Change a gym's identity, day pass price or branch sharing.
-         * @description Owner of the organization or admin of that gym. Send only the fields to change; null for display_name or day_pass_price restores the default.
+         * Change a gym's identity (superadmin) or its day pass price, branch sharing and membership prices (owner or admin).
+         * @description Send only the fields to change; null for display_name or day_pass_price restores the default.
+         *     The identity (`display_name`, `brand_color`; the logo has its own endpoint) is set only by the superadmin,
+         *     who may change nothing else. The owner of the organization or the admin of that gym change the rest,
+         *     and get 403 FORBIDDEN if they send an identity field.
          */
         patch: {
             parameters: {
@@ -1061,6 +1064,198 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/gyms/{gym_id}/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download a gym's logo.
+         * @description Public (no token: an `<img>` cannot send one). The logo is branding, not private data. The bucket is private; the API
+         *     reads the file and streams it. `v` is the version from `logo_url`: when it is the current one the answer is cacheable
+         *     for good (`immutable`), otherwise it is `no-cache`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    v?: string;
+                };
+                header?: never;
+                path: {
+                    gym_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The image. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/png": string;
+                        "image/jpeg": string;
+                        "image/webp": string;
+                    };
+                };
+                /** @description NOT_FOUND (no such gym, or it has no logo). */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description STORAGE_UNAVAILABLE. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        /**
+         * Set a gym's logo.
+         * @description Superadmin only. The body is the image itself (not JSON): PNG, JPEG or WebP, at most 512 KB. The type is
+         *     checked by the file's content, never by its name or the declared Content-Type. The previous logo is deleted.
+         *     Answers 503 STORAGE_UNAVAILABLE when no object store is configured.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    gym_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "image/png": string;
+                    "image/jpeg": string;
+                    "image/webp": string;
+                };
+            };
+            responses: {
+                /** @description Success. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Gym"];
+                        };
+                    };
+                };
+                /** @description VALIDATION_FAILED with field `logo` and code LOGO_TYPE_INVALID or LOGO_SIZE_INVALID. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description FORBIDDEN (not the superadmin). */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description NOT_FOUND. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description STORAGE_UNAVAILABLE. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Remove a gym's logo.
+         * @description Superadmin only. The file is deleted from the object store.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    gym_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Gym"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description FORBIDDEN (not the superadmin). */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description NOT_FOUND. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description STORAGE_UNAVAILABLE. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/clients/{client_id}/owner": {
@@ -2185,18 +2380,10 @@ export interface components {
                 is_active: boolean;
             };
             gyms: components["schemas"]["Gym"][];
-            plan: {
-                /** @enum {string} */
-                state: "free" | "extras";
-                extra_gyms: number;
-                extra_branches: number;
-            };
         };
         NewClient: {
             /** Format: uuid */
             id?: string;
-            /** @default false */
-            agreed_extra: boolean;
             owner: {
                 document_number: string;
                 first_names: string;
@@ -2212,8 +2399,6 @@ export interface components {
             id?: string;
             name: string;
             tax_id?: string;
-            /** @default false */
-            agreed_extra: boolean;
             branches: components["schemas"]["NewBranch"][];
         };
         NewBranch: {
@@ -2221,8 +2406,6 @@ export interface components {
             id?: string;
             name: string;
             address?: string;
-            /** @default false */
-            agreed_extra: boolean;
         };
         CatalogBranch: {
             /** Format: uuid */
@@ -2242,11 +2425,16 @@ export interface components {
             display_name: string | null;
             tax_id: string | null;
             brand_color: string;
+            /**
+             * @description Address of the logo relative to the API prefix (prepend the API base URL); changes with every upload. Null when the gym has none.
+             * @example /gyms/0190…/logo?v=0190…
+             */
+            logo_url: string | null;
             /** @example 15.00 */
             day_pass_price: string;
             day_pass_price_is_default: boolean;
             branch_sharing: boolean;
-            /** @description Base price per duration, ordered by months. Empty until the gym sets them. */
+            /** @description Base price per duration, in the order the gym set (the order offered when selling). Empty until the gym sets them. */
             membership_prices: components["schemas"]["MembershipPrice"][];
             branches: {
                 /** Format: uuid */
@@ -2311,7 +2499,7 @@ export interface components {
             /** @example 15.00 */
             day_pass_price?: string | null;
             branch_sharing?: boolean;
-            /** @description Replaces the whole list. One price per duration, 1 to 24 months, at most 24 entries. */
+            /** @description Replaces the whole list and keeps its order. One price per duration, 1 to 24 months, at most 24 entries. */
             membership_prices?: components["schemas"]["MembershipPrice"][];
         };
         MembershipPrice: {
@@ -2474,6 +2662,8 @@ export interface components {
                 name: string;
                 tax_id: string | null;
                 brand_color: string;
+                /** @description Address of the logo relative to the API prefix; null when the gym has none. */
+                logo_url: string | null;
             };
             branch: {
                 name: string;

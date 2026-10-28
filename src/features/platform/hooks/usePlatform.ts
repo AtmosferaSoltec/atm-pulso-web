@@ -34,16 +34,14 @@ function gymBody(gym: GymDraft): { id: string; name: string; tax_id?: string; br
 
 export interface CreateClientInput {
   draft: ClientDraft;
-  agreedExtra: boolean;
 }
 
 export function useCreateClient(): UseMutationResult<PlatformClient, Error, CreateClientInput> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ draft, agreedExtra }: CreateClientInput) =>
+    mutationFn: ({ draft }: CreateClientInput) =>
       api.post<PlatformClient>('/clients', {
         id: draft.id,
-        agreed_extra: agreedExtra,
         owner: {
           document_number: draft.contactDni.trim(),
           first_names: draft.firstName.trim(),
@@ -57,19 +55,19 @@ export function useCreateClient(): UseMutationResult<PlatformClient, Error, Crea
   });
 }
 
-export function useAddGym(clientId: string): UseMutationResult<unknown, Error, { gym: GymDraft; agreedExtra: boolean }> {
+export function useAddGym(clientId: string): UseMutationResult<unknown, Error, { gym: GymDraft }> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ gym, agreedExtra }) => api.post(`/clients/${clientId}/gyms`, { ...gymBody(gym), agreed_extra: agreedExtra }),
+    mutationFn: ({ gym }) => api.post(`/clients/${clientId}/gyms`, gymBody(gym)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: clientsKey }),
   });
 }
 
-export function useAddBranch(gymId: string): UseMutationResult<CatalogBranch, Error, { name: string; address: string; agreedExtra: boolean }> {
+export function useAddBranch(gymId: string): UseMutationResult<CatalogBranch, Error, { name: string; address: string }> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ name, address, agreedExtra }) =>
-      api.post<CatalogBranch>(`/gyms/${gymId}/branches`, { name: name.trim(), ...(address.trim() ? { address: address.trim() } : {}), agreed_extra: agreedExtra }),
+    mutationFn: ({ name, address }) =>
+      api.post<CatalogBranch>(`/gyms/${gymId}/branches`, { name: name.trim(), ...(address.trim() ? { address: address.trim() } : {}) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: clientsKey }),
   });
 }

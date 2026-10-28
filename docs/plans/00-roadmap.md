@@ -11,6 +11,6 @@ Replace the in-memory demo (`src/store`, `DEMO_DATE`, sample data) by the real A
 | WEB-05 payments-and-dashboard | Payments filters/KPIs/download, dashboard | 05 |
 | WEB-06 cleanup-and-release | Delete demo code, final e2e, hand-over | 06 |
 
-Fixed decisions: token in memory; no demo accounts or seed data (the real first superadmin is inserted manually); free plan is 1 gym and 1 branch
-per gym, shown from `plan` returned by the API (the constant in `src/config/freePlan.ts` is only for wording and is removed when the API supplies it);
+Fixed decisions: token in memory; no demo accounts or seed data (the real first superadmin is inserted manually); there are no plans or limits
+(only the superadmin creates gyms and branches and sets a gym's identity);
 gym logo upload is **hidden** until the owner approves Q-LOGO (keep the colour and the monogram).

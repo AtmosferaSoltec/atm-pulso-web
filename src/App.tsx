@@ -24,7 +24,8 @@ const queryClient = new QueryClient({
 });
 
 function Application(): ReactElement {
-  const { user, inspectedId, inspect } = useAuth();
+  const { user, inspectedId, inspect, restoring } = useAuth();
+  if (restoring) return <div className="empty">Cargando…</div>;
   if (!user) return <LoginPage />;
   if (user.must_change_password) return <PasswordSetupPage />;
   if (user.role === 'superadmin' && !inspectedId) {

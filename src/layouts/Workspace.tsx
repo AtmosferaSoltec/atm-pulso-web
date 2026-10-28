@@ -126,6 +126,7 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
           setMobileOpen(false);
         }}
         gymName={brandName}
+        gymLogoUrl={gym.logo_url}
       />
       {mobileOpen && <Button className="sidebar-backdrop" variant="ghost" aria-label="Cerrar menú" onClick={() => setMobileOpen(false)} />}
       <div className="main-shell">
@@ -165,7 +166,7 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
           {page === 'payments' && <PaymentsPage key={branch.id} branchId={branch.id} showSummary={user.role !== 'receptionist'} />}
           {page === 'team' && <TeamPage readOnly={readOnly} />}
           {page === 'pricing' && <PricingPage key={gym.id} gym={gym} readOnly={readOnly} />}
-          {page === 'branding' && <BrandingPage key={gym.id} gym={gym} readOnly={readOnly} />}
+          {page === 'branding' && <BrandingPage key={gym.id} gym={gym} />}
         </main>
       </div>
       {registering && !readOnly && <MemberForm member={renewing} branchId={branch.id} onSaved={saved} onClose={closeEnrollment} />}

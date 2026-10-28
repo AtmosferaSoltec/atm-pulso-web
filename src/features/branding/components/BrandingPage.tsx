@@ -1,14 +1,15 @@
-import { useState, type FormEvent, type ReactElement } from 'react';
+import { useRef, useState, type ChangeEvent, type FormEvent, type ReactElement } from 'react';
 import { useCurrentUser } from '@/store/authStore';
-import { canManageGym } from '@/features/auth';
 import { describeError } from '@/config/errorMessages';
-import { gymTitle, useUpdateGym } from '@/features/organization';
+import { gymTitle, useGymLogo, useUpdateGym } from '@/features/organization';
 import type { CatalogGym } from '@/types/api.types';
 import { GymBrand } from '@/features/branding/components/GymBrand';
 import { brandTheme } from '@/features/branding/services/brandTheme';
 import { Button } from '@/components/ui/button';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { Field } from '@/components/ui/field';
+import { Icon } from '@/components/ui/icon';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 
 const colors = [
@@ -20,20 +21,52 @@ const colors = [
   { value: '#414951', label: 'Grafito' },
 ];
 
+const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const MAX_LOGO_BYTES = 512 * 1024;
+
 interface BrandingPageProps {
   gym: CatalogGym;
-  readOnly?: boolean;
 }
 
-/** Name and colour of a gym; they apply to all its branches. (The logo upload comes later.) */
-export function BrandingPage({ gym, readOnly = false }: BrandingPageProps): ReactElement {
+/** Name, colour and logo of a gym; they apply to all its branches. Only the superadmin sets them. */
+export function BrandingPage({ gym }: BrandingPageProps): ReactElement {
   const user = useCurrentUser();
   const update = useUpdateGym(gym.id);
+  const logo = useGymLogo(gym.id);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(gymTitle(gym));
   const [color, setColor] = useState(gym.brand_color);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const editable = !readOnly && canManageGym(user, gym.id);
+  const editable = user.role === 'superadmin';
+
+  async function changeLogo(event: ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!LOGO_TYPES.includes(file.type)) {
+      setError('El logo debe ser una imagen PNG, JPG o WebP.');
+      setMessage('');
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setError('El logo debe pesar como máximo 512 KB.');
+      setMessage('');
+      return;
+    }
+    await sendLogo(file);
+  }
+
+  async function sendLogo(file: File | null): Promise<void> {
+    try {
+      await logo.mutateAsync(file);
+      setError('');
+      setMessage(file ? 'Logo actualizado.' : 'Logo quitado.');
+    } catch (failure) {
+      setError(describeError(failure));
+      setMessage('');
+    }
+  }
 
   async function save(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -67,6 +100,19 @@ export function BrandingPage({ gym, readOnly = false }: BrandingPageProps): Reac
             Nombre visible
             <Input disabled={!editable} required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} />
           </label>
+          <div className="logo-field">
+            <GymBrand name={gymTitle(gym)} logoUrl={gym.logo_url} />
+            {editable && (
+              <span className="logo-actions">
+                <input ref={fileInput} type="file" accept={LOGO_TYPES.join(',')} hidden onChange={(event) => void changeLogo(event)} />
+                <Button variant="secondary" disabled={logo.isPending} onClick={() => fileInput.current?.click()}>
+                  <Icon name="upload" size={16} /> {gym.logo_url ? 'Cambiar logo' : 'Subir logo'}
+                </Button>
+                {gym.logo_url && <IconButton icon="close" label="Quitar el logo" disabled={logo.isPending} onClick={() => void sendLogo(null)} />}
+              </span>
+            )}
+            <small>PNG, JPG o WebP, hasta 512 KB. Mejor si es cuadrado.</small>
+          </div>
           <fieldset className="color-options">
             <legend>Color principal</legend>
             {colors.map((option) => (
@@ -97,7 +143,7 @@ export function BrandingPage({ gym, readOnly = false }: BrandingPageProps): Reac
       </form>
       <section className="card brand-preview tenant-theme" style={brandTheme(color)}>
         <span className="eyebrow">VISTA PREVIA</span>
-        <GymBrand name={name.trim() || gymTitle(gym)} />
+        <GymBrand name={name.trim() || gymTitle(gym)} logoUrl={gym.logo_url} />
         <div className="brand-preview-nav">
           <span>Resumen</span>
           <span className="selected">Miembros</span>

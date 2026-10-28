@@ -50,5 +50,5 @@ only decide what to show: the API enforces every rule.
 - `src/config/errorMessages.ts`: Spanish text for the API's error codes.
 - Business rules (member status, receipt numbers, dates, totals) are computed by the API; the web shows what it answers.
 
-The free plan is 1 gym and 1 branch per gym (`src/config/freePlan.ts`, used for wording); extras are created by the
-superadmin after agreeing them with the client.
+There are no plans or limits: only the superadmin creates gyms and branches, and only the superadmin sets a gym's
+identity (name, colour, logo).

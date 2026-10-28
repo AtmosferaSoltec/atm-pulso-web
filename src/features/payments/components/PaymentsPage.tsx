@@ -1,6 +1,6 @@
 import { useState, type ReactElement } from 'react';
 import { Avatar } from '@/features/members';
-import { usePayments, paymentQuery } from '@/features/payments/hooks/usePayments';
+import { usePayments, usePaymentTotals, paymentQuery } from '@/features/payments/hooks/usePayments';
 import { download } from '@/config/apiClient';
 import { describeError } from '@/config/errorMessages';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -49,6 +49,7 @@ export function PaymentsPage({ branchId, showSummary = true }: PaymentsPageProps
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [downloadError, setDownloadError] = useState('');
   const payments = usePayments({ branchId, from, to, method, page, pageSize });
+  const totals = usePaymentTotals({ branchId, from, to }, showSummary).data;
 
   const presetRanges: Record<Period, { from: string; to: string }> = {
     today: { from: today, to: today },
@@ -79,7 +80,6 @@ export function PaymentsPage({ branchId, showSummary = true }: PaymentsPageProps
   }
 
   const rows = payments.data?.data ?? [];
-  const totals = payments.data?.meta.totals;
   const kpis: Kpi[] = totals
     ? [
         { label: 'Total cobrado', value: formatCurrency(totals.amount), icon: 'payments' },
@@ -166,16 +166,18 @@ export function PaymentsPage({ branchId, showSummary = true }: PaymentsPageProps
               }}
             />
           </div>
-          <OptionCards
-            label="Filtrar por medio de pago"
-            variant="chip"
-            options={[{ value: 'all', label: 'Todos' }, ...paymentMethodOptions]}
-            value={method}
-            onChange={(value) => {
-              setMethod(value);
-              setPage(1);
-            }}
-          />
+          <Field label="Medio de pago" as="div">
+            <OptionCards
+              label="Filtrar por medio de pago"
+              variant="chip"
+              options={[{ value: 'all', label: 'Todos' }, ...paymentMethodOptions]}
+              value={method}
+              onChange={(value) => {
+                setMethod(value);
+                setPage(1);
+              }}
+            />
+          </Field>
         </div>
         {payments.isError && (
           <p className="error" role="alert">

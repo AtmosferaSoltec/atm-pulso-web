@@ -18,3 +18,12 @@ export function useUpdateGym(gymId: string): UseMutationResult<CatalogGym, Error
     onSuccess: () => queryClient.invalidateQueries({ queryKey: catalogKey }),
   });
 }
+
+/** Uploads (or, with null, removes) a gym's logo, then refreshes the catalog. Superadmin only. */
+export function useGymLogo(gymId: string): UseMutationResult<CatalogGym, Error, Blob | null> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: Blob | null) => (file ? api.put<CatalogGym>(`/gyms/${gymId}/logo`, file) : api.delete<CatalogGym>(`/gyms/${gymId}/logo`)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: catalogKey }),
+  });
+}

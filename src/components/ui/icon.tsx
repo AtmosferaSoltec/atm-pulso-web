@@ -6,7 +6,9 @@ const paths = {
   plans: "M3 5h18v14H3z M3 10h18 M7 15h4",
   access: "M10 17l5-5-5-5 M3 12h12 M13 3h7v18h-7",
   renewals: "M20 7v5h-5 M4 17v-5h5 M6 6a8 8 0 0 1 14 6 M4 12a8 8 0 0 0 14 6",
-  payments: "M12 2v20 M17 5H9a4 4 0 0 0 0 8h6a3 3 0 0 1 0 6H6",
+  // "S/" (soles): the app only handles PEN, so no dollar sign.
+  payments:
+    "M10 8.5C10 7 8.8 6 7.2 6S4.5 7 4.5 8.5c0 3.5 5.5 2.5 5.5 6C10 16.5 8.8 18 7.2 18S4.2 16.8 4.2 15.2 M19 4l-5 16",
   arrow: "M5 12h14 M13 6l6 6-6 6",
   plus: "M12 5v14 M5 12h14",
   search: "M21 21l-5-5 M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14",
@@ -22,6 +24,7 @@ const paths = {
   bolt: "M13 2L4 14h7l-1 8 10-13h-7z",
   help: "M9 9a3 3 0 1 1 5 2c-2 1-2 2-2 3 M12 17h.01 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20",
   download: "M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5",
+  upload: "M12 16V4 M7 9l5-5 5 5 M4 16v5h16v-5",
   chevron: "M9 5l7 7-7 7",
   chevronLeft: "M15 5l-7 7 7 7",
   tag: "M3 3h8l10 10-8 8L3 11z M7 7h.01",

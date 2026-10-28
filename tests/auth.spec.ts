@@ -20,13 +20,16 @@ test('the first sign-in forces a new password, then asks to sign in again', asyn
   await expect(page.getByRole('heading', { name: 'Resumen del gimnasio' })).toBeVisible();
 });
 
-test('the session lives in memory: a reload goes back to the login', async ({ page }) => {
+test('a reload keeps the session (sessionStorage), and signing out clears it', async ({ page }) => {
   const account = await createAccount();
   await signIn(page, account.ownerDni, PASSWORD);
   await expect(page.getByRole('heading', { name: 'Resumen del gimnasio' })).toBeVisible();
-  expect(await page.evaluate(() => localStorage.length + sessionStorage.length)).toBe(0);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
   await page.reload();
+  await expect(page.getByRole('heading', { name: 'Resumen del gimnasio' })).toBeVisible();
+  await page.getByRole('button', { name: /Cerrar sesión/ }).click();
   await expect(page.getByRole('heading', { name: 'Iniciar sesión' })).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.length)).toBe(0);
 });
 
 test('the profile edits name and phone and changes the password', async ({ page }) => {

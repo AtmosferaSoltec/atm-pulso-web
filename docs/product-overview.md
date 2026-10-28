@@ -35,7 +35,6 @@ Pulso es **gratis con límites**:
 - Lo que exceda esos límites se **acuerda directamente con Atmósfera**, que crea y cobra los extras. Los dueños y administradores **nunca** agregan gimnasios o sedes por su cuenta.
 - Solo el **superadmin** (Atmósfera) puede crearlos, y debe confirmar expresamente que ya lo acordó con el cliente ("Ya lo acordé con el cliente"). Esa confirmación queda guardada con quién y cuándo, para poder cobrarla.
 - Los límites están en **una sola constante** del código, porque el dueño del producto puede cambiarlos.
-- En el panel de clientes cada cliente muestra "Plan gratuito" o "N extras".
 
 ---
 
@@ -48,7 +47,7 @@ Organización (el cliente, es el nombre del propietario)
 ```
 
 - **Organización**: el cliente. Su nombre es el nombre completo de su propietario.
-- **Gimnasio**: negocio con RUC, nombre visible, color de marca y, a futuro, logo. Tiene reglas propias.
+- **Gimnasio**: negocio con RUC, nombre visible, color de marca y logo. Tiene reglas propias.
 - **Sede**: local físico donde se atiende. Las sedes de un mismo gimnasio comparten identidad.
 - El **directorio de miembros es siempre compartido** entre todos los gimnasios y sedes del mismo propietario. Un miembro se registra una sola vez.
 - Los datos de una organización **nunca** se mezclan con los de otra.
@@ -78,14 +77,14 @@ Hay **cuatro roles**. Cada persona tiene un solo usuario y su **DNI es su identi
 | Pagos e ingresos | Sí | Sí | Sí, **sin indicadores (KPIs)** | Consulta |
 | Usuarios | Todos | Recepción de su gimnasio y él mismo | No | Consulta |
 | Tarifas | Todos los gimnasios | Su gimnasio | No | Consulta |
-| Identidad | Todos los gimnasios | Su gimnasio | No | Consulta |
+| Identidad | No | No | No | **Edita** (cualquier gimnasio) |
 | Clientes y gimnasios (panel de plataforma) | No | No | No | **Sí** (es su pantalla de inicio) |
 
 ### 4.3 Diferencias clave, rol por rol
 
 **Superadmin (Atmósfera)**
 - Crea clientes (propietario + gimnasios + sedes), agrega gimnasios a un cliente o sedes a un gimnasio.
-- Es el único que puede salir del plan gratuito, y solo con la confirmación del acuerdo.
+- Es el único que crea gimnasios y sedes, y el único que cambia la identidad de un gimnasio (nombre, color y logo).
 - Puede **consultar** (nunca modificar) cualquier organización, una a la vez.
 - Corrige datos de propietarios (por ejemplo el DNI) y gestiona sus accesos.
 - No pertenece a ninguna organización.
@@ -93,12 +92,12 @@ Hay **cuatro roles**. Cada persona tiene un solo usuario y su **DNI es su identi
 **Propietario**
 - Ve y administra todo su negocio: todos los gimnasios y sedes.
 - **Es el único que crea administradores.** También crea y gestiona recepción.
-- Configura tarifas e identidad de cada gimnasio.
+- Configura la identidad (nombre visible, color y logo) de cada gimnasio.
 - No puede crear gimnasios ni sedes (eso lo acuerda con Atmósfera).
 - Nadie, salvo el superadmin, puede modificar a un propietario.
 
 **Administrador**
-- Gestiona **un solo gimnasio**: sus sedes, su equipo de recepción, tarifas e identidad.
+- Gestiona **un solo gimnasio**: sus sedes, su equipo de recepción y sus tarifas.
 - **Solo crea personal de recepción**, y solo para sedes de su gimnasio. Nunca otros administradores.
 - No se edita a sí mismo (ni su rol ni su alcance).
 
@@ -208,7 +207,7 @@ Para la sede activa: **miembros activos**, **ingresos del mes** (incluye pases d
 La **lista de precios** de cada gimnasio: una tarifa por duración (de 1 a 24 meses; por ejemplo 1 mes S/ 100, 2 meses S/ 180) y el precio del **pase del día**. Las define el dueño o el administrador del gimnasio. Al inscribir o renovar, la tarifa se propone como importe base y quien cobra puede cambiarlo; lo que se cobra queda registrado en el pago y en la boleta. Si el gimnasio aún no tiene tarifas, el importe se escribe a mano.
 
 ### 6.11 Identidad
-Por gimnasio: **nombre visible**, **color de marca** (selector con código hexadecimal) y logo. El color tiñe botones, elementos seleccionados y boletas. Las sedes de un gimnasio comparten la identidad. *(La subida de logo está diferida; ver sección 9.)*
+Por gimnasio: **nombre visible**, **color de marca** (selector con código hexadecimal) y **logo** (PNG, JPG o WebP de hasta 512 KB; un logo por gimnasio, se sube una vez por cada gimnasio que lo use). Solo lo define el superadmin; el dueño y el administrador no ven esta pantalla. El color tiñe botones, elementos seleccionados y boletas; el logo aparece en la navegación y en la boleta impresa. Las sedes de un gimnasio comparten la identidad. Los archivos se guardan en Cloudflare R2.
 
 ### 6.12 Usuarios y permisos
 Alta, edición, activación y desactivación del equipo, con las reglas de cada rol de la sección 4. Cada usuario tiene nombre completo, DNI, rol, gimnasio (administradores) o sedes (recepción) y estado.
@@ -220,7 +219,7 @@ Disponible **para todos los roles** (incluida recepción y el superadmin): ver s
 - Lista de **clientes** con su propietario, gimnasios (nombre y RUC), sedes, estado del plan y si está activo. Búsqueda por cliente, gimnasio o RUC.
 - Métricas: clientes, gimnasios, sedes y usuarios de clientes.
 - **Crear cliente**: documento del propietario (con botón de búsqueda), nombres y apellidos, correo, celular, y sus gimnasios con sedes (con búsqueda de RUC). No se pide "tipo de cliente". El nombre del cliente es el nombre del propietario.
-- Agregar un gimnasio a un cliente o una sede a un gimnasio; si pasa del plan gratuito, se pide la confirmación del acuerdo.
+- Agregar un gimnasio a un cliente o una sede a un gimnasio, sin límites.
 - Correo y celular del propietario son datos de contacto de la organización, no de ingreso.
 
 ---
@@ -314,6 +313,4 @@ Quedan fuera del alcance actual y requieren decisión del dueño del producto:
 | Boleta | Comprobante numerado de cada venta (no tributario) |
 | Pase del día | Entrada única para quien no es miembro |
 | Alcance de acceso | Sedes donde un miembro puede entrar |
-| Plan gratuito | 1 gimnasio y 1 sede por gimnasio |
-| Extra | Gimnasio o sede por encima del plan gratuito, acordado con Atmósfera |
 | Superadmin | Atmósfera; crea clientes y consulta cuentas en solo lectura |

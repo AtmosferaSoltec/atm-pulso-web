@@ -3,5 +3,5 @@ export { gymTitle, flattenBranches, branchTitle } from '@/features/organization/
 export { BranchSwitcher } from '@/features/organization/components/BranchSwitcher';
 export { CatalogProvider } from '@/features/organization/components/CatalogProvider';
 export { useCatalog } from '@/features/organization/hooks/useCatalog';
-export { useUpdateGym, type GymChanges } from '@/features/organization/hooks/useUpdateGym';
+export { useUpdateGym, useGymLogo, type GymChanges } from '@/features/organization/hooks/useUpdateGym';
 export { accessScopeOptions } from '@/features/organization/services/accessScopes';
