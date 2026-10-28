@@ -24,7 +24,7 @@ interface MemberSheetProps {
   onRenew: (member: Member) => void;
 }
 
-/** The member's receipt ("boleta"): printable, with the gym's terms and conditions. Reprints any past one. */
+/** The member's receipt ("boleta"): printable; the terms and conditions appear only on paper. Reprints any past one. */
 export function MemberSheet({ member, receiptId, readOnly = false, onClose, onRenew, onEdit }: MemberSheetProps): ReactElement {
   const detail = useMemberDetail(member.id);
   const [chosen, setChosen] = useState<string | null>(receiptId ?? null);
@@ -116,7 +116,7 @@ export function MemberSheet({ member, receiptId, readOnly = false, onClose, onRe
             </section>
           )}
 
-          <section className="receipt-section">
+          <section className="receipt-section receipt-legal">
             <h4>Términos y condiciones</h4>
             <ol className="receipt-terms">
               {membershipTerms.map((clause) => (
@@ -141,7 +141,7 @@ export function MemberSheet({ member, receiptId, readOnly = false, onClose, onRe
             Editar datos
           </Button>
         )}
-        {!readOnly && (
+        {!readOnly && !receiptId && (
           <Button variant="secondary" onClick={() => onRenew(member)}>
             <Icon name="renewals" size={16} /> Renovar membresía
           </Button>

@@ -263,12 +263,14 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .receipt-terms li{counter-increment:clause;margin-bottom:7px;break-inside:avoid}
 .receipt-terms li::before{content:counter(clause) '. ';font-weight:700;color:var(--brand-ink)}
 .receipt-terms strong{color:#33505f}
+.receipt-legal{display:none}
 .receipt-accept{margin-top:6px;font-size:11px;font-style:italic;color:#5f7686}
 .receipt-signatures{display:flex;justify-content:space-between;gap:40px;margin-top:46px}
 .receipt-signatures span{flex:1;padding-top:8px;border-top:1px solid #9fb2bd;text-align:center;font-size:11px;color:#6d8493}
 .receipt-footer{margin-top:18px;padding-top:10px;border-top:1px dashed #cfdbe2;text-align:center;font-size:10px;color:#8aa0ad}
 @media(max-width:760px){.receipt-header{flex-direction:column}.receipt-id{align-items:flex-start;text-align:left}.receipt-terms{column-count:1}.receipt-grid{flex-direction:column;gap:10px}.receipt-signatures{margin-top:34px;gap:20px}}
 @media print{
+ .receipt-legal{display:block}
  .receipt{font-size:11px;print-color-adjust:exact;-webkit-print-color-adjust:exact}
  .receipt-header{padding-bottom:12px}
  .receipt-section{padding-top:11px;break-inside:avoid}
