@@ -33,7 +33,8 @@ export interface SessionUser {
   phone: string | null;
   role: Role;
   organization: Named | null;
-  gym: Named | null;
+  /** The gyms an admin manages (one or several); empty for the other roles. */
+  gyms: Named[];
   branches: SessionBranch[];
   must_change_password: boolean;
 }
@@ -56,6 +57,7 @@ export type MemberCounts = Schemas['MemberCounts'];
 export type MemberDetail = Schemas['MemberDetail'];
 export type MembershipView = Schemas['MembershipView'];
 export type Sale = Schemas['Sale'];
+export type Voucher = Schemas['Voucher'];
 export type ReceiptSummary = Schemas['ReceiptSummary'];
 export type ReceiptDetail = Schemas['ReceiptDetail'];
 export type AccessCheck = Schemas['AccessCheck'];

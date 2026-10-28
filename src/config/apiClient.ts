@@ -97,6 +97,11 @@ export async function request<T>(method: string, path: string, options: RequestO
   return ((await response.json()) as { data: T }).data;
 }
 
+/** Fetches a private file with the session's token; the caller shows it from the bytes. */
+export async function requestBlob(path: string): Promise<Blob> {
+  return (await send('GET', path, {})).blob();
+}
+
 /** Like `request`, for lists: returns `data` and `meta` together. */
 export async function requestPage<T, Meta>(path: string, options: RequestOptions = {}): Promise<{ data: T[]; meta: Meta }> {
   const response = await send('GET', path, options);
@@ -119,5 +124,6 @@ export const api = {
   post: <T>(path: string, body?: unknown): Promise<T> => request<T>('POST', path, { body: body ?? {} }),
   patch: <T>(path: string, body: unknown): Promise<T> => request<T>('PATCH', path, { body }),
   put: <T>(path: string, file: Blob): Promise<T> => request<T>('PUT', path, { file }),
+  postFile: <T>(path: string, file: Blob): Promise<T> => request<T>('POST', path, { file }),
   delete: <T>(path: string): Promise<T> => request<T>('DELETE', path),
 };

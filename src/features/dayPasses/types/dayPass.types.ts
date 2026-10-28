@@ -8,4 +8,6 @@ export interface DayPassSale {
   document: string;
   name: string;
   phone: string;
+  /** Optional proofs of payment (never for cash); uploaded right after the pass is sold. */
+  vouchers: File[];
 }

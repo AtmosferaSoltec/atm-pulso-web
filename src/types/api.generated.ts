@@ -1680,6 +1680,177 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts/{id}/vouchers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the proofs of payment attached to a receipt's payment.
+         * @description Oldest first. Same reach as the branch where the payment was collected; the superadmin consults with `X-Organization-Id`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The receipt id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Voucher"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        /**
+         * Attach a proof of payment (photo or PDF) to a receipt's payment.
+         * @description Optional and never for cash. The body is the file itself (not JSON): PNG, JPEG, WebP or PDF, at most 10 MB, checked by its content.
+         *     Up to 5 per payment (a payment split in several transfers). Vouchers cannot be edited or deleted: they are evidence.
+         *     Needs the right to operate in that branch (the superadmin only consults).
+         *     Answers 503 STORAGE_UNAVAILABLE when no object store is configured.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The receipt id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "image/png": string;
+                    "image/jpeg": string;
+                    "image/webp": string;
+                    "application/pdf": string;
+                };
+            };
+            responses: {
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Voucher"];
+                        };
+                    };
+                };
+                /** @description VALIDATION_FAILED with VOUCHER_NOT_FOR_CASH (field `receipt`), VOUCHER_TYPE_INVALID or VOUCHER_SIZE_INVALID (field `voucher`). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                /** @description VOUCHER_LIMIT_REACHED. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description STORAGE_UNAVAILABLE. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/vouchers/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download a voucher's file.
+         * @description Private: only with a valid token and within the reach of the payment's branch. The web fetches it with the token and shows
+         *     it from the received bytes (an `<img src>` cannot send the token). The answer is cacheable only by the browser (`private`).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The voucher id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The file. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/png": string;
+                        "image/jpeg": string;
+                        "image/webp": string;
+                        "application/pdf": string;
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["ApiError"];
+                /** @description STORAGE_UNAVAILABLE. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/{id}": {
         parameters: {
             query?: never;
@@ -2454,8 +2625,8 @@ export interface components {
             role: "owner" | "admin" | "receptionist";
             is_active: boolean;
             is_self: boolean;
-            /** @description The gym an admin manages. Null for the other roles. */
-            gym: components["schemas"]["Named"] | null;
+            /** @description The gyms an admin manages (one or more, chosen by the owner). Empty for the other roles. */
+            gyms: components["schemas"]["Named"][];
             branches: {
                 /** Format: uuid */
                 id: string;
@@ -2474,11 +2645,8 @@ export interface components {
             document_number: string;
             /** @enum {string} */
             role: "admin" | "receptionist";
-            /**
-             * Format: uuid
-             * @description Required for admin.
-             */
-            gym_id?: string;
+            /** @description Required for admin (one or more gyms of the organization); refused for receptionist. Only an owner can create an admin. */
+            gym_ids?: string[];
             /** @description Required for receptionist (one or more). */
             branch_ids?: string[];
         };
@@ -2488,8 +2656,8 @@ export interface components {
             document_number?: string;
             /** @enum {string} */
             role?: "admin" | "receptionist";
-            /** Format: uuid */
-            gym_id?: string;
+            /** @description Replaces the gyms of an admin. Only an owner can change them. */
+            gym_ids?: string[];
             branch_ids?: string[];
         };
         /** @description Send only the fields to change. */
@@ -2501,6 +2669,15 @@ export interface components {
             branch_sharing?: boolean;
             /** @description Replaces the whole list and keeps its order. One price per duration, 1 to 24 months, at most 24 entries. */
             membership_prices?: components["schemas"]["MembershipPrice"][];
+        };
+        Voucher: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            content_type: "image/png" | "image/jpeg" | "image/webp" | "application/pdf";
+            size_bytes: number;
+            /** Format: date-time */
+            created_at: string;
         };
         MembershipPrice: {
             months: number;
@@ -2750,6 +2927,8 @@ export interface components {
         PaymentRow: {
             /** Format: uuid */
             id: string;
+            /** @description How many proofs of payment are attached. */
+            voucher_count: number;
             /** Format: date */
             paid_on: string;
             receipt: components["schemas"]["ReceiptRef"];
@@ -2844,8 +3023,8 @@ export interface components {
             role?: "superadmin" | "owner" | "admin" | "receptionist";
             /** @description The client. Null for the superadmin. */
             organization?: components["schemas"]["Named"] | null;
-            /** @description The gym an admin manages. Null for the other roles. */
-            gym?: components["schemas"]["Named"] | null;
+            /** @description Only an admin has gyms (one or more). Empty for the other roles. */
+            gyms?: components["schemas"]["Named"][];
             /** @description Only a receptionist has assigned branches. */
             branches?: {
                 /** Format: uuid */

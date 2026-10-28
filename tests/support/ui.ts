@@ -9,7 +9,7 @@ export async function signIn(page: Page, dni: string, password: string): Promise
 
 /** Opens a section of the sidebar, expanding "Configuración" when it lives there. */
 export async function navigate(page: Page, label: string): Promise<void> {
-  const nav = page.getByRole('navigation');
+  const nav = page.getByRole('navigation', { name: 'Navegación principal' });
   // The sidebar renders once the catalog has loaded.
   await nav.waitFor();
   const target = nav.getByRole('button', { name: label, exact: true });

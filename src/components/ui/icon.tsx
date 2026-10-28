@@ -24,6 +24,8 @@ const paths = {
   help: "M9 9a3 3 0 1 1 5 2c-2 1-2 2-2 3 M12 17h.01 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20",
   download: "M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5",
   upload: "M12 16V4 M7 9l5-5 5 5 M4 16v5h16v-5",
+  clip: "M21 12.5l-8.5 8.5a5 5 0 0 1-7-7L14 5.5a3.5 3.5 0 0 1 5 5L10.5 19a2 2 0 0 1-3-3L15 8.5",
+  file: "M6 2h8l5 5v15H6z M14 2v5h5",
   chevron: "M9 5l7 7-7 7",
   chevronLeft: "M15 5l-7 7 7 7",
   tag: "M3 3h8l10 10-8 8L3 11z M7 7h.01",

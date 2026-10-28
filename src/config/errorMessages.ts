@@ -25,6 +25,7 @@ const messages: Record<string, string> = {
   LOOKUP_UNAVAILABLE: 'La búsqueda no está disponible ahora. Escribe los datos a mano.',
   CONFLICT: 'Este registro ya existe.',
   PAYLOAD_TOO_LARGE: 'El archivo es demasiado grande.',
+  VOUCHER_LIMIT_REACHED: 'Este pago ya tiene el máximo de 5 comprobantes.',
   STORAGE_UNAVAILABLE: 'El almacenamiento de imágenes no está disponible. Inténtalo más tarde.',
 };
 
@@ -41,6 +42,9 @@ const fieldMessages: Record<string, string> = {
   EMAIL_INVALID: 'El correo no es válido.',
   TAX_ID_INVALID: 'El RUC debe tener 11 dígitos.',
   BRAND_COLOR_INVALID: 'El color no es válido.',
+  VOUCHER_TYPE_INVALID: 'El comprobante debe ser una imagen (PNG, JPG, WebP) o un PDF.',
+  VOUCHER_SIZE_INVALID: 'El comprobante pesa demasiado (máximo 10 MB).',
+  VOUCHER_NOT_FOR_CASH: 'Los pagos en efectivo no llevan comprobante.',
   LOGO_TYPE_INVALID: 'El logo debe ser una imagen PNG, JPG o WebP.',
   LOGO_SIZE_INVALID: 'El logo debe pesar como máximo 10 MB.',
   PRICE_INVALID: 'El precio no es válido.',

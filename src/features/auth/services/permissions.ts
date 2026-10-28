@@ -18,13 +18,13 @@ export function canManageTeam(user: SessionUser | null): boolean {
 /** Whether the user may manage the team and identity of a gym. */
 export function canManageGym(user: SessionUser | null, gymId: string): boolean {
   if (!user) return false;
-  return user.role === 'owner' || (user.role === 'admin' && user.gym?.id === gymId);
+  return user.role === 'owner' || (user.role === 'admin' && user.gyms.some((gym) => gym.id === gymId));
 }
 
-/** Branches the user can open: all for owners, the gym's for admins, the assigned ones for reception. */
+/** Branches the user can open: all for owners, those of the admin's gyms, the assigned ones for reception. */
 export function canAccessBranch(user: SessionUser, branch: BranchRef): boolean {
   if (user.role === 'superadmin' || user.role === 'owner') return true;
-  if (user.role === 'admin') return branch.gymId === user.gym?.id;
+  if (user.role === 'admin') return user.gyms.some((gym) => gym.id === branch.gymId);
   return user.branches.some((assigned) => assigned.id === branch.id);
 }
 

@@ -37,7 +37,7 @@ interface Draft {
   documentNumber: string;
   originalDocument: string;
   role: AssignableRole;
-  gymId: string;
+  gymIds: string[];
   branchIds: string[];
 }
 
@@ -55,17 +55,16 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  // What the signed-in user may assign: an owner everything, an admin only their own gym.
+  // What the signed-in user may assign: an owner everything, an admin only their own gyms.
   const gymChoices = gyms.filter((gym) => canManageGym(currentUser, gym.id));
   const branchChoices = branches.filter((branch) => branch.accessible);
-  const gymOptions: Option<string>[] = gymChoices.map((gym) => ({ value: gym.id, label: gym.display_name || gym.name, icon: 'building' }));
   // Only the owner can appoint administrators; an admin creates reception staff.
   const canAssignAdmins = currentUser.role === 'owner';
   const roleChoices = canAssignAdmins ? roleOptions : roleOptions.filter((option) => option.value === 'receptionist');
   const gymName = (id?: string): string => gyms.find((gym) => gym.id === id)?.name ?? '';
 
   function newDraft(): Draft {
-    return { id: crypto.randomUUID(), isNew: true, fullName: '', documentNumber: '', originalDocument: '', role: 'receptionist', gymId: gymChoices[0]?.id ?? '', branchIds: [] };
+    return { id: crypto.randomUUID(), isNew: true, fullName: '', documentNumber: '', originalDocument: '', role: 'receptionist', gymIds: gymChoices.length === 1 ? [gymChoices[0].id] : [], branchIds: [] };
   }
 
   function editDraft(user: TeamUser): Draft {
@@ -76,7 +75,7 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
       documentNumber: user.document_number,
       originalDocument: user.document_number,
       role: user.role === 'admin' ? 'admin' : 'receptionist',
-      gymId: user.gym?.id ?? gymChoices[0]?.id ?? '',
+      gymIds: user.gyms.map((gym) => gym.id),
       branchIds: user.branches.map((branch) => branch.id),
     };
   }
@@ -86,8 +85,8 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
     if (!draft || readOnly) return;
     if (!draft.fullName.trim()) return setError('Ingresa un nombre válido.');
     if (draft.role === 'receptionist' && !draft.branchIds.length) return setError('Selecciona al menos una sede para recepción.');
-    if (draft.role === 'admin' && !draft.gymId) return setError('Selecciona el gimnasio que administrará.');
-    const scope = draft.role === 'admin' ? { gym_id: draft.gymId } : { branch_ids: draft.branchIds };
+    if (draft.role === 'admin' && !draft.gymIds.length) return setError('Selecciona al menos un gimnasio que administrará.');
+    const scope = draft.role === 'admin' ? { gym_ids: draft.gymIds } : { branch_ids: draft.branchIds };
     try {
       if (draft.isNew) {
         await create.mutateAsync({ id: draft.id, full_name: draft.fullName.trim(), document_number: draft.documentNumber, role: draft.role, ...scope });
@@ -132,7 +131,7 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
 
   function scopeOf(user: TeamUser): string {
     if (user.role === 'owner') return 'Todos los gimnasios';
-    if (user.role === 'admin') return `${gymName(user.gym?.id) || user.gym?.name || ''} · todas las sedes`;
+    if (user.role === 'admin') return `${user.gyms.map((gym) => gymName(gym.id) || gym.name).join(', ')} · todas las sedes`;
     return user.branches.map((branch) => branchLabel(branch.id)).join(', ');
   }
 
@@ -250,10 +249,25 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
                 <OptionCards label="Rol" options={roleChoices} value={draft.role} onChange={(role) => setDraft({ ...draft, role })} />
               </Field>
             )}
-            {draft.role === 'admin' && gymOptions.length > 1 && (
-              <Field label="Gimnasio que administra" className="full" as="div">
-                <OptionCards label="Gimnasio que administra" variant="chip" options={gymOptions} value={draft.gymId} onChange={(gymId) => setDraft({ ...draft, gymId })} />
-              </Field>
+            {draft.role === 'admin' && gymChoices.length > 1 && (
+              <fieldset className="branch-assignment full">
+                <legend>Gimnasios que administra</legend>
+                {gymChoices.map((gym) => (
+                  <label key={gym.id}>
+                    <Input
+                      type="checkbox"
+                      checked={draft.gymIds.includes(gym.id)}
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          gymIds: event.target.checked ? [...draft.gymIds, gym.id] : draft.gymIds.filter((id) => id !== gym.id),
+                        })
+                      }
+                    />
+                    {gym.display_name || gym.name}
+                  </label>
+                ))}
+              </fieldset>
             )}
             <p className="notice full">{roleNotes[draft.role]}</p>
             {draft.role === 'receptionist' && (

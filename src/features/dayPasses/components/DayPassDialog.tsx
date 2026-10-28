@@ -12,6 +12,7 @@ import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { LookupInput } from '@/components/ui/lookup-input';
 import { OptionCards } from '@/components/ui/option-cards';
+import { VoucherPicker } from '@/features/vouchers';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 interface DayPassDialogProps {
@@ -26,6 +27,7 @@ interface DayPassDialogProps {
 /** Charges a single entry. Paying is all that is needed; customer data is optional, for future promotions. */
 export function DayPassDialog({ price, branchName, onConfirm, onClose }: DayPassDialogProps): ReactElement {
   const [method, setMethod] = useState<PaymentMethod>('cash');
+  const [vouchers, setVouchers] = useState<File[]>([]);
   const [withData, setWithData] = useState(false);
   const [documentType, setDocumentType] = useState<DocumentType>('dni');
   const [document, setDocument] = useState('');
@@ -57,7 +59,7 @@ export function DayPassDialog({ price, branchName, onConfirm, onClose }: DayPass
     event.preventDefault();
     setSaving(true);
     try {
-      await onConfirm({ method, documentType, document, name, phone });
+      await onConfirm({ method, documentType, document, name, phone, vouchers });
     } catch (failure) {
       setError(describeError(failure));
       setSaving(false);
@@ -74,6 +76,7 @@ export function DayPassDialog({ price, branchName, onConfirm, onClose }: DayPass
         <Field label="Medio de pago" className="full" as="div">
           <OptionCards label="Medio de pago" variant="chip" options={paymentMethodOptions} value={method} onChange={setMethod} />
         </Field>
+        {method !== 'cash' && <VoucherPicker files={vouchers} onChange={setVouchers} />}
         <div className="full">
           <Button variant="ghost" aria-expanded={withData} onClick={() => setWithData(!withData)}>
             <Icon name={withData ? 'close' : 'plus'} size={15} /> {withData ? 'Quitar datos del cliente' : 'Agregar datos del cliente (opcional)'}

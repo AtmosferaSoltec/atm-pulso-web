@@ -1,8 +1,7 @@
-import { useState, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { describeError } from '@/config/errorMessages';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Icon } from '@/components/ui/icon';
-import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { MemberTable } from '@/features/members/components/MemberTable';
@@ -19,20 +18,16 @@ interface MembersPageProps {
   filters: MemberFilters;
   showBranch: boolean;
   readOnly: boolean;
-  /** The branch whose enrolled members the pin shows; present only when the directory is shared between branches. */
-  localOnly?: { branchId: string; branchName: string };
   onSelect: (member: Member) => void;
   onEdit: (member: Member) => void;
   onRenew: (member: Member) => void;
 }
 
-export function MembersPage({ filters, showBranch, readOnly, localOnly, onSelect, onEdit, onRenew }: MembersPageProps): ReactElement {
-  const [onlyLocal, setOnlyLocal] = useState(false);
+export function MembersPage({ filters, showBranch, readOnly, onSelect, onEdit, onRenew }: MembersPageProps): ReactElement {
   const search = useDebouncedValue(filters.search.trim());
   const list = useMemberList({
     search,
     status: filters.filter,
-    homeBranchId: onlyLocal ? localOnly?.branchId : undefined,
     page: filters.page,
     pageSize: filters.pageSize,
   });
@@ -51,18 +46,6 @@ export function MembersPage({ filters, showBranch, readOnly, localOnly, onSelect
           />
         </div>
         <StatusFilterBar value={filters.filter} counts={counts} onChange={filters.setFilter} />
-        {localOnly && (
-          <IconButton
-            icon="pin"
-            className="scope-toggle"
-            label={`Solo inscritos en ${localOnly.branchName}`}
-            aria-pressed={onlyLocal}
-            onClick={() => {
-              setOnlyLocal(!onlyLocal);
-              filters.setPage(1);
-            }}
-          />
-        )}
       </div>
       {list.isError && (
         <p className="error" role="alert">

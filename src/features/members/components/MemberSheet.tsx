@@ -13,6 +13,8 @@ import { paymentMethodLabels } from '@/config/paymentMethods';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
 import type { PaymentMethod } from '@/types/api.types';
+import { VouchersDialog } from '@/features/vouchers';
+import { IconButton } from '@/components/ui/icon-button';
 
 interface MemberSheetProps {
   member: Member;
@@ -32,6 +34,7 @@ export function MemberSheet({ member, receiptId, readOnly = false, onClose, onRe
   const currentId = chosen ?? periods[0]?.receipt?.id ?? null;
   const receipt = useReceipt(currentId);
   const data = receipt.data;
+  const [vouchersOpen, setVouchersOpen] = useState(false);
 
   return (
     <Dialog title="Boleta de membresía" wide onClose={onClose}>
@@ -146,10 +149,16 @@ export function MemberSheet({ member, receiptId, readOnly = false, onClose, onRe
             <Icon name="renewals" size={16} /> Renovar membresía
           </Button>
         )}
+        {data && data.payment.method !== 'cash' && (
+          <IconButton icon="clip" label="Comprobantes de pago" onClick={() => setVouchersOpen(true)} />
+        )}
         <Button onClick={() => window.print()} disabled={!data}>
           <Icon name="print" size={16} /> Imprimir boleta
         </Button>
       </div>
+      {vouchersOpen && data && (
+        <VouchersDialog receiptId={data.id} receiptNumber={data.number} method={data.payment.method as PaymentMethod} readOnly={readOnly} onClose={() => setVouchersOpen(false)} />
+      )}
     </Dialog>
   );
 }

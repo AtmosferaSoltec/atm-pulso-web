@@ -42,7 +42,7 @@ export function ProfileDialog({ onClose }: ProfileDialogProps): ReactElement {
       : user.role === 'owner'
         ? 'Todos tus gimnasios y sedes'
         : user.role === 'admin'
-          ? `${user.gym?.name ?? 'Tu gimnasio'} · todas las sedes`
+          ? `${user.gyms.map((gym) => gym.name).join(', ') || 'Tus gimnasios'} · todas las sedes`
           : user.branches.map((branch) => `${branch.gym_name} · ${branch.name}`).join(', ');
 
   async function saveData(event: FormEvent<HTMLFormElement>): Promise<void> {

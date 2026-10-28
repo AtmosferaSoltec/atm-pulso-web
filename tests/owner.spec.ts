@@ -108,7 +108,6 @@ test('the dashboard shows real figures, not samples', async ({ page }) => {
   await expect(page.getByText('Nadie vence esta semana.')).toBeVisible();
   await enrollMember(account.ownerToken, account.branches[0].id, { months: 1, startsOn: isoDaysFromToday(-27), amount: '100.00' });
   await page.reload();
-  await signIn(page, account.ownerDni, PASSWORD);
   await expect(page.locator('.metric').filter({ hasText: /Vigentes\s*1/ })).toBeVisible();
   await expect(page.locator('.metric').filter({ hasText: /Por vencer\s*1/ })).toBeVisible();
   await expect(page.locator('.metric').filter({ hasText: /Ingresos del mes\s*S\/\s*100\.00/ })).toBeVisible();
@@ -156,4 +155,94 @@ test('the DNI search fills the name through the API', async ({ page }) => {
   await expect(page.getByPlaceholder('Ej. Andrea García')).toHaveValue('');
   await page.getByRole('button', { name: 'Buscar DNI' }).click();
   await expect(page.getByPlaceholder('Ej. Andrea García')).not.toHaveValue('');
+});
+
+test('a document is verified from the top bar on any page, with the shortcuts, and not on mobile', async ({ page }) => {
+  const account = await createAccount();
+  const branch = account.branches[0].id;
+  const valid = await enrollMember(account.ownerToken, branch, { months: 3, name: 'Socia Vigente' });
+  const expired = await enrollMember(account.ownerToken, branch, { months: 1, startsOn: isoDaysFromToday(-90), name: 'Socia Vencida' });
+  await signIn(page, account.ownerDni, PASSWORD);
+  await expect(page.getByRole('heading', { name: 'Resumen del gimnasio' })).toBeVisible();
+  const field = page.getByLabel('Verificar documento');
+
+  // Ctrl+K jumps to the field from the dashboard; Enter verifies and the answer floats over the page.
+  await page.keyboard.press('Control+k');
+  await expect(field).toBeFocused();
+  await field.fill(valid.dni);
+  await field.press('Enter');
+  const allowed = page.getByRole('status').filter({ hasText: 'Acceso permitido' });
+  await expect(allowed).toContainText('Socia Vigente');
+  await expect(page.getByRole('heading', { name: 'Resumen del gimnasio' })).toBeVisible();
+  await expect(field).toHaveValue('');
+
+  // "/" does the same from another page, but is a plain character while typing in a field.
+  await navigate(page, 'Pagos e ingresos');
+  await page.keyboard.press('/');
+  await expect(field).toBeFocused();
+  await field.fill(expired.dni);
+  await field.press('Enter');
+  const denied = page.getByRole('alert').filter({ hasText: 'Acceso no permitido' });
+  await expect(denied).toContainText('La membresía venció el');
+  await field.press('Escape');
+  await expect(denied).toHaveCount(0);
+
+  // Every check lands in the same log as the access page's.
+  await navigate(page, 'Control de acceso');
+  await expect(field).toHaveCount(0);
+  await expect(page.locator('.log-entry')).toHaveCount(2);
+  await page.keyboard.press('Control+k');
+  await expect(page.getByLabel('Documento del miembro')).toBeFocused();
+
+  // The members page no longer has the "only this branch" pin.
+  await navigate(page, 'Miembros');
+  await expect(page.getByRole('button', { name: /Solo inscritos/ })).toHaveCount(0);
+
+  // Phones keep only the access page.
+  await page.setViewportSize({ width: 600, height: 900 });
+  await expect(field).toBeHidden();
+});
+
+const PROOF_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+
+test('a transfer carries optional proofs of payment, attached at the sale or later, and cash carries none', async ({ page }) => {
+  const account = await createAccount();
+  await setMembershipPrices(account, [{ months: 1, amount: '100.00' }]);
+  await enrollMember(account.ownerToken, account.branches[0].id, { name: 'Pago Efectivo' });
+  await signIn(page, account.ownerDni, PASSWORD);
+  await navigate(page, 'Miembros');
+  await page.getByRole('button', { name: 'Nuevo miembro' }).click();
+  await page.getByPlaceholder('8 dígitos').fill(uniqueDni());
+  await page.getByPlaceholder('999999999').fill('955444333');
+  await page.getByPlaceholder('Ej. Andrea García').fill('Pago Yape');
+
+  // Cash needs no proof; Yape offers the optional attachment.
+  await page.getByRole('radio', { name: 'Efectivo' }).click();
+  await expect(page.getByRole('button', { name: /Adjuntar comprobante/ })).toHaveCount(0);
+  await page.getByRole('radio', { name: 'Yape/Plin' }).click();
+  await expect(page.getByRole('button', { name: /Adjuntar comprobante/ })).toBeVisible();
+  await page.locator('input[type=file]').setInputFiles({ name: 'yape.png', mimeType: 'image/png', buffer: PROOF_PNG });
+  await expect(page.getByText('yape.png')).toBeVisible();
+  await page.getByRole('button', { name: 'Guardar y ver boleta' }).click();
+
+  const receipt = page.getByRole('dialog', { name: 'Boleta de membresía' });
+  await expect(receipt.getByText(/N\.º R-/)).toBeVisible();
+  await receipt.getByRole('button', { name: 'Comprobantes de pago' }).click();
+  const vouchers = page.getByRole('dialog', { name: /^Comprobantes · R-/ });
+  await expect(vouchers.locator('.voucher-card')).toHaveCount(1);
+  await vouchers.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await receipt.getByRole('button', { name: 'Cerrar', exact: true }).click();
+
+  // Later, from the payments list: the clip shows the count, more can be added up to five, cash has no clip.
+  await navigate(page, 'Pagos e ingresos');
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+  const clip = page.getByRole('button', { name: /^Comprobantes de R-\d+ \(1\)$/ });
+  await expect(clip).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Agregar comprobante a / })).toHaveCount(0);
+  await clip.click();
+  const again = page.getByRole('dialog', { name: /^Comprobantes · R-/ });
+  await again.locator('input[type=file]').setInputFiles({ name: 'segunda.png', mimeType: 'image/png', buffer: PROOF_PNG });
+  await expect(again.locator('.voucher-card')).toHaveCount(2);
+  await again.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await expect(page.getByRole('button', { name: /^Comprobantes de R-\d+ \(2\)$/ })).toBeVisible();
 });

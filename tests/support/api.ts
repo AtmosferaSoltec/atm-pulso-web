@@ -101,7 +101,7 @@ export async function createStaff(account: Account, role: 'receptionist' | 'admi
     full_name: name,
     document_number: dni,
     role,
-    ...(role === 'admin' ? { gym_id: gymId } : { branch_ids: branchIds }),
+    ...(role === 'admin' ? { gym_ids: gymId ? [gymId] : [] } : { branch_ids: branchIds }),
   });
   return { dni, name, token: await firstLogin(dni) };
 }

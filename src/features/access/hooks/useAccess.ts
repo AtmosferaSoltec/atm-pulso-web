@@ -15,6 +15,6 @@ export function useAccessCheck(branchId: string): UseMutationResult<AccessCheck,
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (documentNumber: string) => api.post<AccessCheck>('/access/checks', { id: crypto.randomUUID(), branch_id: branchId, document_number: documentNumber }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['access'] }),
+    onSuccess: () => Promise.all(['access', 'dashboard'].map((key) => queryClient.invalidateQueries({ queryKey: [key] }))),
   });
 }

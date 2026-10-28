@@ -10,6 +10,7 @@ import { documentLabel, documentRules, documentTypeOptions, type DocumentType } 
 import { lookupPerson } from '@/services/documentLookup';
 import { todayInLima } from '@/utils/limaDate';
 import type { Sale } from '@/types/api.types';
+import { uploadVouchers, VoucherPicker } from '@/features/vouchers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog } from '@/components/ui/dialog';
@@ -22,7 +23,8 @@ interface MemberFormProps {
   member?: Member;
   /** The branch where the user works: where the sale is collected, and the new member's home. */
   branchId: string;
-  onSaved: (sale: Sale) => void;
+  /** `voucherFailures` is how many proofs of payment could not be uploaded after the sale was saved. */
+  onSaved: (sale: Sale, voucherFailures: number) => void;
   onClose: () => void;
 }
 
@@ -39,6 +41,7 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
   const [phone, setPhone] = useState('');
   const [searching, setSearching] = useState(false);
   const [saleId] = useState(() => crypto.randomUUID());
+  const [vouchers, setVouchers] = useState<File[]>([]);
   const [accessScope, setAccessScope] = useState<AccessScope>('branch');
   const [accessBranchIds, setAccessBranchIds] = useState<string[]>([homeBranchId]);
   const today = todayInLima();
@@ -127,7 +130,8 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
       const result = member
         ? await renew.mutateAsync({ memberId: member.id, ...sale })
         : await enroll.mutateAsync({ ...sale, document_type: documentType, document_number: documentNumber, full_name: fullName.trim(), phone });
-      onSaved(result);
+      const toUpload = terms.method === 'cash' ? [] : vouchers;
+      onSaved(result, toUpload.length > 0 ? await uploadVouchers(result.receipt.id, toUpload) : 0);
     } catch (failure) {
       setError(describeError(failure));
     }
@@ -187,6 +191,7 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
           </Field>
         )}
         <EnrollmentFields value={terms} onChange={setTerms} prices={gymPrices} />
+        {terms.method !== 'cash' && <VoucherPicker files={vouchers} onChange={setVouchers} />}
         {error && (
           <p role="alert" className="error full">
             {error}

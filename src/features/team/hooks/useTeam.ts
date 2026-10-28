@@ -11,7 +11,7 @@ export interface NewTeamUser {
   full_name: string;
   document_number: string;
   role: AssignableRole;
-  gym_id?: string;
+  gym_ids?: string[];
   branch_ids?: string[];
 }
 
@@ -19,7 +19,7 @@ export interface TeamUserChanges {
   full_name?: string;
   document_number?: string;
   role?: AssignableRole;
-  gym_id?: string;
+  gym_ids?: string[];
   branch_ids?: string[];
 }
 

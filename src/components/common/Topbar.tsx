@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 
@@ -7,6 +7,8 @@ interface TopbarProps {
   userName: string;
   onToggleMenu: () => void;
   onBack?: () => void;
+  /** Extra controls placed before the location (the quick access check). */
+  children?: ReactNode;
 }
 
 export function Topbar({
@@ -14,6 +16,7 @@ export function Topbar({
   userName,
   onToggleMenu,
   onBack,
+  children,
 }: TopbarProps): ReactElement {
   return (
     <header className="topbar">
@@ -24,6 +27,7 @@ export function Topbar({
             Volver a clientes
           </Button>
         )}
+        {children}
         <span className="location-label">{locationLabel}</span>
         <span className="topbar-avatar">{userName.split(' ').map((part) => part[0]).join('')}</span>
       </div>

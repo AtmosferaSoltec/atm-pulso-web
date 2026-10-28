@@ -61,6 +61,7 @@ test('the superadmin consults a client without any operational action', async ({
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
   await navigate(page, 'Control de acceso');
   await expect(page.getByLabel('Documento del miembro')).toHaveCount(0);
+  await expect(page.getByLabel('Verificar documento')).toHaveCount(0);
   await navigate(page, 'Usuarios');
   await expect(page.getByRole('button', { name: 'Nuevo usuario', exact: true })).toHaveCount(0);
   await navigate(page, 'Identidad');

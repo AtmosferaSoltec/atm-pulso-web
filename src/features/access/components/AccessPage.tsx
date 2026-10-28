@@ -4,14 +4,12 @@ import { Avatar } from '@/features/members';
 import { DayPassDialog, useSellDayPass } from '@/features/dayPasses';
 import { useAccessCheck, useAccessEvents } from '@/features/access/hooks/useAccess';
 import { checkText, eventText, timeInLima } from '@/features/access/services/accessReasons';
+import { cleanDocument, MAX_DOCUMENT_LENGTH } from '@/features/access/services/accessDocument';
 import type { AccessResult } from '@/features/access/types/access.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/icon';
 import { formatCurrency } from '@/utils/formatCurrency';
-
-/** A DNI has 8 digits; a carné de extranjería up to 12. */
-const MAX_DOCUMENT_LENGTH = 12;
 
 interface AccessPageProps {
   branchId: string;
@@ -47,7 +45,8 @@ export function AccessPage({ branchId, branchName, dayPassPrice, readOnly = fals
   async function sell(sale: Parameters<typeof sellPass.mutateAsync>[0]): Promise<void> {
     const pass = await sellPass.mutateAsync(sale);
     setSellingPass(false);
-    setResult({ allowed: true, name: pass.visitor_name ?? undefined, reason: `Pase del día ${pass.receipt.number} cobrado: ${formatCurrency(pass.amount)}. Puede ingresar.` });
+    const lost = pass.voucherFailures > 0 ? ' No se pudo subir el comprobante: súbelo desde Pagos.' : '';
+    setResult({ allowed: true, name: pass.visitor_name ?? undefined, reason: `Pase del día ${pass.receipt.number} cobrado: ${formatCurrency(pass.amount)}. Puede ingresar.${lost}` });
     setDni('');
     dniInput.current?.focus();
   }
@@ -64,11 +63,12 @@ export function AccessPage({ branchId, branchName, dayPassPrice, readOnly = fals
             <Input
               ref={dniInput}
               autoFocus
+              data-document-input
               autoComplete="off"
               aria-label="Documento del miembro"
               value={dni}
               onChange={(event) => {
-                setDni(event.target.value.replace(/\D/g, '').slice(0, MAX_DOCUMENT_LENGTH));
+                setDni(cleanDocument(event.target.value));
                 setResult(null);
               }}
               placeholder="DNI o carné de extranjería"

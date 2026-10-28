@@ -8,7 +8,7 @@ import { usePageRoute } from '@/hooks/usePageRoute';
 import { useAuth, useCurrentUser } from '@/store/authStore';
 import { Dashboard } from '@/features/dashboard';
 import { useMemberFilters, MembersPage, MemberForm, MemberSheet, MemberEditForm, type Member, type StatusFilter } from '@/features/members';
-import { AccessPage } from '@/features/access';
+import { AccessAlert, AccessPage, QuickAccessCheck, type AccessResult } from '@/features/access';
 import { PaymentsPage } from '@/features/payments';
 import { PricingPage } from '@/features/pricing';
 import type { Page } from '@/types/navigation.types';
@@ -44,6 +44,7 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
   const [editing, setEditing] = useState<Member | null>(null);
   const [selected, setSelected] = useState<{ member: Member; receiptId?: string } | null>(null);
   const [toast, setToast] = useState('');
+  const [accessAlert, setAccessAlert] = useState<AccessResult | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
 
   const brandName = gym ? gymTitle(gym) : 'Pulso';
@@ -92,11 +93,12 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
     setRegistering(true);
   }
 
-  function saved(sale: Sale): void {
+  function saved(sale: Sale, voucherFailures: number): void {
     const renewal = !!renewing;
     closeEnrollment();
     setSelected({ member: sale.member, receiptId: sale.receipt.id });
-    setToast(renewal ? 'Renovación y pago registrados.' : 'Miembro y pago registrados.');
+    const done = renewal ? 'Renovación y pago registrados.' : 'Miembro y pago registrados.';
+    setToast(voucherFailures > 0 ? `${done} No se pudo subir ${voucherFailures === 1 ? 'un comprobante' : `${voucherFailures} comprobantes`}: súbelos desde Pagos.` : done);
   }
 
   function changeBranch(id: string): void {
@@ -104,6 +106,7 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
     setBranchId(id);
     setSelected(null);
     setEditing(null);
+    setAccessAlert(null);
     closeEnrollment();
     filters.reset();
     setMobileOpen(false);
@@ -130,7 +133,9 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
       />
       {mobileOpen && <Button className="sidebar-backdrop" variant="ghost" aria-label="Cerrar menú" onClick={() => setMobileOpen(false)} />}
       <div className="main-shell">
-        <Topbar locationLabel={branchLabel(branch.id)} userName={user.full_name} onToggleMenu={() => setMobileOpen(!mobileOpen)} onBack={onBack} />
+        <Topbar locationLabel={branchLabel(branch.id)} userName={user.full_name} onToggleMenu={() => setMobileOpen(!mobileOpen)} onBack={onBack}>
+          {!readOnly && <QuickAccessCheck branchId={branch.id} hidden={page === 'access'} onResult={setAccessAlert} />}
+        </Topbar>
         <main>
           <div className="page-heading">
             <h1>{pageDetails[page].title}</h1>
@@ -154,7 +159,6 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
               filters={filters}
               showBranch={hasManyBranches}
               readOnly={readOnly}
-              localOnly={hasManyBranches ? { branchId: branch.id, branchName: branch.name } : undefined}
               onSelect={(member) => setSelected({ member })}
               onEdit={setEditing}
               onRenew={openEnrollment}
@@ -195,6 +199,7 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
         />
       )}
       {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
+      {accessAlert && page !== 'access' && <AccessAlert result={accessAlert} branchName={branchLabel(branch.id)} onClose={() => setAccessAlert(null)} />}
       {toast && (
         <div className="toast" role="status">
           <Icon name="check" size={18} />
