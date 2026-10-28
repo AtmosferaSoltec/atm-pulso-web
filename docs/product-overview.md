@@ -207,7 +207,7 @@ Para la sede activa: **miembros activos**, **ingresos del mes** (incluye pases d
 La **lista de precios** de cada gimnasio: una tarifa por duración (de 1 a 24 meses; por ejemplo 1 mes S/ 100, 2 meses S/ 180) y el precio del **pase del día**. Las define el dueño o el administrador del gimnasio. Al inscribir o renovar, la tarifa se propone como importe base y quien cobra puede cambiarlo; lo que se cobra queda registrado en el pago y en la boleta. Si el gimnasio aún no tiene tarifas, el importe se escribe a mano.
 
 ### 6.11 Identidad
-Por gimnasio: **nombre visible**, **color de marca** (selector con código hexadecimal) y **logo** (PNG, JPG o WebP de hasta 512 KB; un logo por gimnasio, se sube una vez por cada gimnasio que lo use). Solo lo define el superadmin; el dueño y el administrador no ven esta pantalla. El color tiñe botones, elementos seleccionados y boletas; el logo aparece en la navegación y en la boleta impresa. Las sedes de un gimnasio comparten la identidad. Los archivos se guardan en Cloudflare R2.
+Por gimnasio: **nombre visible**, **color de marca** (selector con código hexadecimal) y **logo** (PNG, JPG o WebP de hasta 10 MB; un logo por gimnasio, se sube una vez por cada gimnasio que lo use). Solo lo define el superadmin; el dueño y el administrador no ven esta pantalla. El color tiñe botones, elementos seleccionados y boletas; el logo aparece en la navegación y en la boleta impresa. Las sedes de un gimnasio comparten la identidad. Los archivos se guardan en Cloudflare R2.
 
 ### 6.12 Usuarios y permisos
 Alta, edición, activación y desactivación del equipo, con las reglas de cada rol de la sección 4. Cada usuario tiene nombre completo, DNI, rol, gimnasio (administradores) o sedes (recepción) y estado.

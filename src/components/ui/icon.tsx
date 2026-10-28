@@ -6,9 +6,8 @@ const paths = {
   plans: "M3 5h18v14H3z M3 10h18 M7 15h4",
   access: "M10 17l5-5-5-5 M3 12h12 M13 3h7v18h-7",
   renewals: "M20 7v5h-5 M4 17v-5h5 M6 6a8 8 0 0 1 14 6 M4 12a8 8 0 0 0 14 6",
-  // "S/" (soles): the app only handles PEN, so no dollar sign.
-  payments:
-    "M10 8.5C10 7 8.8 6 7.2 6S4.5 7 4.5 8.5c0 3.5 5.5 2.5 5.5 6C10 16.5 8.8 18 7.2 18S4.2 16.8 4.2 15.2 M19 4l-5 16",
+  // A banknote with a second one behind it (no currency sign: the icon must read in any currency).
+  payments: "M3 9h15v10H3z M10.5 14a2.5 2.5 0 1 0 0-.01 M6 9V6h15v10h-3",
   arrow: "M5 12h14 M13 6l6 6-6 6",
   plus: "M12 5v14 M5 12h14",
   search: "M21 21l-5-5 M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14",

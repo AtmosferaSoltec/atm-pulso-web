@@ -22,7 +22,7 @@ const colors = [
 ];
 
 const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-const MAX_LOGO_BYTES = 512 * 1024;
+const MAX_LOGO_BYTES = 10 * 1024 * 1024;
 
 interface BrandingPageProps {
   gym: CatalogGym;
@@ -50,7 +50,7 @@ export function BrandingPage({ gym }: BrandingPageProps): ReactElement {
       return;
     }
     if (file.size > MAX_LOGO_BYTES) {
-      setError('El logo debe pesar como máximo 512 KB.');
+      setError('El logo debe pesar como máximo 10 MB.');
       setMessage('');
       return;
     }
@@ -111,7 +111,7 @@ export function BrandingPage({ gym }: BrandingPageProps): ReactElement {
                 {gym.logo_url && <IconButton icon="close" label="Quitar el logo" disabled={logo.isPending} onClick={() => void sendLogo(null)} />}
               </span>
             )}
-            <small>PNG, JPG o WebP, hasta 512 KB. Mejor si es cuadrado.</small>
+            <small>PNG, JPG o WebP, hasta 10 MB. Mejor si es cuadrado.</small>
           </div>
           <fieldset className="color-options">
             <legend>Color principal</legend>

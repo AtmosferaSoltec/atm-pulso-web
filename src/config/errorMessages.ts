@@ -24,6 +24,7 @@ const messages: Record<string, string> = {
   DOCUMENT_NOT_FOUND: 'No se encontraron datos para este documento.',
   LOOKUP_UNAVAILABLE: 'La búsqueda no está disponible ahora. Escribe los datos a mano.',
   CONFLICT: 'Este registro ya existe.',
+  PAYLOAD_TOO_LARGE: 'El archivo es demasiado grande.',
   STORAGE_UNAVAILABLE: 'El almacenamiento de imágenes no está disponible. Inténtalo más tarde.',
 };
 
@@ -41,7 +42,7 @@ const fieldMessages: Record<string, string> = {
   TAX_ID_INVALID: 'El RUC debe tener 11 dígitos.',
   BRAND_COLOR_INVALID: 'El color no es válido.',
   LOGO_TYPE_INVALID: 'El logo debe ser una imagen PNG, JPG o WebP.',
-  LOGO_SIZE_INVALID: 'El logo debe pesar como máximo 512 KB.',
+  LOGO_SIZE_INVALID: 'El logo debe pesar como máximo 10 MB.',
   PRICE_INVALID: 'El precio no es válido.',
   BRANCHES_REQUIRED: 'Selecciona al menos una sede.',
   RANGE_INVALID: 'El rango de fechas no es válido (máximo 366 días).',
