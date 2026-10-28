@@ -29,6 +29,8 @@ export function canAccessBranch(user: SessionUser, branch: BranchRef): boolean {
 }
 
 export function canVisitPage(user: SessionUser, page: Page): boolean {
+  // Identity (name, colours, logo) is set by Atmósfera, never by the gym's own staff.
+  if (page === 'branding') return user.role === 'superadmin';
   if (user.role === 'receptionist') return ['members', 'access', 'payments'].includes(page);
   return true;
 }

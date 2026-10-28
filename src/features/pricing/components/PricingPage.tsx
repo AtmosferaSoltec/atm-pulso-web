@@ -1,4 +1,7 @@
-import { useState, type FormEvent, type ReactElement } from 'react';
+import { useState, type CSSProperties, type FormEvent, type ReactElement } from 'react';
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useCurrentUser } from '@/store/authStore';
 import { canManageGym } from '@/features/auth';
 import { describeError } from '@/config/errorMessages';
@@ -45,6 +48,40 @@ function readRows(rows: PriceRow[]): { prices: CatalogMembershipPrice[] } | { er
   return { prices };
 }
 
+interface PriceRowFieldsProps {
+  row: PriceRow;
+  editable: boolean;
+  onChange: (changes: Partial<PriceRow>) => void;
+  onRemove: () => void;
+}
+
+/** One membership price; the grip moves it, and the list order is the order offered when selling. */
+function PriceRowFields({ row, editable, onChange, onRemove }: PriceRowFieldsProps): ReactElement {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: row.key, disabled: !editable });
+  const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition };
+  return (
+    <div className={`price-row${isDragging ? ' dragging' : ''}`} ref={setNodeRef} style={style}>
+      {editable && (
+        <IconButton
+          icon="grip"
+          label={`Mover la tarifa de ${row.months || '—'} meses`}
+          className="drag-handle"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+        />
+      )}
+      <Field label="Duración (meses)" required>
+        <Input type="number" min="1" max={MAX_MONTHS} step="1" required disabled={!editable} value={row.months} onChange={(event) => onChange({ months: event.target.value })} />
+      </Field>
+      <Field label="Precio (S/)" required>
+        <Input type="number" min="0" step="0.01" required disabled={!editable} value={row.amount} onChange={(event) => onChange({ amount: event.target.value })} />
+      </Field>
+      {editable && <IconButton icon="close" label={`Quitar la tarifa de ${row.months || '—'} meses`} onClick={onRemove} />}
+    </div>
+  );
+}
+
 /** Prices a gym's administrator controls: the base price of each membership length and the day pass. */
 export function PricingPage({ gym, readOnly = false }: PricingPageProps): ReactElement {
   const user = useCurrentUser();
@@ -54,6 +91,15 @@ export function PricingPage({ gym, readOnly = false }: PricingPageProps): ReactE
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const editable = !readOnly && canManageGym(user, gym.id);
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+
+  function moveRow({ active, over }: DragEndEvent): void {
+    if (!over || active.id === over.id) return;
+    const from = rows.findIndex((row) => row.key === active.id);
+    const to = rows.findIndex((row) => row.key === over.id);
+    setRows(arrayMove(rows, from, to));
+    setMessage('');
+  }
 
   function changeRow(key: string, changes: Partial<PriceRow>): void {
     setRows(rows.map((row) => (row.key === key ? { ...row, ...changes } : row)));
@@ -103,43 +149,22 @@ export function PricingPage({ gym, readOnly = false }: PricingPageProps): ReactE
       <div className="pricing-fields">
         <div className="price-rows">
           <h3 className="price-heading">Membresías</h3>
-          {rows.map((row) => (
-            <div className="price-row" key={row.key}>
-              <Field label="Duración (meses)" required>
-                <Input
-                  type="number"
-                  min="1"
-                  max={MAX_MONTHS}
-                  step="1"
-                  required
-                  disabled={!editable}
-                  value={row.months}
-                  onChange={(event) => changeRow(row.key, { months: event.target.value })}
-                />
-              </Field>
-              <Field label="Precio (S/)" required>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  disabled={!editable}
-                  value={row.amount}
-                  onChange={(event) => changeRow(row.key, { amount: event.target.value })}
-                />
-              </Field>
-              {editable && (
-                <IconButton
-                  icon="close"
-                  label={`Quitar la tarifa de ${row.months || '—'} meses`}
-                  onClick={() => {
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={moveRow}>
+            <SortableContext items={rows.map((row) => row.key)} strategy={verticalListSortingStrategy}>
+              {rows.map((row) => (
+                <PriceRowFields
+                  key={row.key}
+                  row={row}
+                  editable={editable}
+                  onChange={(changes) => changeRow(row.key, changes)}
+                  onRemove={() => {
                     setRows(rows.filter((item) => item.key !== row.key));
                     setMessage('');
                   }}
                 />
-              )}
-            </div>
-          ))}
+              ))}
+            </SortableContext>
+          </DndContext>
           {rows.length === 0 && (
             <p className="empty">
               <Icon name="tag" size={20} /> Aún no hay tarifas. Al inscribir, el importe se escribe a mano.

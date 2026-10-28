@@ -8,8 +8,6 @@ import { formatCurrency } from '@/utils/formatCurrency';
 interface DashboardProps {
   branchId: string;
   readOnly?: boolean;
-  onNavigate: (page: 'members' | 'payments') => void;
-  onExpiring: () => void;
   onSelect: (member: Member) => void;
   onEdit: (member: Member) => void;
   onRenew: (member: Member) => void;
@@ -21,12 +19,11 @@ interface Metric {
   value: string;
   icon: IconName;
   tone: 'ok' | 'money' | 'warn';
-  onOpen: () => void;
 }
 
 const UPCOMING_LIMIT = 5;
 
-export function Dashboard({ branchId, readOnly = false, onNavigate, onExpiring, onSelect, onEdit, onRenew }: DashboardProps): ReactElement {
+export function Dashboard({ branchId, readOnly = false, onSelect, onEdit, onRenew }: DashboardProps): ReactElement {
   const dashboard = useDashboard(branchId);
   // The five nearest to expire, as full rows so the quick actions (view, edit, renew) work.
   const upcoming = useMemberList({ search: '', status: 'expiring', homeBranchId: branchId, page: 1, pageSize: UPCOMING_LIMIT });
@@ -34,9 +31,9 @@ export function Dashboard({ branchId, readOnly = false, onNavigate, onExpiring, 
   const expiringCount = data?.members.expiring ?? 0;
 
   const metrics: Metric[] = [
-    { id: 'active', label: 'Vigentes', value: data ? String(data.members.active + data.members.expiring) : '–', icon: 'members', tone: 'ok', onOpen: () => onNavigate('members') },
-    { id: 'revenue', label: 'Ingresos del mes', value: data ? formatCurrency(data.income.month) : '–', icon: 'payments', tone: 'money', onOpen: () => onNavigate('payments') },
-    { id: 'expiring', label: 'Por vencer', value: data ? String(expiringCount) : '–', icon: 'clock', tone: 'warn', onOpen: onExpiring },
+    { id: 'active', label: 'Vigentes', value: data ? String(data.members.active + data.members.expiring) : '–', icon: 'members', tone: 'ok' },
+    { id: 'revenue', label: 'Ingresos del mes', value: data ? formatCurrency(data.income.month) : '–', icon: 'payments', tone: 'money' },
+    { id: 'expiring', label: 'Por vencer', value: data ? String(expiringCount) : '–', icon: 'clock', tone: 'warn' },
   ];
 
   return (
@@ -48,7 +45,7 @@ export function Dashboard({ branchId, readOnly = false, onNavigate, onExpiring, 
       )}
       <div className="metrics">
         {metrics.map((metric) => (
-          <button key={metric.id} type="button" className={`card metric tone-${metric.tone}`} onClick={metric.onOpen}>
+          <div key={metric.id} className={`card metric tone-${metric.tone}`}>
             <span className="metric-icon">
               <Icon name={metric.icon} size={22} />
             </span>
@@ -56,7 +53,7 @@ export function Dashboard({ branchId, readOnly = false, onNavigate, onExpiring, 
               <span className="metric-label">{metric.label}</span>
               <strong className="metric-value">{metric.value}</strong>
             </span>
-          </button>
+          </div>
         ))}
       </div>
       <section className="card renewal-card">
@@ -79,11 +76,6 @@ export function Dashboard({ branchId, readOnly = false, onNavigate, onExpiring, 
             onRenew={readOnly ? undefined : onRenew}
             allowReminders={!readOnly}
           />
-        )}
-        {expiringCount > UPCOMING_LIMIT && (
-          <button type="button" className="see-all" onClick={onExpiring}>
-            Ver los {expiringCount} <Icon name="arrow" size={16} />
-          </button>
         )}
       </section>
     </>

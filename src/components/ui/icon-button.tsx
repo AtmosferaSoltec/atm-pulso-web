@@ -1,7 +1,7 @@
-import type { ButtonHTMLAttributes, ReactElement } from "react";
+import type { ComponentPropsWithRef, ReactElement } from "react";
 import { Icon, type IconName } from "@/components/ui/icon";
 interface IconButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "title"> {
+  extends Omit<ComponentPropsWithRef<"button">, "children" | "title"> {
   icon: IconName;
   /** Accessible name and tooltip. The button renders no visible text. */
   label: string;

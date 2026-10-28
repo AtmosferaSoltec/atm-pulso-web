@@ -143,8 +143,6 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
             <Dashboard
               branchId={branch.id}
               readOnly={readOnly}
-              onNavigate={navigate}
-              onExpiring={() => navigate('members', 'expiring')}
               onSelect={(member) => setSelected({ member })}
               onEdit={setEditing}
               onRenew={openEnrollment}

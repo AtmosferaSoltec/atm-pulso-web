@@ -104,17 +104,17 @@ test('the dashboard shows real figures, not samples', async ({ page }) => {
   const account = await createAccount();
   await signIn(page, account.ownerDni, PASSWORD);
   await expect(page.getByRole('heading', { name: 'Resumen del gimnasio' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Vigentes\s*0/ })).toBeVisible();
+  await expect(page.locator('.metric').filter({ hasText: /Vigentes\s*0/ })).toBeVisible();
   await expect(page.getByText('Nadie vence esta semana.')).toBeVisible();
   await enrollMember(account.ownerToken, account.branches[0].id, { months: 1, startsOn: isoDaysFromToday(-27), amount: '100.00' });
   await page.reload();
   await signIn(page, account.ownerDni, PASSWORD);
-  await expect(page.getByRole('button', { name: /Vigentes\s*1/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Por vencer\s*1/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Ingresos del mes\s*S\/\s*100\.00/ })).toBeVisible();
+  await expect(page.locator('.metric').filter({ hasText: /Vigentes\s*1/ })).toBeVisible();
+  await expect(page.locator('.metric').filter({ hasText: /Por vencer\s*1/ })).toBeVisible();
+  await expect(page.locator('.metric').filter({ hasText: /Ingresos del mes\s*S\/\s*100\.00/ })).toBeVisible();
 });
 
-test('the gym prices, the day pass price and the identity are saved on the server', async ({ page }) => {
+test('the gym prices, the day pass price are saved on the server and identity is hidden', async ({ page }) => {
   const account = await createAccount();
   await signIn(page, account.ownerDni, PASSWORD);
   await navigate(page, 'Tarifas');
@@ -130,15 +130,9 @@ test('the gym prices, the day pass price and the identity are saved on the serve
     { months: 1, amount: '100.00' },
     { months: 2, amount: '180.00' },
   ]);
-  await navigate(page, 'Identidad');
-  await page.getByLabel('Nombre visible').fill('Fuerza Total');
-  await page.getByRole('button', { name: 'Cobre' }).click();
-  await page.getByRole('button', { name: 'Guardar identidad' }).click();
-  await expect(page.getByText('Identidad actualizada')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Identidad' })).toHaveCount(0);
   const gym = (await catalogOf(account.ownerToken)).gyms[0];
   expect(gym.day_pass_price).toBe('22.50');
-  expect(gym.display_name).toBe('Fuerza Total');
-  expect(gym.brand_color).toBe('#ad522a');
 });
 
 test('the owner resets a receptionist password and deactivates them', async ({ page }) => {
