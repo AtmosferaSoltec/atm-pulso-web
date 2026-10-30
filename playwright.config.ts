@@ -1,8 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
-// The tests run against a real local API (see tests/README.md). The web is started here,
-// pointing at it.
-const apiUrl = process.env.E2E_API_URL ?? 'http://127.0.0.1:3091/api/v1';
+// The tests mock atm-auth-api and pulso-api in the browser (tests/support/mocks.ts), so they need no backend.
+export const AUTH_URL = 'http://auth.test';
+export const API_URL = 'http://api.test/api/v1';
 
 export default defineConfig({
   testDir: './tests',
@@ -15,6 +15,6 @@ export default defineConfig({
     command: 'pnpm dev --host 127.0.0.1 --port 4175 --strictPort',
     url: 'http://127.0.0.1:4175',
     reuseExistingServer: false,
-    env: { VITE_API_URL: apiUrl },
+    env: { VITE_API_URL: API_URL, VITE_AUTH_API_URL: AUTH_URL },
   },
 });

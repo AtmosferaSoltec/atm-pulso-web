@@ -16,10 +16,9 @@ interface AccessPageProps {
   branchName: string;
   /** The gym's single-entry price ("15.00"). */
   dayPassPrice: string;
-  readOnly?: boolean;
 }
 
-export function AccessPage({ branchId, branchName, dayPassPrice, readOnly = false }: AccessPageProps): ReactElement {
+export function AccessPage({ branchId, branchName, dayPassPrice }: AccessPageProps): ReactElement {
   const [dni, setDni] = useState('');
   const [result, setResult] = useState<AccessResult | null>(null);
   const [sellingPass, setSellingPass] = useState(false);
@@ -52,50 +51,48 @@ export function AccessPage({ branchId, branchName, dayPassPrice, readOnly = fals
   }
 
   return (
-    <div className={readOnly ? 'access-readonly' : 'access-grid'}>
-      {!readOnly && (
-        <section className="card access-card">
-          <span className="large-icon">
-            <Icon name="access" size={32} />
-          </span>
-          <h2>Verificar ingreso</h2>
-          <form onSubmit={(event) => void verify(event)}>
-            <Input
-              ref={dniInput}
-              autoFocus
-              data-document-input
-              autoComplete="off"
-              aria-label="Documento del miembro"
-              value={dni}
-              onChange={(event) => {
-                setDni(cleanDocument(event.target.value));
-                setResult(null);
-              }}
-              placeholder="DNI o carné de extranjería"
-              inputMode="numeric"
-              pattern="[0-9]{8,12}"
-              required
-              maxLength={MAX_DOCUMENT_LENGTH}
-            />
-            <Button type="submit" disabled={check.isPending}>
-              Verificar acceso <Icon name="arrow" size={18} />
-            </Button>
-          </form>
-          {result && (
-            <div role="status" className={`access-result ${result.allowed ? 'allowed' : 'denied'}`}>
-              <Icon name={result.allowed ? 'check' : 'close'} size={30} />
-              <h3>{result.allowed ? 'Acceso permitido' : 'Acceso no permitido'}</h3>
-              {result.name && <strong>{result.name}</strong>}
-              <p>{result.reason}</p>
-            </div>
-          )}
-          <div className="day-pass-action">
-            <Button variant="secondary" onClick={() => setSellingPass(true)}>
-              <Icon name="plus" size={16} /> Pase del día · {formatCurrency(dayPassPrice)}
-            </Button>
+    <div className="access-grid">
+      <section className="card access-card">
+        <span className="large-icon">
+          <Icon name="access" size={32} />
+        </span>
+        <h2>Verificar ingreso</h2>
+        <form onSubmit={(event) => void verify(event)}>
+          <Input
+            ref={dniInput}
+            autoFocus
+            data-document-input
+            autoComplete="off"
+            aria-label="Documento del miembro"
+            value={dni}
+            onChange={(event) => {
+              setDni(cleanDocument(event.target.value));
+              setResult(null);
+            }}
+            placeholder="DNI o carné de extranjería"
+            inputMode="numeric"
+            pattern="[0-9]{8,12}"
+            required
+            maxLength={MAX_DOCUMENT_LENGTH}
+          />
+          <Button type="submit" disabled={check.isPending}>
+            Verificar acceso <Icon name="arrow" size={18} />
+          </Button>
+        </form>
+        {result && (
+          <div role="status" className={`access-result ${result.allowed ? 'allowed' : 'denied'}`}>
+            <Icon name={result.allowed ? 'check' : 'close'} size={30} />
+            <h3>{result.allowed ? 'Acceso permitido' : 'Acceso no permitido'}</h3>
+            {result.name && <strong>{result.name}</strong>}
+            <p>{result.reason}</p>
           </div>
-        </section>
-      )}
+        )}
+        <div className="day-pass-action">
+          <Button variant="secondary" onClick={() => setSellingPass(true)}>
+            <Icon name="plus" size={16} /> Pase del día · {formatCurrency(dayPassPrice)}
+          </Button>
+        </div>
+      </section>
       <section className="card">
         <div className="card-heading">
           <h2>Últimos accesos</h2>

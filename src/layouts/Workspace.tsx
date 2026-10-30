@@ -18,16 +18,10 @@ import { TeamPage } from '@/features/team';
 import { BrandingPage, brandTheme, brandFavicon } from '@/features/branding';
 import { useCatalog, gymTitle } from '@/features/organization';
 
-interface WorkspaceProps {
-  /** Present when the superadmin is looking at a client: goes back to the client list. */
-  onBack?: () => void;
-}
-
-export function Workspace({ onBack }: WorkspaceProps): ReactElement {
+export function Workspace(): ReactElement {
   const user = useCurrentUser();
-  const { logout } = useAuth();
+  const { logout, tenants, switchGym } = useAuth();
   const { gyms, branches, branchLabel } = useCatalog();
-  const readOnly = user.role === 'superadmin';
   const { page, goTo } = usePageRoute(user);
 
   const availableBranches = branches.filter((branch) => branch.accessible);
@@ -87,7 +81,6 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
   }
 
   function openEnrollment(member?: Member): void {
-    if (readOnly) return;
     setRenewing(member);
     setSelected(null);
     setRegistering(true);
@@ -120,6 +113,8 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
         onNavigate={navigate}
         open={mobileOpen}
         user={user}
+        gyms={tenants}
+        onGymChange={switchGym}
         branches={availableBranches}
         branchId={branch.id}
         onBranchChange={changeBranch}
@@ -133,13 +128,13 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
       />
       {mobileOpen && <Button className="sidebar-backdrop" variant="ghost" aria-label="Cerrar menú" onClick={() => setMobileOpen(false)} />}
       <div className="main-shell">
-        <Topbar locationLabel={branchLabel(branch.id)} userName={user.full_name} onToggleMenu={() => setMobileOpen(!mobileOpen)} onBack={onBack}>
-          {!readOnly && <QuickAccessCheck branchId={branch.id} hidden={page === 'access'} onResult={setAccessAlert} />}
+        <Topbar locationLabel={branchLabel(branch.id)} userName={user.full_name} onToggleMenu={() => setMobileOpen(!mobileOpen)}>
+          <QuickAccessCheck branchId={branch.id} hidden={page === 'access'} onResult={setAccessAlert} />
         </Topbar>
         <main>
           <div className="page-heading">
             <h1>{pageDetails[page].title}</h1>
-            {!readOnly && enrollmentPages.includes(page) && (
+            {enrollmentPages.includes(page) && (
               <Button onClick={() => openEnrollment()}>
                 <Icon name="plus" size={18} /> Nuevo miembro
               </Button>
@@ -148,7 +143,6 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
           {page === 'dashboard' && (
             <Dashboard
               branchId={branch.id}
-              readOnly={readOnly}
               onSelect={(member) => setSelected({ member })}
               onEdit={setEditing}
               onRenew={openEnrollment}
@@ -158,27 +152,25 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
             <MembersPage
               filters={filters}
               showBranch={hasManyBranches}
-              readOnly={readOnly}
               onSelect={(member) => setSelected({ member })}
               onEdit={setEditing}
               onRenew={openEnrollment}
             />
           )}
           {page === 'access' && (
-            <AccessPage key={branch.id} branchId={branch.id} branchName={branchLabel(branch.id)} dayPassPrice={branch.dayPassPrice} readOnly={readOnly} />
+            <AccessPage key={branch.id} branchId={branch.id} branchName={branchLabel(branch.id)} dayPassPrice={branch.dayPassPrice} />
           )}
           {page === 'payments' && <PaymentsPage key={branch.id} branchId={branch.id} showSummary={user.role !== 'receptionist'} />}
-          {page === 'team' && <TeamPage readOnly={readOnly} />}
-          {page === 'pricing' && <PricingPage key={gym.id} gym={gym} readOnly={readOnly} />}
+          {page === 'team' && <TeamPage />}
+          {page === 'pricing' && <PricingPage key={gym.id} gym={gym} />}
           {page === 'branding' && <BrandingPage key={gym.id} gym={gym} />}
         </main>
       </div>
-      {registering && !readOnly && <MemberForm member={renewing} branchId={branch.id} onSaved={saved} onClose={closeEnrollment} />}
+      {registering && <MemberForm member={renewing} branchId={branch.id} onSaved={saved} onClose={closeEnrollment} />}
       {selected && (
         <MemberSheet
           member={selected.member}
           receiptId={selected.receiptId}
-          readOnly={readOnly}
           onClose={() => setSelected(null)}
           onRenew={openEnrollment}
           onEdit={(member) => {
@@ -187,7 +179,7 @@ export function Workspace({ onBack }: WorkspaceProps): ReactElement {
           }}
         />
       )}
-      {editing && !readOnly && (
+      {editing && (
         <MemberEditForm
           member={editing}
           onClose={() => setEditing(null)}

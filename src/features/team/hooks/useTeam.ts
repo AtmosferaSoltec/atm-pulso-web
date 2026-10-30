@@ -7,27 +7,25 @@ const teamKey = ['team'] as const;
 export type AssignableRole = Extract<Role, 'admin' | 'receptionist'>;
 
 export interface NewTeamUser {
-  id: string;
   full_name: string;
   document_number: string;
   role: AssignableRole;
-  gym_ids?: string[];
+  /** Required for reception; an admin reaches every branch. */
   branch_ids?: string[];
 }
 
+/** The DNI never changes: it is the person's login at atm-auth-api. */
 export interface TeamUserChanges {
   full_name?: string;
-  document_number?: string;
   role?: AssignableRole;
-  gym_ids?: string[];
   branch_ids?: string[];
 }
 
-/** The users the signed-in owner or admin manages (the API decides who each one sees). */
+/** The users of the account, for its administrators. */
 export function useTeamUsers(): UseQueryResult<TeamUser[]> {
   return useQuery({
     queryKey: teamKey,
-    queryFn: async () => (await requestPage<TeamUser, Pagination>('/users', { query: { page_size: 100 } })).data,
+    queryFn: async () => (await requestPage<TeamUser, Pagination>('/team', { query: { page_size: 100 } })).data,
   });
 }
 
@@ -40,9 +38,9 @@ export function useTeamMutations(): {
   const queryClient = useQueryClient();
   const refresh = (): Promise<void> => queryClient.invalidateQueries({ queryKey: teamKey });
   return {
-    create: useMutation({ mutationFn: (user: NewTeamUser) => api.post<TeamUser>('/users', user), onSuccess: refresh }),
-    update: useMutation({ mutationFn: ({ id, changes }) => api.patch<TeamUser>(`/users/${id}`, changes), onSuccess: refresh }),
-    setActive: useMutation({ mutationFn: ({ id, active }) => api.post<TeamUser>(`/users/${id}/${active ? 'activate' : 'deactivate'}`), onSuccess: refresh }),
-    resetPassword: useMutation({ mutationFn: (id: string) => api.post<TeamUser>(`/users/${id}/password`), onSuccess: refresh }),
+    create: useMutation({ mutationFn: (user: NewTeamUser) => api.post<TeamUser>('/team', user), onSuccess: refresh }),
+    update: useMutation({ mutationFn: ({ id, changes }) => api.patch<TeamUser>(`/team/${id}`, changes), onSuccess: refresh }),
+    setActive: useMutation({ mutationFn: ({ id, active }) => api.post<TeamUser>(`/team/${id}/${active ? 'activate' : 'deactivate'}`), onSuccess: refresh }),
+    resetPassword: useMutation({ mutationFn: (id: string) => api.post<TeamUser>(`/team/${id}/password`), onSuccess: refresh }),
   };
 }

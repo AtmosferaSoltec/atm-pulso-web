@@ -7,7 +7,7 @@ import type { components } from '@/types/api.generated';
  */
 type Schemas = components['schemas'];
 
-export type Role = 'superadmin' | 'owner' | 'admin' | 'receptionist';
+export type Role = 'admin' | 'receptionist';
 export type PaymentMethod = 'yape_plin' | 'cash' | 'card' | 'transfer';
 export type MemberStatus = 'active' | 'expiring' | 'expired' | 'scheduled';
 export type AccessScope = 'branch' | 'gym' | 'network';
@@ -18,6 +18,11 @@ export interface Named {
   name: string;
 }
 
+export interface SessionGym extends Named {
+  brand_color: string;
+  logo_url: string | null;
+}
+
 export interface SessionBranch {
   id: string;
   name: string;
@@ -25,33 +30,34 @@ export interface SessionBranch {
   gym_name: string;
 }
 
-/** The signed-in user, as `GET /me` and the login answer it. */
+/** The signed-in user, as `GET /me` answers it. */
 export interface SessionUser {
   id: string;
   document_number: string;
   full_name: string;
   phone: string | null;
   role: Role;
-  organization: Named | null;
-  /** The gyms an admin manages (one or several); empty for the other roles. */
-  gyms: Named[];
+  organization: Named;
+  /** The gym (auth company) the session works in. */
+  gym: SessionGym;
+  /** The branches a receptionist works in; empty for an admin. */
   branches: SessionBranch[];
-  must_change_password: boolean;
-}
-
-export interface Session {
-  access_token: string;
-  expires_in: number;
-  user: SessionUser;
 }
 
 export type Catalog = Schemas['Catalog'];
 export type CatalogGym = Schemas['Gym'];
 export type CatalogMembershipPrice = Schemas['MembershipPrice'];
 export type CatalogBranch = CatalogGym['branches'][number];
-export type PlatformClient = Schemas['Client'];
-export type ClientSummary = Schemas['ClientSummary'];
-export type TeamUser = Schemas['TeamUser'];
+export interface TeamUser {
+  id: string;
+  full_name: string;
+  document_number: string;
+  phone: string | null;
+  role: Role;
+  is_active: boolean;
+  is_self: boolean;
+  branches: { id: string; name: string; gym_id: string }[];
+}
 export type MemberView = Schemas['MemberView'];
 export type MemberCounts = Schemas['MemberCounts'];
 export type MemberDetail = Schemas['MemberDetail'];

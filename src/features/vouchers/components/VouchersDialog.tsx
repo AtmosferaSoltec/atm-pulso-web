@@ -11,19 +11,17 @@ interface VouchersDialogProps {
   receiptId: string;
   receiptNumber: string;
   method: PaymentMethod;
-  /** The superadmin only looks. */
-  readOnly?: boolean;
   onClose: () => void;
 }
 
 /** The proofs of payment of one receipt: see them, and add more (up to five) even after the sale. */
-export function VouchersDialog({ receiptId, receiptNumber, method, readOnly = false, onClose }: VouchersDialogProps): ReactElement {
+export function VouchersDialog({ receiptId, receiptNumber, method, onClose }: VouchersDialogProps): ReactElement {
   const list = useVouchers(receiptId);
   const upload = useUploadVoucher(receiptId);
   const [problem, setProblem] = useState('');
   const vouchers = list.data ?? [];
   const room = MAX_VOUCHERS - vouchers.length;
-  const canAdd = !readOnly && method !== 'cash' && room > 0;
+  const canAdd = method !== 'cash' && room > 0;
 
   async function add(files: File[]): Promise<void> {
     setProblem('');
@@ -54,7 +52,7 @@ export function VouchersDialog({ receiptId, receiptNumber, method, readOnly = fa
         ))}
       </div>
       {canAdd && <VoucherDropzone onFiles={(files) => void add(files)} onProblem={setProblem} disabled={upload.isPending} />}
-      {!canAdd && !readOnly && method !== 'cash' && <p className="muted">Se alcanzó el máximo de {MAX_VOUCHERS} comprobantes.</p>}
+      {!canAdd && method !== 'cash' && <p className="muted">Se alcanzó el máximo de {MAX_VOUCHERS} comprobantes.</p>}
       {upload.isPending && <p className="muted">Subiendo…</p>}
       {problem && (
         <p role="alert" className="error">

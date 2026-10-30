@@ -1,6 +1,8 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { useCurrentUser, useAuth } from '@/store/authStore';
-import { MIN_PASSWORD_LENGTH, useProfile } from '@/features/auth/hooks/useProfile';
+import { useAuth } from '@/store/authStore';
+import { describeError } from '@/config/errorMessages';
+import { changePassword } from '@/features/auth/services/authSession';
+import { MIN_PASSWORD_LENGTH, validateNewPassword } from '@/features/auth/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { IconButton } from '@/components/ui/icon-button';
@@ -8,14 +10,19 @@ import { Input } from '@/components/ui/input';
 import { BrandMark } from '@/components/ui/brand-mark';
 import { Icon } from '@/components/ui/icon';
 
+interface PasswordSetupPageProps {
+  documentNumber: string;
+  /** The password the person just typed: atm-auth-api accepted it but issues no session until it is replaced. */
+  temporaryPassword: string;
+  onCancel: () => void;
+}
+
 /**
- * First sign-in: the temporary password is the DNI, so nothing else works until the user
- * creates their own. When it is done the API asks to sign in again with the new one.
+ * First sign-in: the temporary password is the DNI, so nothing else works until the user creates their own.
+ * atm-auth-api ends every session when the password changes, so the new one is used to sign in right after.
  */
-export function PasswordSetupPage(): ReactElement {
-  const user = useCurrentUser();
-  const { logout } = useAuth();
-  const { changePassword } = useProfile();
+export function PasswordSetupPage({ documentNumber, temporaryPassword, onCancel }: PasswordSetupPageProps): ReactElement {
+  const { login } = useAuth();
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
   const [show, setShow] = useState(false);
@@ -24,11 +31,18 @@ export function PasswordSetupPage(): ReactElement {
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
+    const invalid = validateNewPassword(temporaryPassword, next, confirm);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
     setBusy(true);
-    // The temporary password is the DNI itself.
-    const failure = await changePassword(user.document_number, next, confirm);
-    if (failure) {
-      setError(failure);
+    try {
+      await changePassword(documentNumber, temporaryPassword, next);
+      const user = await login(documentNumber, next);
+      window.location.hash = user.role === 'receptionist' ? 'access' : 'dashboard';
+    } catch (failure) {
+      setError(describeError(failure));
       setBusy(false);
     }
   }
@@ -45,7 +59,7 @@ export function PasswordSetupPage(): ReactElement {
             <Icon name="shield" size={24} />
           </span>
           <h2>Crea tu contraseña</h2>
-          <p>Hola, {user.full_name}. Para continuar, crea una contraseña nueva.</p>
+          <p>Para continuar, crea una contraseña nueva.</p>
           <form onSubmit={submit} className="login-form">
             <Field label="Nueva contraseña" required hint={`Al menos ${MIN_PASSWORD_LENGTH} caracteres.`}>
               <div className="password-field">
@@ -64,8 +78,8 @@ export function PasswordSetupPage(): ReactElement {
             <Button type="submit" disabled={busy}>
               Guardar contraseña <Icon name="arrow" size={17} />
             </Button>
-            <Button variant="secondary" onClick={logout}>
-              Salir
+            <Button variant="secondary" onClick={onCancel}>
+              Volver
             </Button>
           </form>
         </div>

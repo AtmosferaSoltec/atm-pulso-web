@@ -1,7 +1,6 @@
 import { useState, type ReactElement } from 'react';
 import { Avatar } from '@/features/members';
 import { VouchersDialog } from '@/features/vouchers';
-import { useCurrentUser } from '@/store/authStore';
 import { usePayments, usePaymentTotals, paymentQuery } from '@/features/payments/hooks/usePayments';
 import { download } from '@/config/apiClient';
 import { describeError } from '@/config/errorMessages';
@@ -47,7 +46,6 @@ export function PaymentsPage({ branchId, showSummary = true }: PaymentsPageProps
   // The screen always opens on today's payments.
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState(today);
-  const user = useCurrentUser();
   const [viewing, setViewing] = useState<PaymentRow | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -240,7 +238,7 @@ export function PaymentsPage({ branchId, showSummary = true }: PaymentsPageProps
           {!payments.isPending && rows.length === 0 && <div className="empty">No hay pagos con este filtro en la sede seleccionada.</div>}
         </div>
         {viewing && (
-          <VouchersDialog receiptId={viewing.receipt.id} receiptNumber={viewing.receipt.number} method={viewing.method} readOnly={user.role === 'superadmin'} onClose={() => setViewing(null)} />
+          <VouchersDialog receiptId={viewing.receipt.id} receiptNumber={viewing.receipt.number} method={viewing.method} onClose={() => setViewing(null)} />
         )}
         <Pagination
           page={page}

@@ -1,74 +1,58 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { api, setAuthToken, setInspectedOrganization, setUnauthorizedHandler } from '@/config/apiClient';
+import { api, ApiError, setTokenSource, setUnauthorizedHandler } from '@/config/apiClient';
+import { clearTokens, forceRefresh, getAccessToken, hasStoredSession, listTenants, signIn, signOut, switchTenant } from '@/features/auth/services/authSession';
+import type { SessionTenant } from '@/features/auth/types/auth.types';
 import { AuthContext, type AuthContextValue } from '@/store/authStore';
-import type { Session, SessionUser } from '@/types/api.types';
+import type { SessionUser } from '@/types/api.types';
 
-const STORAGE_KEY = 'pulso.session';
-
-interface StoredSession {
-  token: string;
-  inspectedId: string | null;
-}
-
-/** sessionStorage dies with the tab: a reload keeps the session, closing the tab asks for the login again. */
-function readStored(): StoredSession | null {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as StoredSession) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeStored(session: StoredSession | null): void {
-  try {
-    if (session) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-    else sessionStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // Storage unavailable (private mode): the session just lives until the next reload.
-  }
-}
-
-/** Keeps the session in memory and in sessionStorage; on load it restores the user from GET /me. */
+/**
+ * Holds the signed-in user. The tokens are atm-auth-api's and live in `authSession`; on load, a stored
+ * refresh token brings the session back and `GET /me` says who it is.
+ */
 export function AuthProvider({ children }: { children: ReactNode }): ReactElement {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<SessionUser | null>(null);
-  const [inspectedId, setInspectedId] = useState<string | null>(null);
+  const [tenants, setTenants] = useState<SessionTenant[]>([]);
   const [notice, setNotice] = useState('');
-  const [restoring, setRestoring] = useState(() => readStored() !== null);
+  const [restoring, setRestoring] = useState(() => hasStoredSession());
 
   const clear = useCallback(
     (message = '') => {
-      writeStored(null);
-      setAuthToken(null);
-      setInspectedOrganization(null);
+      clearTokens();
       setUser(null);
-      setInspectedId(null);
+      setTenants([]);
       setNotice(message);
       queryClient.clear();
     },
     [queryClient],
   );
 
+  /** The gym selector only matters with more than one gym; a failure just hides it. */
+  const loadTenants = useCallback(() => {
+    listTenants()
+      .then(setTenants)
+      .catch(() => setTenants([]));
+  }, []);
+
   useEffect(() => {
-    const stored = readStored();
-    if (!stored) return;
-    setAuthToken(stored.token);
-    setInspectedOrganization(stored.inspectedId);
+    setTokenSource({ getAccessToken, forceRefresh });
+    return () => setTokenSource(null);
+  }, []);
+
+  useEffect(() => {
+    if (!hasStoredSession()) return;
     let active = true;
     api
       .get<SessionUser>('/me')
       .then((restored) => {
         if (!active) return;
         setUser(restored);
-        setInspectedId(stored.inspectedId);
+        loadTenants();
       })
-      .catch(() => {
-        if (!active) return;
-        writeStored(null);
-        setAuthToken(null);
-        setInspectedOrganization(null);
+      .catch((error: unknown) => {
+        // A dropped connection keeps the stored session for the next try; anything else asks to sign in again.
+        if (active && !(error instanceof ApiError && error.status === 0)) clearTokens();
       })
       .finally(() => {
         if (active) setRestoring(false);
@@ -76,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadTenants]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => clear('Tu sesión terminó. Inicia sesión de nuevo.'));
@@ -86,38 +70,41 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      inspectedId,
+      tenants,
       notice,
       restoring,
       async login(documentNumber, password) {
-        const session = await api.post<Session>('/auth/login', { document_number: documentNumber, password });
-        setAuthToken(session.access_token);
-        writeStored({ token: session.access_token, inspectedId: null });
+        await signIn(documentNumber, password);
+        let profile: SessionUser;
+        try {
+          profile = await api.get<SessionUser>('/me');
+        } catch (error) {
+          // Signed in at atm-auth-api but not allowed in Pulso (no role here, inactive...): leave no session behind.
+          await signOut();
+          throw error;
+        }
         queryClient.clear();
         setNotice('');
-        setUser(session.user);
-        return session.user;
+        setUser(profile);
+        loadTenants();
+        return profile;
       },
-      logout: () => clear(),
-      inspect(organizationId) {
-        setInspectedOrganization(organizationId);
-        setInspectedId(organizationId);
-        const stored = readStored();
-        if (stored) writeStored({ ...stored, inspectedId: organizationId });
+      async switchGym(tenantId) {
+        await switchTenant(tenantId);
+        // Everything cached belongs to the previous gym.
         queryClient.clear();
+        const profile = await api.get<SessionUser>('/me');
+        setUser(profile);
+        loadTenants();
+      },
+      logout() {
+        void signOut();
+        clear();
       },
       replaceUser: setUser,
-      applyPasswordChange(result) {
-        if ('login_required' in result) {
-          clear('Contraseña actualizada. Inicia sesión con tu nueva contraseña.');
-          return;
-        }
-        setAuthToken(result.access_token);
-        writeStored({ token: result.access_token, inspectedId });
-        setUser(result.user);
-      },
+      endSession: (message) => clear(message),
     }),
-    [user, inspectedId, notice, restoring, clear, queryClient],
+    [user, tenants, notice, restoring, clear, queryClient, loadTenants],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

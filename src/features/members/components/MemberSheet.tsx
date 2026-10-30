@@ -20,14 +20,13 @@ interface MemberSheetProps {
   member: Member;
   /** Opens on this receipt (the one just issued); otherwise on the latest. */
   receiptId?: string;
-  readOnly?: boolean;
   onClose: () => void;
   onEdit: (member: Member) => void;
   onRenew: (member: Member) => void;
 }
 
 /** The member's receipt ("boleta"): printable; the terms and conditions appear only on paper. Reprints any past one. */
-export function MemberSheet({ member, receiptId, readOnly = false, onClose, onRenew, onEdit }: MemberSheetProps): ReactElement {
+export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit }: MemberSheetProps): ReactElement {
   const detail = useMemberDetail(member.id);
   const [chosen, setChosen] = useState<string | null>(receiptId ?? null);
   const periods = detail.data?.memberships.filter((period) => period.receipt) ?? [];
@@ -139,12 +138,10 @@ export function MemberSheet({ member, receiptId, readOnly = false, onClose, onRe
         </article>
       )}
       <div className="form-actions no-print">
-        {!readOnly && (
-          <Button variant="ghost" onClick={() => onEdit(member)}>
-            Editar datos
-          </Button>
-        )}
-        {!readOnly && !receiptId && (
+        <Button variant="ghost" onClick={() => onEdit(member)}>
+          Editar datos
+        </Button>
+        {!receiptId && (
           <Button variant="secondary" onClick={() => onRenew(member)}>
             <Icon name="renewals" size={16} /> Renovar membresía
           </Button>
@@ -157,7 +154,7 @@ export function MemberSheet({ member, receiptId, readOnly = false, onClose, onRe
         </Button>
       </div>
       {vouchersOpen && data && (
-        <VouchersDialog receiptId={data.id} receiptNumber={data.number} method={data.payment.method as PaymentMethod} readOnly={readOnly} onClose={() => setVouchersOpen(false)} />
+        <VouchersDialog receiptId={data.id} receiptNumber={data.number} method={data.payment.method as PaymentMethod} onClose={() => setVouchersOpen(false)} />
       )}
     </Dialog>
   );

@@ -16,7 +16,7 @@ export const pageDetails: Record<Page, PageDetails> = {
   payments: { title: 'Pagos e ingresos', name: 'Pagos e ingresos', icon: 'payments' },
   team: { title: 'Usuarios y permisos', name: 'Usuarios', icon: 'members' },
   pricing: { title: 'Tarifas del gimnasio', name: 'Tarifas', icon: 'cash' },
-  branding: { title: 'Identidad del gimnasio', name: 'Identidad', icon: 'tag' },
+  branding: { title: 'Color del gimnasio', name: 'Color', icon: 'tag' },
 };
 
 /** Pages used every day; always visible in the sidebar. */

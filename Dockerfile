@@ -11,9 +11,11 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-# The API's address is fixed at build time (Vite inlines it); the workflow passes it.
+# The APIs' addresses are fixed at build time (Vite inlines them); the workflow passes them.
 ARG VITE_API_URL
+ARG VITE_AUTH_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_AUTH_API_URL=$VITE_AUTH_API_URL
 RUN pnpm build
 
 # ---- Runtime ----

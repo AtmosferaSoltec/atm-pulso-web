@@ -1,20 +1,29 @@
 import { api } from '@/config/apiClient';
 import { describeError } from '@/config/errorMessages';
 import { useAuth } from '@/store/authStore';
-import type { Session, SessionUser } from '@/types/api.types';
+import { changePassword as changeAuthPassword } from '@/features/auth/services/authSession';
+import type { SessionUser } from '@/types/api.types';
 
 export const MIN_PASSWORD_LENGTH = 8;
+
+/** The rule for a new password, shared by the profile and the first-login screen. Returns a message, or null when it is fine. */
+export function validateNewPassword(current: string, next: string, confirm: string): string | null {
+  if (next.length < MIN_PASSWORD_LENGTH) return `La nueva contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+  if (next === current) return 'La nueva contraseña debe ser distinta de la actual.';
+  if (next !== confirm) return 'Las contraseñas nuevas no coinciden.';
+  return null;
+}
 
 interface ProfileApi {
   /** Saves the non-sensitive data. Returns an error message, or null when it worked. */
   updateProfile: (changes: { name: string; phone: string }) => Promise<string | null>;
-  /** Changes the password after checking the current one. Returns an error message, or null. */
+  /** Changes the password at atm-auth-api and signs out. Returns an error message, or null. */
   changePassword: (current: string, next: string, confirm: string) => Promise<string | null>;
 }
 
 /** Self-service profile actions for the signed-in user. */
 export function useProfile(): ProfileApi {
-  const { replaceUser, applyPasswordChange } = useAuth();
+  const { user, replaceUser, endSession } = useAuth();
 
   async function updateProfile({ name, phone }: { name: string; phone: string }): Promise<string | null> {
     const cleanName = name.trim();
@@ -30,11 +39,13 @@ export function useProfile(): ProfileApi {
   }
 
   async function changePassword(current: string, next: string, confirm: string): Promise<string | null> {
-    if (next.length < MIN_PASSWORD_LENGTH) return `La nueva contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
-    if (next === current) return 'La nueva contraseña debe ser distinta de la actual.';
-    if (next !== confirm) return 'Las contraseñas nuevas no coinciden.';
+    const invalid = validateNewPassword(current, next, confirm);
+    if (invalid) return invalid;
+    if (!user) return 'Inicia sesión de nuevo.';
     try {
-      applyPasswordChange(await api.post<Session | { login_required: true }>('/me/password', { current_password: current, new_password: next }));
+      // atm-auth-api ends every session of the person: the login asks for the new password.
+      await changeAuthPassword(user.document_number, current, next);
+      endSession('Contraseña actualizada. Inicia sesión con tu nueva contraseña.');
       return null;
     } catch (error) {
       return describeError(error);

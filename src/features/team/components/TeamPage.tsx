@@ -1,6 +1,4 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { useCurrentUser } from '@/store/authStore';
-import { canManageGym } from '@/features/auth';
 import { describeError } from '@/config/errorMessages';
 import { useCatalog, branchTitle } from '@/features/organization';
 import { useTeamMutations, useTeamUsers, type AssignableRole } from '@/features/team/hooks/useTeam';
@@ -19,14 +17,12 @@ const roleOptions: Option<AssignableRole>[] = [
 ];
 
 const roleLabels: Record<Role, string> = {
-  superadmin: 'Superadmin',
-  owner: 'Propietario',
   admin: 'Administrador',
   receptionist: 'Recepción',
 };
 
 const roleNotes: Record<AssignableRole, string> = {
-  admin: 'Gestiona los usuarios y la identidad de su gimnasio. No puede crear gimnasios.',
+  admin: 'Gestiona los usuarios, las tarifas y la identidad de los gimnasios. Accede a todas las sedes.',
   receptionist: 'Puede consultar miembros, inscribir, renovar, registrar pagos y controlar ingresos en sus sedes.',
 };
 
@@ -35,19 +31,12 @@ interface Draft {
   isNew: boolean;
   fullName: string;
   documentNumber: string;
-  originalDocument: string;
   role: AssignableRole;
-  gymIds: string[];
   branchIds: string[];
 }
 
-interface TeamPageProps {
-  readOnly?: boolean;
-}
-
-export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
-  const currentUser = useCurrentUser();
-  const { gyms, branches, branchLabel } = useCatalog();
+export function TeamPage(): ReactElement {
+  const { branches, branchLabel } = useCatalog();
   const team = useTeamUsers();
   const { create, update, setActive, resetPassword } = useTeamMutations();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -55,16 +44,10 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  // What the signed-in user may assign: an owner everything, an admin only their own gyms.
-  const gymChoices = gyms.filter((gym) => canManageGym(currentUser, gym.id));
   const branchChoices = branches.filter((branch) => branch.accessible);
-  // Only the owner can appoint administrators; an admin creates reception staff.
-  const canAssignAdmins = currentUser.role === 'owner';
-  const roleChoices = canAssignAdmins ? roleOptions : roleOptions.filter((option) => option.value === 'receptionist');
-  const gymName = (id?: string): string => gyms.find((gym) => gym.id === id)?.name ?? '';
 
   function newDraft(): Draft {
-    return { id: crypto.randomUUID(), isNew: true, fullName: '', documentNumber: '', originalDocument: '', role: 'receptionist', gymIds: gymChoices.length === 1 ? [gymChoices[0].id] : [], branchIds: [] };
+    return { id: '', isNew: true, fullName: '', documentNumber: '', role: 'receptionist', branchIds: [] };
   }
 
   function editDraft(user: TeamUser): Draft {
@@ -73,30 +56,26 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
       isNew: false,
       fullName: user.full_name,
       documentNumber: user.document_number,
-      originalDocument: user.document_number,
       role: user.role === 'admin' ? 'admin' : 'receptionist',
-      gymIds: user.gyms.map((gym) => gym.id),
       branchIds: user.branches.map((branch) => branch.id),
     };
   }
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!draft || readOnly) return;
+    if (!draft) return;
     if (!draft.fullName.trim()) return setError('Ingresa un nombre válido.');
     if (draft.role === 'receptionist' && !draft.branchIds.length) return setError('Selecciona al menos una sede para recepción.');
-    if (draft.role === 'admin' && !draft.gymIds.length) return setError('Selecciona al menos un gimnasio que administrará.');
-    const scope = draft.role === 'admin' ? { gym_ids: draft.gymIds } : { branch_ids: draft.branchIds };
+    const scope = draft.role === 'admin' ? {} : { branch_ids: draft.branchIds };
     try {
       if (draft.isNew) {
-        await create.mutateAsync({ id: draft.id, full_name: draft.fullName.trim(), document_number: draft.documentNumber, role: draft.role, ...scope });
+        await create.mutateAsync({ full_name: draft.fullName.trim(), document_number: draft.documentNumber, role: draft.role, ...scope });
         setMessage(`Usuario creado. Ingresa con su DNI ${draft.documentNumber}; su contraseña inicial es ese mismo DNI y la cambiará al entrar.`);
       } else {
         await update.mutateAsync({
           id: draft.id,
           changes: {
             full_name: draft.fullName.trim(),
-            ...(draft.documentNumber !== draft.originalDocument ? { document_number: draft.documentNumber } : {}),
             role: draft.role,
             ...scope,
           },
@@ -130,8 +109,7 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
   }
 
   function scopeOf(user: TeamUser): string {
-    if (user.role === 'owner') return 'Todos los gimnasios';
-    if (user.role === 'admin') return `${user.gyms.map((gym) => gymName(gym.id) || gym.name).join(', ')} · todas las sedes`;
+    if (user.role === 'admin') return 'Todas las sedes';
     return user.branches.map((branch) => branchLabel(branch.id)).join(', ');
   }
 
@@ -143,16 +121,14 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
         <div>
           <h2>Usuarios de la cuenta</h2>
         </div>
-        {!readOnly && (
-          <Button
-            onClick={() => {
-              setError('');
-              setDraft(newDraft());
-            }}
-          >
-            <Icon name="plus" size={16} /> Nuevo usuario
-          </Button>
-        )}
+        <Button
+          onClick={() => {
+            setError('');
+            setDraft(newDraft());
+          }}
+        >
+          <Icon name="plus" size={16} /> Nuevo usuario
+        </Button>
       </div>
       {message && (
         <p className="notice" role="status">
@@ -173,11 +149,9 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
                 <th>Rol</th>
                 <th>Sedes</th>
                 <th>Estado</th>
-                {!readOnly && (
-                  <th className="right">
-                    <span className="visually-hidden">Acciones</span>
-                  </th>
-                )}
+                <th className="right">
+                  <span className="visually-hidden">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -192,30 +166,28 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
                   <td>
                     <span className={`badge ${user.is_active ? 'active' : 'expired'}`}>{user.is_active ? 'Activo' : 'Inactivo'}</span>
                   </td>
-                  {!readOnly && (
-                    <td className="right">
-                      {user.is_self || user.role === 'owner' ? (
-                        <small>{user.is_self ? 'Tu cuenta' : ''}</small>
-                      ) : (
-                        <div className="row-actions">
-                          <IconButton
-                            icon="edit"
-                            label={`Editar a ${user.full_name}`}
-                            onClick={() => {
-                              setDraft(editDraft(user));
-                              setError('');
-                            }}
-                          />
-                          <IconButton icon="renewals" label={`Restablecer contraseña de ${user.full_name}`} onClick={() => setResetting(user)} />
-                          <IconButton
-                            icon={user.is_active ? 'close' : 'check'}
-                            label={`${user.is_active ? 'Desactivar' : 'Activar'} a ${user.full_name}`}
-                            onClick={() => void toggle(user)}
-                          />
-                        </div>
-                      )}
-                    </td>
-                  )}
+                  <td className="right">
+                    {user.is_self ? (
+                      <small>Tu cuenta</small>
+                    ) : (
+                      <div className="row-actions">
+                        <IconButton
+                          icon="edit"
+                          label={`Editar a ${user.full_name}`}
+                          onClick={() => {
+                            setDraft(editDraft(user));
+                            setError('');
+                          }}
+                        />
+                        <IconButton icon="renewals" label={`Restablecer contraseña de ${user.full_name}`} onClick={() => setResetting(user)} />
+                        <IconButton
+                          icon={user.is_active ? 'close' : 'check'}
+                          label={`${user.is_active ? 'Desactivar' : 'Activar'} a ${user.full_name}`}
+                          onClick={() => void toggle(user)}
+                        />
+                      </div>
+                    )}
+                  </td>
                 </tr>
               ))}
               {team.isPending && (
@@ -233,9 +205,10 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
             <Field label="Nombre completo" required className="full">
               <Input required value={draft.fullName} onChange={(event) => setDraft({ ...draft, fullName: event.target.value })} />
             </Field>
-            <Field label="DNI" required className="full">
+            <Field label="DNI" required className="full" hint={draft.isNew ? 'Será su usuario; la contraseña inicial es el mismo DNI.' : 'El DNI no se puede cambiar.'}>
               <Input
                 required
+                readOnly={!draft.isNew}
                 inputMode="numeric"
                 pattern="[0-9]{8}"
                 maxLength={8}
@@ -244,31 +217,9 @@ export function TeamPage({ readOnly = false }: TeamPageProps): ReactElement {
                 onChange={(event) => setDraft({ ...draft, documentNumber: event.target.value.replace(/\D/g, '') })}
               />
             </Field>
-            {roleChoices.length > 1 && (
-              <Field label="Rol" className="full" as="div">
-                <OptionCards label="Rol" options={roleChoices} value={draft.role} onChange={(role) => setDraft({ ...draft, role })} />
-              </Field>
-            )}
-            {draft.role === 'admin' && gymChoices.length > 1 && (
-              <fieldset className="branch-assignment full">
-                <legend>Gimnasios que administra</legend>
-                {gymChoices.map((gym) => (
-                  <label key={gym.id}>
-                    <Input
-                      type="checkbox"
-                      checked={draft.gymIds.includes(gym.id)}
-                      onChange={(event) =>
-                        setDraft({
-                          ...draft,
-                          gymIds: event.target.checked ? [...draft.gymIds, gym.id] : draft.gymIds.filter((id) => id !== gym.id),
-                        })
-                      }
-                    />
-                    {gym.display_name || gym.name}
-                  </label>
-                ))}
-              </fieldset>
-            )}
+            <Field label="Rol" className="full" as="div">
+              <OptionCards label="Rol" options={roleOptions} value={draft.role} onChange={(role) => setDraft({ ...draft, role })} />
+            </Field>
             <p className="notice full">{roleNotes[draft.role]}</p>
             {draft.role === 'receptionist' && (
               <fieldset className="branch-assignment full">

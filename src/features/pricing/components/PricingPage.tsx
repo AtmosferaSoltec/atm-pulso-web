@@ -3,7 +3,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useCurrentUser } from '@/store/authStore';
-import { canManageGym } from '@/features/auth';
+import { canManageAccount } from '@/features/auth';
 import { describeError } from '@/config/errorMessages';
 import { gymTitle, useUpdateGym } from '@/features/organization';
 import { MAX_MONTHS } from '@/features/members/services/enrollment';
@@ -16,7 +16,6 @@ import { Input } from '@/components/ui/input';
 
 interface PricingPageProps {
   gym: CatalogGym;
-  readOnly?: boolean;
 }
 
 /** A price row while it is being edited: both values stay text until saved. */
@@ -83,14 +82,14 @@ function PriceRowFields({ row, editable, onChange, onRemove }: PriceRowFieldsPro
 }
 
 /** Prices a gym's administrator controls: the base price of each membership length and the day pass. */
-export function PricingPage({ gym, readOnly = false }: PricingPageProps): ReactElement {
+export function PricingPage({ gym }: PricingPageProps): ReactElement {
   const user = useCurrentUser();
   const update = useUpdateGym(gym.id);
   const [price, setPrice] = useState(gym.day_pass_price);
   const [rows, setRows] = useState<PriceRow[]>(() => toRows(gym.membership_prices));
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const editable = !readOnly && canManageGym(user, gym.id);
+  const editable = canManageAccount(user);
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
   function moveRow({ active, over }: DragEndEvent): void {

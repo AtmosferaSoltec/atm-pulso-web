@@ -17,13 +17,12 @@ const emptyCounts: MemberCounts = { all: 0, active: 0, expiring: 0, expired: 0, 
 interface MembersPageProps {
   filters: MemberFilters;
   showBranch: boolean;
-  readOnly: boolean;
   onSelect: (member: Member) => void;
   onEdit: (member: Member) => void;
   onRenew: (member: Member) => void;
 }
 
-export function MembersPage({ filters, showBranch, readOnly, onSelect, onEdit, onRenew }: MembersPageProps): ReactElement {
+export function MembersPage({ filters, showBranch, onSelect, onEdit, onRenew }: MembersPageProps): ReactElement {
   const search = useDebouncedValue(filters.search.trim());
   const list = useMemberList({
     search,
@@ -56,10 +55,9 @@ export function MembersPage({ filters, showBranch, readOnly, onSelect, onEdit, o
         members={list.data?.data ?? []}
         loading={list.isPending}
         onSelect={onSelect}
-        onEdit={readOnly ? undefined : onEdit}
-        onRenew={readOnly ? undefined : onRenew}
+        onEdit={onEdit}
+        onRenew={onRenew}
         showBranch={showBranch}
-        allowReminders={!readOnly}
       />
       {list.data && list.data.meta.total > PAGE_SIZES[0] && (
         <Pagination

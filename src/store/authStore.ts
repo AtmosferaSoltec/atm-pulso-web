@@ -1,20 +1,23 @@
 import { createContext, useContext } from 'react';
-import type { Session, SessionUser } from '@/types/api.types';
+import type { SessionTenant } from '@/features/auth/types/auth.types';
+import type { SessionUser } from '@/types/api.types';
 
 export interface AuthContextValue {
   user: SessionUser | null;
-  /** Client the superadmin is looking at; null when not inspecting. */
-  inspectedId: string | null;
-  /** Set after a forced password change, so the login can say it worked. */
+  /** The gyms the person can work for; the selector shows when there is more than one. */
+  tenants: SessionTenant[];
+  /** Said on the login after the session ended on its own terms (a password change). */
   notice: string;
-  /** True while a stored session is being checked after a reload. */
+  /** True while a stored session is being recovered after a reload. */
   restoring: boolean;
+  /** Signs in with atm-auth-api and loads the profile. Throws `ApiError`; `PASSWORD_CHANGE_REQUIRED` means the first password must be replaced. */
   login: (documentNumber: string, password: string) => Promise<SessionUser>;
+  /** Moves the session to another gym and reloads the profile. Throws `ApiError`. */
+  switchGym: (tenantId: string) => Promise<void>;
   logout: () => void;
-  inspect: (organizationId: string | null) => void;
   replaceUser: (user: SessionUser) => void;
-  /** Used after a password change: stores the fresh token, or signs out when the API asks to log in again. */
-  applyPasswordChange: (result: Session | { login_required: true }) => void;
+  /** Leaves the session (atm-auth-api already ended it) and shows `message` on the login. */
+  endSession: (message: string) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

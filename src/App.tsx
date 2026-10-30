@@ -1,8 +1,7 @@
 import type { ReactElement } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ApiError } from '@/config/apiClient';
-import { LoginPage, PasswordSetupPage } from '@/features/auth';
-import { PlatformPage } from '@/features/platform';
+import { LoginPage } from '@/features/auth';
 import { CatalogProvider } from '@/features/organization';
 import { Workspace } from '@/layouts/Workspace';
 import { AuthProvider } from '@/store/AuthProvider';
@@ -24,32 +23,12 @@ const queryClient = new QueryClient({
 });
 
 function Application(): ReactElement {
-  const { user, inspectedId, inspect, restoring } = useAuth();
+  const { user, restoring } = useAuth();
   if (restoring) return <div className="empty">Cargando…</div>;
   if (!user) return <LoginPage />;
-  if (user.must_change_password) return <PasswordSetupPage />;
-  if (user.role === 'superadmin' && !inspectedId) {
-    return (
-      <PlatformPage
-        onInspect={(id) => {
-          inspect(id);
-          window.location.hash = 'dashboard';
-        }}
-      />
-    );
-  }
   return (
-    <CatalogProvider key={`${user.id}-${inspectedId ?? user.organization?.id}`}>
-      <Workspace
-        onBack={
-          user.role === 'superadmin'
-            ? () => {
-                inspect(null);
-                window.location.hash = 'clients';
-              }
-            : undefined
-        }
-      />
+    <CatalogProvider key={`${user.id}-${user.gym.id}`}>
+      <Workspace />
     </CatalogProvider>
   );
 }

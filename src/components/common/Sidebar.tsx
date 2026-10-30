@@ -1,5 +1,6 @@
 import { useState, type ReactElement } from 'react';
-import { BranchSwitcher, type BranchOption } from '@/features/organization';
+import { BranchSwitcher, GymSwitcher, type BranchOption } from '@/features/organization';
+import type { SessionTenant } from '@/features/auth/types/auth.types';
 import { canVisitPage } from '@/features/auth';
 import type { Role, SessionUser } from '@/types/api.types';
 import { GymBrand } from '@/features/branding';
@@ -14,6 +15,9 @@ interface SidebarProps {
   onNavigate: (page: Page) => void;
   open: boolean;
   user: SessionUser;
+  /** The gyms the person works for; a selector shows when there is more than one. */
+  gyms: SessionTenant[];
+  onGymChange: (tenantId: string) => Promise<void>;
   branches: BranchOption[];
   branchId: string;
   onBranchChange: (id: string) => void;
@@ -25,8 +29,6 @@ interface SidebarProps {
 }
 
 const roleLabels: Record<Role, string> = {
-  superadmin: 'Superadmin',
-  owner: 'Propietario',
   admin: 'Administrador',
   receptionist: 'Recepción',
 };
@@ -36,6 +38,8 @@ export function Sidebar({
   onNavigate,
   open,
   user,
+  gyms,
+  onGymChange,
   branches,
   branchId,
   onBranchChange,
@@ -72,6 +76,7 @@ export function Sidebar({
       <a className="tenant-brand-link" href={`#${home}`} onClick={() => onNavigate(home)}>
         <GymBrand name={gymName} logoUrl={gymLogoUrl} />
       </a>
+      <GymSwitcher gyms={gyms} onChange={onGymChange} />
       <BranchSwitcher branches={branches} activeBranchId={branchId} onChange={onBranchChange} />
       <nav aria-label="Navegación principal">
         {visibleMain.map(renderLink)}

@@ -1,8 +1,10 @@
 /**
- * The only place that talks HTTP. It adds the bearer token (kept in memory; AuthProvider mirrors it in sessionStorage so a reload keeps the session),
- * the inspection header for the superadmin, and turns the API's error shape into `ApiError`.
+ * The only place that talks HTTP to pulso-api. It adds the bearer token that atm-auth-api issued (the session
+ * module provides it and renews it), retries once when the API rejects it, and turns the API's error shape into `ApiError`.
  */
 const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api/v1').replace(/\/$/, '');
+/** atm-auth-api: login, renewal, logout and password change. The browser calls it directly. */
+export const AUTH_BASE_URL = (import.meta.env.VITE_AUTH_API_URL ?? 'http://localhost:3130').replace(/\/$/, '');
 
 export class ApiError extends Error {
   readonly status: number;
@@ -22,23 +24,22 @@ export class ApiError extends Error {
   }
 }
 
-interface Credentials {
-  token: string | null;
-  inspectedOrganizationId: string | null;
+/** Where the client gets the session's token; the auth session installs it so this file knows nothing about atm-auth-api. */
+export interface TokenSource {
+  /** A valid access token (renewed when about to expire), or null when nobody is signed in. Throws `ApiError` 401 when the session is over. */
+  getAccessToken: () => Promise<string | null>;
+  /** Asks atm-auth-api for a new access token because pulso-api rejected the current one. */
+  forceRefresh: () => Promise<string>;
 }
 
-const credentials: Credentials = { token: null, inspectedOrganizationId: null };
+let tokenSource: TokenSource | null = null;
 let onUnauthorized: (() => void) | null = null;
 
-export function setAuthToken(token: string | null): void {
-  credentials.token = token;
+export function setTokenSource(source: TokenSource | null): void {
+  tokenSource = source;
 }
 
-/** The superadmin looks at one client at a time; the header is sent on GET requests only. */
-export function setInspectedOrganization(id: string | null): void {
-  credentials.inspectedOrganizationId = id;
-}
-
+/** Called when the session cannot be recovered; the app goes back to the login. */
 export function setUnauthorizedHandler(handler: (() => void) | null): void {
   onUnauthorized = handler;
 }
@@ -66,15 +67,13 @@ function buildUrl(path: string, query?: Query): string {
   return url.toString();
 }
 
-async function send(method: string, path: string, options: RequestOptions): Promise<Response> {
+async function fetchOnce(method: string, path: string, options: RequestOptions, token: string | null): Promise<Response> {
   const headers: Record<string, string> = {};
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
   if (options.file) headers['Content-Type'] = options.file.type;
-  if (credentials.token) headers.Authorization = `Bearer ${credentials.token}`;
-  if (method === 'GET' && credentials.inspectedOrganizationId) headers['X-Organization-Id'] = credentials.inspectedOrganizationId;
-  let response: Response;
+  if (token) headers.Authorization = `Bearer ${token}`;
   try {
-    response = await fetch(buildUrl(path, options.query), {
+    return await fetch(buildUrl(path, options.query), {
       method,
       headers,
       body: options.file ?? (options.body === undefined ? undefined : JSON.stringify(options.body)),
@@ -84,10 +83,30 @@ async function send(method: string, path: string, options: RequestOptions): Prom
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
     throw new ApiError(0, 'NETWORK_ERROR', 'No se pudo conectar con el servidor.');
   }
+}
+
+async function send(method: string, path: string, options: RequestOptions): Promise<Response> {
+  let token: string | null;
+  try {
+    token = (await tokenSource?.getAccessToken()) ?? null;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) onUnauthorized?.();
+    throw error;
+  }
+  let response = await fetchOnce(method, path, options, token);
+  if (response.status === 401 && token && tokenSource) {
+    // The token was revoked or expired early: ask atm-auth-api for a new one and try once more.
+    try {
+      response = await fetchOnce(method, path, options, await tokenSource.forceRefresh());
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) onUnauthorized?.();
+      throw error;
+    }
+  }
   if (response.ok) return response;
   const payload = (await response.json().catch(() => null)) as { error?: { code?: string; message?: string; details?: unknown } } | null;
   const apiError = new ApiError(response.status, payload?.error?.code ?? 'UNKNOWN', payload?.error?.message ?? 'Algo salió mal.', payload?.error?.details);
-  if (response.status === 401 && apiError.code === 'UNAUTHORIZED' && credentials.token) onUnauthorized?.();
+  if (response.status === 401 && token) onUnauthorized?.();
   throw apiError;
 }
 

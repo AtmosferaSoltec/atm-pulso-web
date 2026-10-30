@@ -9,8 +9,6 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 
 const roleLabels: Record<Role, string> = {
-  superadmin: 'Superadmin',
-  owner: 'Propietario',
   admin: 'Administrador',
   receptionist: 'Recepción',
 };
@@ -34,16 +32,11 @@ export function ProfileDialog({ onClose }: ProfileDialogProps): ReactElement {
   const [confirm, setConfirm] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
   const [passwordError, setPasswordError] = useState('');
-  const [passwordSaved, setPasswordSaved] = useState(false);
 
   const scope =
-    user.role === 'superadmin'
-      ? 'Todas las cuentas de clientes'
-      : user.role === 'owner'
-        ? 'Todos tus gimnasios y sedes'
-        : user.role === 'admin'
-          ? `${user.gyms.map((gym) => gym.name).join(', ') || 'Tus gimnasios'} · todas las sedes`
-          : user.branches.map((branch) => `${branch.gym_name} · ${branch.name}`).join(', ');
+    user.role === 'admin'
+      ? `${user.gym.name} · todas las sedes`
+      : user.branches.map((branch) => `${branch.gym_name} · ${branch.name}`).join(', ');
 
   async function saveData(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -56,12 +49,6 @@ export function ProfileDialog({ onClose }: ProfileDialogProps): ReactElement {
     event.preventDefault();
     const error = await changePassword(current, next, confirm);
     setPasswordError(error ?? '');
-    setPasswordSaved(!error);
-    if (!error) {
-      setCurrent('');
-      setNext('');
-      setConfirm('');
-    }
   }
 
   const passwordType = showPasswords ? 'text' : 'password';
@@ -147,11 +134,6 @@ export function ProfileDialog({ onClose }: ProfileDialogProps): ReactElement {
         {passwordError && (
           <p role="alert" className="error full">
             {passwordError}
-          </p>
-        )}
-        {passwordSaved && (
-          <p role="status" className="notice full">
-            Contraseña actualizada. Úsala la próxima vez que inicies sesión.
           </p>
         )}
         <div className="form-actions full">

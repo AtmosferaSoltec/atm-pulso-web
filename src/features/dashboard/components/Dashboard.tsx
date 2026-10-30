@@ -7,7 +7,6 @@ import { formatCurrency } from '@/utils/formatCurrency';
 
 interface DashboardProps {
   branchId: string;
-  readOnly?: boolean;
   onSelect: (member: Member) => void;
   onEdit: (member: Member) => void;
   onRenew: (member: Member) => void;
@@ -23,7 +22,7 @@ interface Metric {
 
 const UPCOMING_LIMIT = 5;
 
-export function Dashboard({ branchId, readOnly = false, onSelect, onEdit, onRenew }: DashboardProps): ReactElement {
+export function Dashboard({ branchId, onSelect, onEdit, onRenew }: DashboardProps): ReactElement {
   const dashboard = useDashboard(branchId);
   // The five nearest to expire, as full rows so the quick actions (view, edit, renew) work.
   const upcoming = useMemberList({ search: '', status: 'expiring', homeBranchId: branchId, page: 1, pageSize: UPCOMING_LIMIT });
@@ -72,9 +71,8 @@ export function Dashboard({ branchId, readOnly = false, onSelect, onEdit, onRene
             members={upcoming.data?.data ?? []}
             loading={upcoming.isPending}
             onSelect={onSelect}
-            onEdit={readOnly ? undefined : onEdit}
-            onRenew={readOnly ? undefined : onRenew}
-            allowReminders={!readOnly}
+            onEdit={onEdit}
+            onRenew={onRenew}
           />
         )}
       </section>

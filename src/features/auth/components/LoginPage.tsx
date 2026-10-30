@@ -1,6 +1,9 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useAuth } from '@/store/authStore';
+import { ApiError } from '@/config/apiClient';
 import { describeError } from '@/config/errorMessages';
+import { PASSWORD_CHANGE_REQUIRED } from '@/features/auth/services/authApi';
+import { PasswordSetupPage } from '@/features/auth/components/PasswordSetupPage';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { IconButton } from '@/components/ui/icon-button';
@@ -15,17 +18,33 @@ export function LoginPage(): ReactElement {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // Set when atm-auth-api asks to replace the temporary password (the DNI) before issuing a session.
+  const [settingUp, setSettingUp] = useState<string | null>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setBusy(true);
     try {
       const user = await login(dni.trim(), password);
-      if (!user.must_change_password) window.location.hash = user.role === 'receptionist' ? 'access' : user.role === 'superadmin' ? 'clients' : 'dashboard';
+      window.location.hash = user.role === 'receptionist' ? 'access' : 'dashboard';
     } catch (failure) {
-      setError(describeError(failure));
+      if (failure instanceof ApiError && failure.code === PASSWORD_CHANGE_REQUIRED) setSettingUp(password);
+      else setError(describeError(failure));
       setBusy(false);
     }
+  }
+
+  if (settingUp !== null) {
+    return (
+      <PasswordSetupPage
+        documentNumber={dni.trim()}
+        temporaryPassword={settingUp}
+        onCancel={() => {
+          setSettingUp(null);
+          setPassword('');
+        }}
+      />
+    );
   }
 
   return (
