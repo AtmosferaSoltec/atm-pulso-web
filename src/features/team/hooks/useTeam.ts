@@ -25,7 +25,7 @@ export interface TeamUserChanges {
 export function useTeamUsers(): UseQueryResult<TeamUser[]> {
   return useQuery({
     queryKey: teamKey,
-    queryFn: async () => (await requestPage<TeamUser, Pagination>('/team', { query: { page_size: 100 } })).data,
+    queryFn: async () => (await requestPage<TeamUser, Pagination>('/users', { query: { page_size: 100 } })).data,
   });
 }
 
@@ -38,9 +38,9 @@ export function useTeamMutations(): {
   const queryClient = useQueryClient();
   const refresh = (): Promise<void> => queryClient.invalidateQueries({ queryKey: teamKey });
   return {
-    create: useMutation({ mutationFn: (user: NewTeamUser) => api.post<TeamUser>('/team', user), onSuccess: refresh }),
-    update: useMutation({ mutationFn: ({ id, changes }) => api.patch<TeamUser>(`/team/${id}`, changes), onSuccess: refresh }),
-    setActive: useMutation({ mutationFn: ({ id, active }) => api.post<TeamUser>(`/team/${id}/${active ? 'activate' : 'deactivate'}`), onSuccess: refresh }),
-    resetPassword: useMutation({ mutationFn: (id: string) => api.post<TeamUser>(`/team/${id}/password`), onSuccess: refresh }),
+    create: useMutation({ mutationFn: (user: NewTeamUser) => api.post<TeamUser>('/users', user), onSuccess: refresh }),
+    update: useMutation({ mutationFn: ({ id, changes }) => api.patch<TeamUser>(`/users/${id}`, changes), onSuccess: refresh }),
+    setActive: useMutation({ mutationFn: ({ id, active }) => api.post<TeamUser>(`/users/${id}/${active ? 'activate' : 'deactivate'}`), onSuccess: refresh }),
+    resetPassword: useMutation({ mutationFn: (id: string) => api.post<TeamUser>(`/users/${id}/password`), onSuccess: refresh }),
   };
 }

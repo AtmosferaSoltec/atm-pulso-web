@@ -16,14 +16,13 @@ export const pageDetails: Record<Page, PageDetails> = {
   payments: { title: 'Pagos e ingresos', name: 'Pagos e ingresos', icon: 'payments' },
   team: { title: 'Usuarios y permisos', name: 'Usuarios', icon: 'members' },
   pricing: { title: 'Tarifas del gimnasio', name: 'Tarifas', icon: 'cash' },
-  branding: { title: 'Color del gimnasio', name: 'Color', icon: 'tag' },
 };
 
 /** Pages used every day; always visible in the sidebar. */
 export const mainPages: Page[] = ['dashboard', 'members', 'access', 'payments'];
 
 /** Pages configured once; grouped behind the settings entry. */
-export const settingsPages: Page[] = ['team', 'pricing', 'branding'];
+export const settingsPages: Page[] = ['team', 'pricing'];
 
 /** Pages offering "Nuevo miembro": enrolling happens only from the members module. */
 export const enrollmentPages: Page[] = ['members'];

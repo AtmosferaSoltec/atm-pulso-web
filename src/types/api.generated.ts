@@ -80,62 +80,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Sign in with DNI and password.
-         * @description Nothing is stored: no session row and no refresh token. An unknown DNI, a wrong
-         *     password and an inactive user all answer `INVALID_CREDENTIALS`, so the caller cannot
-         *     tell which one it was. After 5 failures in 15 minutes a DNI answers
-         *     `TOO_MANY_ATTEMPTS` with `Retry-After`. There is also a stricter per-IP limit.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @example 10000002 */
-                        document_number: string;
-                        /** @example Pulso2026! */
-                        password: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description signed in */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data?: components["schemas"]["Session"];
-                        };
-                    };
-                };
-                400: components["responses"]["ValidationFailed"];
-                401: components["responses"]["InvalidCredentials"];
-                429: components["responses"]["TooManyAttempts"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/me": {
         parameters: {
             query?: never;
@@ -165,7 +109,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
-                403: components["responses"]["PasswordChangeRequired"];
+                403: components["responses"]["Forbidden"];
             };
         };
         put?: never;
@@ -207,12 +151,12 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                403: components["responses"]["PasswordChangeRequired"];
+                403: components["responses"]["Forbidden"];
             };
         };
         trace?: never;
     };
-    "/clients": {
+    "/admin/clients": {
         parameters: {
             query?: never;
             header?: never;
@@ -220,132 +164,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List clients with their gyms.
-         * @description Superadmin only; organization inspection headers are ignored.
-         */
-        get: {
-            parameters: {
-                query?: {
-                    search?: string;
-                    page?: number;
-                    page_size?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Success. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Client"][];
-                            meta?: components["schemas"]["Pagination"];
-                        };
-                    };
-                };
-                400: components["responses"]["ValidationFailed"];
-                401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN or PASSWORD_CHANGE_REQUIRED. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description NOT_FOUND. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /**
-         * Create a client atomically with a DNI temporary password.
-         * @description Superadmin only; organization inspection headers are ignored.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["NewClient"];
-                };
-            };
-            responses: {
-                /** @description Success. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Client"];
-                        };
-                    };
-                };
-                400: components["responses"]["ValidationFailed"];
-                401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN or PASSWORD_CHANGE_REQUIRED. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description NOT_FOUND. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description USER_DOCUMENT_TAKEN or CONFLICT. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clients/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Count clients and their resources.
-         * @description Superadmin only; organization inspection headers are ignored.
+         * Every client with its gyms and branches (superadmin).
+         * @description First records every company that has Pulso enabled in atm-auth-api (its client as an organization,
+         *     itself as a gym with a default branch "Sede principal"); if atm-auth-api does not answer, the stored
+         *     clients are listed.
          */
         get: {
             parameters: {
@@ -363,30 +185,12 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data: components["schemas"]["ClientSummary"];
+                            data?: components["schemas"]["AdminClient"][];
                         };
                     };
                 };
-                400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN or PASSWORD_CHANGE_REQUIRED. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description NOT_FOUND. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                403: components["responses"]["Forbidden"];
             };
         };
         put?: never;
@@ -397,7 +201,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/clients/{client_id}/gyms": {
+    "/admin/gyms/{gym_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -406,74 +210,48 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Add a gym to a client.
-         * @description Superadmin only; organization inspection headers are ignored.
-         */
-        post: {
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set the look of a gym (superadmin). */
+        patch: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    client_id: string;
+                    gym_id: string;
                 };
                 cookie?: never;
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["NewGym"];
+                    "application/json": {
+                        brand_color: string;
+                    };
                 };
             };
             responses: {
-                /** @description Success. */
-                201: {
+                /** @description The gym. */
+                200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            data: components["schemas"]["Gym"];
+                            data?: components["schemas"]["AdminGym"];
                         };
                     };
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN or PASSWORD_CHANGE_REQUIRED. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description NOT_FOUND. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description USER_DOCUMENT_TAKEN or CONFLICT. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
             };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
-    "/gyms/{gym_id}/branches": {
+    "/admin/gyms/{gym_id}/branches": {
         parameters: {
             query?: never;
             header?: never;
@@ -482,10 +260,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Add a branch to a gym.
-         * @description Superadmin only; organization inspection headers are ignored.
-         */
+        /** Add a branch to a gym (superadmin). Atmósfera charges per branch, so gym admins never do this. */
         post: {
             parameters: {
                 query?: never;
@@ -497,56 +272,112 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["NewBranch"];
+                    "application/json": {
+                        name: string;
+                        address?: string | null;
+                    };
                 };
             };
             responses: {
-                /** @description Success. */
+                /** @description The branch. */
                 201: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            data: components["schemas"]["CatalogBranch"];
+                            data?: components["schemas"]["AdminBranch"];
                         };
                     };
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN or PASSWORD_CHANGE_REQUIRED. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description NOT_FOUND. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description USER_DOCUMENT_TAKEN or CONFLICT. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
             };
         };
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/admin/branches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a branch nobody has used (superadmin).
+         * @description 409 `BRANCH_IN_USE` when it has members, sales, access history or receptionists, or is the last branch of its gym.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Rename a branch or change its address (superadmin). */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        address?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description The branch. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["AdminBranch"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
+            };
+        };
         trace?: never;
     };
     "/catalog": {
@@ -563,10 +394,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: never;
-                header?: {
-                    /** @description Required for superadmin inspection only. */
-                    "X-Organization-Id"?: string;
-                };
+                header?: never;
                 path?: never;
                 cookie?: never;
             };
@@ -585,7 +413,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                403: components["responses"]["PasswordChangeRequired"];
+                403: components["responses"]["Forbidden"];
                 /** @description Organization does not exist. */
                 404: {
                     headers: {
@@ -614,7 +442,9 @@ export interface paths {
         };
         /**
          * List the users the caller manages.
-         * @description Owner sees the organization; admin sees itself and the receptionists of its gym. Reception gets 403; the superadmin may inspect with X-Organization-Id.
+         * @description The team of the current gym: the people atm-auth-api lets into it (merged with the branches Pulso
+         *     assigned; people the console added are recorded the first time they are listed). Admin only.
+         *     If atm-auth-api cannot be reached the list falls back to the people Pulso already knows.
          */
         get: {
             parameters: {
@@ -622,10 +452,7 @@ export interface paths {
                     page?: number;
                     page_size?: number;
                 };
-                header?: {
-                    /** @description Superadmin inspection on GET only; ignored for other roles. */
-                    "X-Organization-Id"?: string;
-                };
+                header?: never;
                 path?: never;
                 cookie?: never;
             };
@@ -645,7 +472,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN, PASSWORD_CHANGE_REQUIRED, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED, CANNOT_MODIFY_SELF or CANNOT_MODIFY_OWNER. */
+                /** @description FORBIDDEN, NO_ACCESS, USER_INACTIVE, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED or CANNOT_MODIFY_SELF. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -667,8 +494,12 @@ export interface paths {
         };
         put?: never;
         /**
-         * Create an admin or receptionist.
-         * @description The temporary password is the DNI and must be changed at first login. Only an owner creates admins; an admin creates receptionists of its own gym.
+         * Create an admin or receptionist in the current gym.
+         * @description The account and the access are created in atm-auth-api (the DNI is the first password there and
+         *     must be changed at the first login). Admin only. An admin takes no branches; a receptionist needs
+         *     one or more branches of the current gym. Errors: `AUTH_UNAVAILABLE` (503), `USER_IN_OTHER_COMPANY` (409,
+         *     the person already works for another company: only Atmósfera can add them to a second one),
+         *     `ROLE_NOT_ASSIGNABLE`, `SCOPE_NOT_ALLOWED` (a branch of another gym or client).
          */
         post: {
             parameters: {
@@ -696,7 +527,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN, PASSWORD_CHANGE_REQUIRED, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED, CANNOT_MODIFY_SELF or CANNOT_MODIFY_OWNER. */
+                /** @description FORBIDDEN, NO_ACCESS, USER_INACTIVE, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED or CANNOT_MODIFY_SELF. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -714,7 +545,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description USER_DOCUMENT_TAKEN or CONFLICT. */
+                /** @description USER_DOCUMENT_TAKEN, USER_IN_OTHER_COMPANY or CONFLICT. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -745,8 +576,8 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Change a user's name, DNI, role, gym or branches.
-         * @description A DNI correction and a scope change invalidate the user's tokens. Nobody edits themselves or an owner.
+         * Change a team member's name, role or branches.
+         * @description A new role is also applied in atm-auth-api. The DNI cannot be edited. Nobody edits themselves.
          */
         patch: {
             parameters: {
@@ -776,7 +607,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN, PASSWORD_CHANGE_REQUIRED, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED, CANNOT_MODIFY_SELF or CANNOT_MODIFY_OWNER. */
+                /** @description FORBIDDEN, NO_ACCESS, USER_INACTIVE, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED or CANNOT_MODIFY_SELF. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -794,7 +625,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description USER_DOCUMENT_TAKEN or CONFLICT. */
+                /** @description USER_DOCUMENT_TAKEN, USER_IN_OTHER_COMPANY or CONFLICT. */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -844,7 +675,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN, PASSWORD_CHANGE_REQUIRED, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED, CANNOT_MODIFY_SELF or CANNOT_MODIFY_OWNER. */
+                /** @description FORBIDDEN, NO_ACCESS, USER_INACTIVE, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED or CANNOT_MODIFY_SELF. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -907,7 +738,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN, PASSWORD_CHANGE_REQUIRED, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED, CANNOT_MODIFY_SELF or CANNOT_MODIFY_OWNER. */
+                /** @description FORBIDDEN, NO_ACCESS, USER_INACTIVE, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED or CANNOT_MODIFY_SELF. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -943,8 +774,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Reset a user's password to their DNI.
-         * @description Sets must_change_password and invalidates existing tokens.
+         * Reset a team member's password to their DNI (in atm-auth-api).
+         * @description They must choose a new password at their next login. Admin only; `AUTH_UNAVAILABLE` (503) if atm-auth-api does not answer.
          */
         post: {
             parameters: {
@@ -970,7 +801,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN, PASSWORD_CHANGE_REQUIRED, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED, CANNOT_MODIFY_SELF or CANNOT_MODIFY_OWNER. */
+                /** @description FORBIDDEN, NO_ACCESS, USER_INACTIVE, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED or CANNOT_MODIFY_SELF. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -1010,11 +841,12 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Change a gym's identity (superadmin) or its day pass price, branch sharing and membership prices (owner or admin).
-         * @description Send only the fields to change; null for display_name or day_pass_price restores the default.
-         *     The identity (`display_name`, `brand_color`; the logo has its own endpoint) is set only by the superadmin,
-         *     who may change nothing else. The owner of the organization or the admin of that gym change the rest,
-         *     and get 403 FORBIDDEN if they send an identity field.
+         * Change the rules of the current gym (admin).
+         * @description Send only the fields to change; null for day_pass_price restores the default. A gym admin changes
+         *     `day_pass_price`, `branch_sharing` and `membership_prices` of the gym of their token. The identity
+         *     (`display_name`, `brand_color`, logo, name) is configured by Atmósfera from the console
+         *     (`PATCH /admin/gyms/{gym_id}`): sending `display_name` or `brand_color` here answers 403 `FORBIDDEN`.
+         *     A gym that is not the one of the token answers 403 `SCOPE_NOT_ALLOWED`.
          */
         patch: {
             parameters: {
@@ -1044,7 +876,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN, PASSWORD_CHANGE_REQUIRED, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED, CANNOT_MODIFY_SELF or CANNOT_MODIFY_OWNER. */
+                /** @description FORBIDDEN, NO_ACCESS, USER_INACTIVE, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED or CANNOT_MODIFY_SELF. */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -1064,337 +896,6 @@ export interface paths {
                 };
             };
         };
-        trace?: never;
-    };
-    "/gyms/{gym_id}/logo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download a gym's logo.
-         * @description Public (no token: an `<img>` cannot send one). The logo is branding, not private data. The bucket is private; the API
-         *     reads the file and streams it. `v` is the version from `logo_url`: when it is the current one the answer is cacheable
-         *     for good (`immutable`), otherwise it is `no-cache`.
-         */
-        get: {
-            parameters: {
-                query?: {
-                    v?: string;
-                };
-                header?: never;
-                path: {
-                    gym_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The image. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "image/png": string;
-                        "image/jpeg": string;
-                        "image/webp": string;
-                    };
-                };
-                /** @description NOT_FOUND (no such gym, or it has no logo). */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description STORAGE_UNAVAILABLE. */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        /**
-         * Set a gym's logo.
-         * @description Superadmin only. The body is the image itself (not JSON): PNG, JPEG or WebP, at most 10 MB. The type is
-         *     checked by the file's content, never by its name or the declared Content-Type. The previous logo is deleted.
-         *     Answers 503 STORAGE_UNAVAILABLE when no object store is configured.
-         */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    gym_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "image/png": string;
-                    "image/jpeg": string;
-                    "image/webp": string;
-                };
-            };
-            responses: {
-                /** @description Success. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Gym"];
-                        };
-                    };
-                };
-                /** @description VALIDATION_FAILED with field `logo` and code LOGO_TYPE_INVALID or LOGO_SIZE_INVALID. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN (not the superadmin). */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description NOT_FOUND. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description STORAGE_UNAVAILABLE. */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        post?: never;
-        /**
-         * Remove a gym's logo.
-         * @description Superadmin only. The file is deleted from the object store.
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    gym_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Success. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["Gym"];
-                        };
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN (not the superadmin). */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description NOT_FOUND. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description STORAGE_UNAVAILABLE. */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clients/{client_id}/owner": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Correct a client owner's name or DNI.
-         * @description Superadmin only. Role, gym and branches cannot be changed here. Invalidates the owner's tokens.
-         */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    client_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UserChanges"];
-                };
-            };
-            responses: {
-                /** @description Success. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["TeamUser"];
-                        };
-                    };
-                };
-                400: components["responses"]["ValidationFailed"];
-                401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN, PASSWORD_CHANGE_REQUIRED, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED, CANNOT_MODIFY_SELF or CANNOT_MODIFY_OWNER. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description NOT_FOUND (also for resources of another organization). */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description USER_DOCUMENT_TAKEN or CONFLICT. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/clients/{client_id}/owner/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reset a client owner's password to their DNI.
-         * @description Superadmin only.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    client_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Success. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["TeamUser"];
-                        };
-                    };
-                };
-                400: components["responses"]["ValidationFailed"];
-                401: components["responses"]["Unauthorized"];
-                /** @description FORBIDDEN, PASSWORD_CHANGE_REQUIRED, ROLE_NOT_ASSIGNABLE, SCOPE_NOT_ALLOWED, CANNOT_MODIFY_SELF or CANNOT_MODIFY_OWNER. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description NOT_FOUND (also for resources of another organization). */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/members": {
@@ -1406,7 +907,7 @@ export interface paths {
         };
         /**
          * List the shared member directory with status counts.
-         * @description Every role of the organization sees every member. The superadmin may inspect with X-Organization-Id. Counts ignore the status filter but respect q and home_branch_id.
+         * @description Every role of the organization sees every member. Counts ignore the status filter but respect q and home_branch_id.
          */
         get: {
             parameters: {
@@ -1448,7 +949,7 @@ export interface paths {
          * Enroll a member (member, first period, payment and receipt in one transaction).
          * @description The branch must be one the caller works in. Repeating the same `id` returns the original sale with 200.
          *     Errors: MEMBER_DOCUMENT_TAKEN (409, details.member_id), BRANCH_NOT_ACCESSIBLE (403), SCOPE_NOT_ALLOWED (400, foreign branch),
-         *     ACCESS_BRANCHES_INVALID (400), VALIDATION_FAILED (400). The superadmin gets 403.
+         *     ACCESS_BRANCHES_INVALID (400), VALIDATION_FAILED (400).
          */
         post: {
             parameters: {
@@ -1689,7 +1190,7 @@ export interface paths {
         };
         /**
          * List the proofs of payment attached to a receipt's payment.
-         * @description Oldest first. Same reach as the branch where the payment was collected; the superadmin consults with `X-Organization-Id`.
+         * @description Oldest first. Same reach as the branch where the payment was collected.
          */
         get: {
             parameters: {
@@ -1723,7 +1224,7 @@ export interface paths {
          * Attach a proof of payment (photo or PDF) to a receipt's payment.
          * @description Optional and never for cash. The body is the file itself (not JSON): PNG, JPEG, WebP or PDF, at most 10 MB, checked by its content.
          *     Up to 5 per payment (a payment split in several transfers). Vouchers cannot be edited or deleted: they are evidence.
-         *     Needs the right to operate in that branch (the superadmin only consults).
+         *     Needs access to that branch.
          *     Answers 503 STORAGE_UNAVAILABLE when no object store is configured.
          */
         post: {
@@ -1965,7 +1466,7 @@ export interface paths {
         };
         /**
          * History of access entries (checks and day passes), newest first.
-         * @description Owner sees the organization, admin its gym, reception its assigned branches. A `branch_id` the caller cannot reach is 403 BRANCH_NOT_ACCESSIBLE.
+         * @description Admin sees the current gym, reception its assigned branches. A `branch_id` the caller cannot reach is 403 BRANCH_NOT_ACCESSIBLE.
          */
         get: {
             parameters: {
@@ -2220,7 +1721,7 @@ export interface paths {
         };
         /**
          * Payments of the branches the caller reaches, with the totals of the whole filter.
-         * @description Owner reaches the organization, admin its gym, reception its assigned branches. Dates are Lima dates, inclusive; the default range is the current month and the widest is 366 days.
+         * @description Admin reaches the current gym, reception its assigned branches. Dates are Lima dates, inclusive; the default range is the current month and the widest is 366 days.
          *     `meta.totals` covers the whole filter (not just the page) and is **omitted for reception**, who must not get KPIs.
          */
         get: {
@@ -2279,7 +1780,7 @@ export interface paths {
         };
         /**
          * Download the filtered payments as CSV.
-         * @description Owner and admin only (reception gets 403). Same filters as `/payments`, no pagination. UTF-8 with BOM, comma separated; columns
+         * @description Admin only (reception gets 403). Same filters as `/payments`, no pagination. UTF-8 with BOM, comma separated; columns
          *     Boleta, Miembro, Documento, Plan, Importe, Medio de pago, Fecha. More than 10,000 rows is 413 EXPORT_TOO_LARGE. Cells that start with `= + - @` are prefixed with `'`.
          *     Fetch it with the Bearer header and save the blob; never put the token in a URL.
          */
@@ -2332,7 +1833,7 @@ export interface paths {
         };
         /**
          * Figures of a gym or branch for today and this month.
-         * @description Owner and admin only (reception gets 403). A new organization answers zeros, never sample data. `expiring_soon` has at most five members, nearest end date first.
+         * @description Admin only (reception gets 403). A new organization answers zeros, never sample data. `expiring_soon` has at most five members, nearest end date first.
          */
         get: {
             parameters: {
@@ -2364,67 +1865,6 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/me/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Change your own password.
-         * @description Every older token stops working at once and a fresh one is returned, so the user
-         *     stays signed in on this device for a voluntary change. When `must_change_password`
-         *     is true, completion returns `login_required: true` without a token; sign in again.
-         *     Restricted tokens only allow GET /me and POST /me/password; other authenticated
-         *     endpoints return 403 PASSWORD_CHANGE_REQUIRED. A wrong current password answers
-         *     `CURRENT_PASSWORD_INCORRECT` with **400** (not 401, so the web does not read it as an
-         *     ended session) and repeated failures are limited.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        current_password: string;
-                        new_password: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description password changed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data?: components["schemas"]["Session"] | {
-                                /** @constant */
-                                login_required: true;
-                            };
-                        };
-                    };
-                };
-                400: components["responses"]["ValidationFailed"];
-                401: components["responses"]["Unauthorized"];
-                403: components["responses"]["PasswordChangeRequired"];
-                429: components["responses"]["TooManyAttempts"];
-            };
-        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2466,7 +1906,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                403: components["responses"]["PasswordChangeRequired"];
+                403: components["responses"]["Forbidden"];
                 404: components["responses"]["DocumentNotFound"];
                 502: components["responses"]["LookupUnavailable"];
             };
@@ -2511,7 +1951,7 @@ export interface paths {
                 };
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
-                403: components["responses"]["PasswordChangeRequired"];
+                403: components["responses"]["Forbidden"];
                 404: components["responses"]["DocumentNotFound"];
                 502: components["responses"]["LookupUnavailable"];
             };
@@ -2533,51 +1973,6 @@ export interface components {
             page_size: number;
             total: number;
         };
-        ClientSummary: {
-            clients: number;
-            gyms: number;
-            branches: number;
-            client_users: number;
-        };
-        Client: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            owner: {
-                /** Format: uuid */
-                id: string;
-                document_number: string;
-                full_name: string;
-                is_active: boolean;
-            };
-            gyms: components["schemas"]["Gym"][];
-        };
-        NewClient: {
-            /** Format: uuid */
-            id?: string;
-            owner: {
-                document_number: string;
-                first_names: string;
-                last_names: string;
-                /** Format: email */
-                email: string;
-                phone: string;
-            };
-            gyms: components["schemas"]["NewGym"][];
-        };
-        NewGym: {
-            /** Format: uuid */
-            id?: string;
-            name: string;
-            tax_id?: string;
-            branches: components["schemas"]["NewBranch"][];
-        };
-        NewBranch: {
-            /** Format: uuid */
-            id?: string;
-            name: string;
-            address?: string;
-        };
         CatalogBranch: {
             /** Format: uuid */
             id: string;
@@ -2594,12 +1989,10 @@ export interface components {
             id: string;
             name: string;
             display_name: string | null;
+            /** @description RUC; null when the company has none. */
             tax_id: string | null;
             brand_color: string;
-            /**
-             * @description Address of the logo relative to the API prefix (prepend the API base URL); changes with every upload. Null when the gym has none.
-             * @example /gyms/0190…/logo?v=0190…
-             */
+            /** @description Always null for now; the logo will come from the company profile of atm-auth-api. */
             logo_url: string | null;
             /** @example 15.00 */
             day_pass_price: string;
@@ -2622,11 +2015,10 @@ export interface components {
             document_number: string;
             phone: string | null;
             /** @enum {string} */
-            role: "owner" | "admin" | "receptionist";
+            role: "admin" | "receptionist";
+            /** @description False when blocked in Pulso or disabled in atm-auth-api. */
             is_active: boolean;
             is_self: boolean;
-            /** @description The gyms an admin manages (one or more, chosen by the owner). Empty for the other roles. */
-            gyms: components["schemas"]["Named"][];
             branches: {
                 /** Format: uuid */
                 id: string;
@@ -2636,34 +2028,23 @@ export interface components {
             }[];
         };
         NewUser: {
-            /**
-             * Format: uuid
-             * @description Optional; repeating a request with the same id is idempotent.
-             */
-            id?: string;
             full_name: string;
             document_number: string;
             /** @enum {string} */
             role: "admin" | "receptionist";
-            /** @description Required for admin (one or more gyms of the organization); refused for receptionist. Only an owner can create an admin. */
-            gym_ids?: string[];
-            /** @description Required for receptionist (one or more). */
+            /** @description Required for receptionist (one or more branches of the current gym); refused for admin (`SCOPE_INVALID`). */
             branch_ids?: string[];
         };
         /** @description Send only the fields to change. */
         UserChanges: {
             full_name?: string;
-            document_number?: string;
             /** @enum {string} */
             role?: "admin" | "receptionist";
-            /** @description Replaces the gyms of an admin. Only an owner can change them. */
-            gym_ids?: string[];
+            /** @description Replaces the branches of a receptionist (required when the role becomes receptionist). */
             branch_ids?: string[];
         };
         /** @description Send only the fields to change. */
         GymChanges: {
-            display_name?: string | null;
-            brand_color?: string;
             /** @example 15.00 */
             day_pass_price?: string | null;
             branch_sharing?: boolean;
@@ -2996,37 +2377,27 @@ export interface components {
                 phone: string;
             }[];
         };
-        Session: {
-            access_token?: string;
-            /** @example Bearer */
-            token_type?: string;
-            /** Format: date-time */
-            expires_at?: string;
-            /**
-             * @description Seconds until it stops working
-             * @example 28800
-             */
-            expires_in?: number;
-            user?: components["schemas"]["User"];
-        };
         User: {
-            must_change_password: boolean;
             /** Format: uuid */
-            id?: string;
-            /** @enum {string} */
-            document_type?: "dni";
+            id: string;
             /** @example 10000002 */
-            document_number?: string;
-            full_name?: string;
-            phone?: string | null;
+            document_number: string;
+            full_name: string;
+            phone: string | null;
             /** @enum {string} */
-            role?: "superadmin" | "owner" | "admin" | "receptionist";
-            /** @description The client. Null for the superadmin. */
-            organization?: components["schemas"]["Named"] | null;
-            /** @description Only an admin has gyms (one or more). Empty for the other roles. */
-            gyms?: components["schemas"]["Named"][];
-            /** @description Only a receptionist has assigned branches. */
-            branches?: {
+            role: "admin" | "receptionist";
+            /** @description The client (owner of one or more gyms). */
+            organization: components["schemas"]["Named"];
+            /** @description The company of the token, the gym the person is working in. */
+            gym: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                brand_color: string;
+                logo_url: string | null;
+            };
+            /** @description All the branches of the gym for an admin, the assigned ones for a receptionist. */
+            branches: {
                 /** Format: uuid */
                 id?: string;
                 name?: string;
@@ -3034,6 +2405,31 @@ export interface components {
                 gym_id?: string;
                 gym_name?: string;
             }[];
+        };
+        AdminBranch: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            address: string | null;
+        };
+        AdminGym: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            auth_tenant_id: string;
+            /** @description Null when the company has none. */
+            ruc: string | null;
+            name: string;
+            brand_color: string;
+            branches: components["schemas"]["AdminBranch"][];
+        };
+        AdminClient: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            auth_client_id: string;
+            name: string;
+            gyms: components["schemas"]["AdminGym"][];
         };
         Named: {
             /** Format: uuid */
@@ -3089,8 +2485,8 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description `PASSWORD_CHANGE_REQUIRED`: set a new password before accessing the application. */
-        PasswordChangeRequired: {
+        /** @description `FORBIDDEN`, `NO_ACCESS` (the token does not open Pulso) or `USER_INACTIVE` (blocked in Pulso). */
+        Forbidden: {
             headers: {
                 [name: string]: unknown;
             };
@@ -3098,28 +2494,9 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description `UNAUTHORIZED`: missing, invalid or expired token, inactive user, or a token from before a password change. */
+        /** @description `UNAUTHORIZED`: missing, invalid or expired token. Ask atm-auth-api for a new one (refresh) and retry once. */
         Unauthorized: {
             headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description `INVALID_CREDENTIALS`. */
-        InvalidCredentials: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description `TOO_MANY_ATTEMPTS`. `Retry-After` says how many seconds to wait. */
-        TooManyAttempts: {
-            headers: {
-                "Retry-After"?: number;
                 [name: string]: unknown;
             };
             content: {

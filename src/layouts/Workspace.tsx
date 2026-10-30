@@ -15,7 +15,7 @@ import type { Page } from '@/types/navigation.types';
 import type { Sale } from '@/types/api.types';
 import { ProfileDialog } from '@/features/auth';
 import { TeamPage } from '@/features/team';
-import { BrandingPage, brandTheme, brandFavicon } from '@/features/branding';
+import { brandTheme, brandFavicon } from '@/features/branding';
 import { useCatalog, gymTitle } from '@/features/organization';
 
 export function Workspace(): ReactElement {
@@ -163,7 +163,6 @@ export function Workspace(): ReactElement {
           {page === 'payments' && <PaymentsPage key={branch.id} branchId={branch.id} showSummary={user.role !== 'receptionist'} />}
           {page === 'team' && <TeamPage />}
           {page === 'pricing' && <PricingPage key={gym.id} gym={gym} />}
-          {page === 'branding' && <BrandingPage key={gym.id} gym={gym} />}
         </main>
       </div>
       {registering && <MemberForm member={renewing} branchId={branch.id} onSaved={saved} onClose={closeEnrollment} />}

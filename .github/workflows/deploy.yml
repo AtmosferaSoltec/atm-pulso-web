@@ -57,6 +57,7 @@ jobs:
           push: true
           build-args: |
             VITE_API_URL=https://pulso-api.atmosferast.com/api/v1
+            VITE_AUTH_API_URL=https://auth.atmosferast.com
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:sha-${{ github.sha }}
