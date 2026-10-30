@@ -136,8 +136,8 @@ Our clients are gym owners and reception staff, not software users. Teach once, 
 - **Same icon, same place, everywhere.** Add `plus`, edit `edit`, view `eye`, renew `renewals`, WhatsApp `message`, search `search`. Row actions keep fixed slots so icons never jump between rows.
 - **Status by colour.** Green = vigente, amber = por vencer, red = vencido, blue = por iniciar. Filters are colour dots with counts.
 - **No explanatory subtitles, breadcrumbs or footers.** If a screen needs a paragraph to be understood, redesign the screen.
-- **Daily vs. once.** Daily pages live in the sidebar; one-time configuration (gyms and rules, users, identity) lives under "Configuración". Page lists are in `src/config/pages.ts`.
-- **Never show invented data.** No hardcoded dates or sample charts; derive from `DEMO_DATE` or real records.
+- **Daily vs. once.** Daily pages live in the sidebar; one-time configuration (team, prices, gym colour) lives under "Configuración". Page lists are in `src/config/pages.ts`.
+- **Never show invented data.** No hardcoded dates or sample charts; derive them from real records.
 - **Comfortable sizes.** Body text in tables is 14px, touch targets are at least 38px.
 - **Form controls.** Never use a native `<select>` or `<input type="date">`. Short fixed lists use `OptionCards` (`card` or `chip` variant); dates use `DatePicker` (`src/components/ui/`). Every field goes in `Field`; pass `required` to show the red asterisk and leave it off for optional fields, and add the "* Obligatorio" note to the form footer.
 
@@ -145,7 +145,7 @@ Our clients are gym owners and reception staff, not software users. Teach once, 
 
 ## 6. Business Rules to Remember
 
-- **Pulso is free, with limits**: 1 gym and up to 1 branch per gym per client. The limits live in `src/config/freePlan.ts`; do not hardcode them elsewhere.
-- Extra gyms or branches are **agreed directly with Atmósfera**, which creates and charges for them. Owners and admins never add gyms or branches themselves; only the superadmin does, and must confirm the extra agreement.
-- The member directory is always shared across an owner's gyms and branches. "Access between branches" is a per-gym rule set by that gym's administrator.
-- Only an owner creates administrators; an administrator creates reception staff.
+- **Pulso has no plans or limits of its own.** Atmósfera orchestrates everything from `atm-console-web`: it creates the client, its companies (each company enabled for Pulso is a **gym**) and the **branches** of each gym, for which it charges directly. Owners/admins never create gyms or branches, and neither does this web.
+- **Login is atm-auth-api's.** The browser calls it directly (`VITE_AUTH_API_URL`) and sends the access token to pulso-api. Never reintroduce passwords, tokens or sessions handled by Pulso.
+- Roles are only `admin` and `receptionist` (no owner, no superadmin). Only an admin creates users. A person with access to several gyms switches with the gym selector.
+- The member directory is shared across the client's gyms. "Access between branches" is a per-gym rule set by that gym's administrator.

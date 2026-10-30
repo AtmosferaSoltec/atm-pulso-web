@@ -6,15 +6,15 @@ Spanish UI. It talks to the real API in `../atm-pulso-api`; there is no demo dat
 
 ## Run it locally
 
-You need the API running (see `../atm-pulso-api/README.md`) and a first superadmin created by hand.
+You need pulso-api (`../atm-pulso-api/README.md`) and atm-auth-api (`../atm-auth-api/README.md`) running, with the system `pulso`, a company and an `admin` user created in the console.
 
 ```sh
 pnpm install
-cp .env.example .env     # VITE_API_URL, the API's address (default http://localhost:3001/api/v1)
+cp .env.example .env     # VITE_API_URL (pulso-api, default http://localhost:3001/api/v1) and VITE_AUTH_API_URL (atm-auth-api, default http://localhost:3130)
 pnpm dev
 ```
 
-The session lives in memory only (nothing sensitive in the browser's storage), so a reload means signing in again.
+The access token lives in memory only; the refresh token (atm-auth-api's) lives in `localStorage` or `sessionStorage` depending on the system's session policy, and brings the session back after a reload.
 
 ## Verification
 
@@ -22,7 +22,7 @@ The session lives in memory only (nothing sensitive in the browser's storage), s
 pnpm lint
 pnpm build                 # tsc -b + vite build
 pnpm test:unit
-pnpm test:e2e              # needs the API and a database: see tests/README.md
+pnpm test:e2e              # mocks atm-auth-api and pulso-api in the browser: see tests/README.md
 ```
 
 ## Types from the contract
@@ -32,23 +32,24 @@ contract changes and commit the result. `src/types/api.types.ts` names the shape
 
 ## Roles
 
+Two roles, defined for the system `pulso` in atm-auth-api (the token carries them as `app_role`):
+
 | Role | Created by | Sees | Can manage |
 | --- | --- | --- | --- |
-| `superadmin` | inserted by hand (the first), then by another superadmin | Every client, read-only | Clients, gyms and branches |
-| `owner` | Superadmin | Every gym and branch of the account | All users, rules and identity of every gym |
-| `admin` | Owner | One gym and its branches | Reception users, rules, prices and identity of that gym |
-| `receptionist` | Owner or admin | Only the assigned branches | Members, payments and access control |
+| `admin` | Atmósfera (console) or another admin | Every branch of the gym it works in | Team, prices, branch-sharing rule and colour of that gym |
+| `receptionist` | An admin | Only the assigned branches | Members, payments and access control |
 
-Only the owner creates administrators; an administrator creates reception staff. A new user's first password is
-their DNI and must be changed at the first sign-in. Permission helpers (`src/features/auth/services/permissions.ts`)
-only decide what to show: the API enforces every rule.
+A person may work for several gyms (one atm-auth-api company each); the sidebar then shows a gym selector that switches the
+session with `POST /v1/refresh`. Gyms and branches are created by Atmósfera in the console, never in Pulso. A new user's first
+password is their DNI and must be changed at the first sign-in. Permission helpers
+(`src/features/auth/services/permissions.ts`) only decide what to show: the API enforces every rule.
 
 ## Where things are
 
-- `src/config/apiClient.ts`: the only place that talks HTTP (token in memory, error mapping).
+- `src/config/apiClient.ts`: the only place that talks to pulso-api (bearer token, one retry after a forced refresh, error mapping).
+- `src/features/auth/services/authApi.ts` and `authSession.ts`: the only code that talks to atm-auth-api (login, refresh with a lock between tabs, logout, password change, gym switch).
 - `src/features/<module>/hooks`: TanStack Query hooks per feature; screens never call `fetch`.
 - `src/config/errorMessages.ts`: Spanish text for the API's error codes.
 - Business rules (member status, receipt numbers, dates, totals) are computed by the API; the web shows what it answers.
 
-There are no plans or limits: only the superadmin creates gyms and branches, and only the superadmin sets a gym's
-identity (name, colour, logo).
+There are no plans or limits in Pulso: gyms and branches (and a gym's name and logo) are created by Atmósfera in the console.

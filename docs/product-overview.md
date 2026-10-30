@@ -17,7 +17,7 @@ Con Pulso un gimnasio puede:
 - Controlar el **ingreso** de cada persona en la puerta (permitido o denegado, con el motivo).
 - Vender **pases del día** a quien no es miembro.
 - Ver un **resumen** del gimnasio (miembros vigentes, ingresos del mes, quién está por vencer).
-- Manejar **varios gimnasios y varias sedes** bajo una misma cuenta, con un equipo de usuarios con permisos distintos.
+- Manejar **varias sedes** por gimnasio y **varios gimnasios** bajo un mismo cliente, con un equipo de usuarios con permisos distintos.
 
 Todo lo que ve el usuario está en **español**. Se ingresa con **DNI y contraseña**; no hay correo ni recuperación por correo.
 
@@ -25,81 +25,62 @@ Todo lo que ve el usuario está en **español**. Se ingresa con **DNI y contrase
 
 ## 2. Modelo de negocio
 
-Pulso es **gratis con límites**:
+Atmósfera **orquesta todo desde la consola web** (`atm-console-web`, que es el superadmin de la plataforma):
 
-| Incluido gratis | Por cliente |
-|---|---|
-| Gimnasios | **1** |
-| Sedes | **1 por gimnasio** |
-
-- Lo que exceda esos límites se **acuerda directamente con Atmósfera**, que crea y cobra los extras. Los dueños y administradores **nunca** agregan gimnasios o sedes por su cuenta.
-- Solo el **superadmin** (Atmósfera) puede crearlos, y debe confirmar expresamente que ya lo acordó con el cliente ("Ya lo acordé con el cliente"). Esa confirmación queda guardada con quién y cuándo, para poder cobrarla.
-- Los límites están en **una sola constante** del código, porque el dueño del producto puede cambiarlos.
+- Se da de alta un **cliente** y, dentro de él, sus **empresas**. Cada empresa habilitada para Pulso es un **gimnasio**.
+- Las **sedes** de cada gimnasio las crea y las quita **solo Atmósfera**, desde la consola. Atmósfera cobra un monto por sede; ese precio se acuerda con el cliente y **no se gestiona dentro de los sistemas**.
+- Ni el administrador ni la recepción crean gimnasios ni sedes, y Pulso no tiene planes ni límites propios.
 
 ---
 
 ## 3. Cómo se organiza una cuenta
 
 ```
-Organización (el cliente, es el nombre del propietario)
- └── Gimnasio  (nombre, RUC, color e identidad)
-      └── Sede (nombre, dirección)
+Cliente (organización, dueño de uno o varios gimnasios)
+ └── Gimnasio = empresa de atm-auth-api  (nombre, RUC, color, logo)
+      └── Sede (nombre, dirección; la crea Atmósfera)
 ```
 
-- **Organización**: el cliente. Su nombre es el nombre completo de su propietario.
-- **Gimnasio**: negocio con RUC, nombre visible, color de marca y logo. Tiene reglas propias.
+- **Organización**: el cliente de atm-auth-api. Agrupa sus gimnasios.
+- **Gimnasio**: una empresa con RUC, nombre visible, logo y color de marca. La sesión siempre trabaja en **un** gimnasio; una persona con acceso a varios cambia de uno a otro con el **selector de gimnasio**.
 - **Sede**: local físico donde se atiende. Las sedes de un mismo gimnasio comparten identidad.
-- El **directorio de miembros es siempre compartido** entre todos los gimnasios y sedes del mismo propietario. Un miembro se registra una sola vez.
-- Los datos de una organización **nunca** se mezclan con los de otra.
+- El **directorio de miembros es compartido** entre todos los gimnasios del mismo cliente: un miembro se registra una sola vez y puede pertenecer a varios gimnasios.
+- Los datos de un cliente **nunca** se mezclan con los de otro.
 
 ---
 
 ## 4. Roles y diferencias
 
-Hay **cuatro roles**. Cada persona tiene un solo usuario y su **DNI es su identificador** de ingreso (único en todo el sistema).
+Hay **dos roles**, definidos en atm-auth-api para el sistema `pulso`. Cada persona tiene un solo usuario y su **DNI es su identificador** de ingreso. No existe propietario ni superadmin dentro de Pulso: la plataforma la administra Atmósfera desde la consola.
 
 ### 4.1 Resumen
 
-| | Superadmin | Propietario (owner) | Administrador (admin) | Recepción (receptionist) |
-|---|---|---|---|---|
-| **Quién es** | Atmósfera | Dueño del cliente | Gerente de un gimnasio | Personal de mostrador |
-| **Lo crea** | Se inserta a mano (el primero) o lo crea otro superadmin | El superadmin, junto con el cliente | El propietario | El propietario, o un administrador para su gimnasio |
-| **Alcance** | Cualquier organización, **solo lectura** | Todos los gimnasios y sedes de su organización | **Un** gimnasio y sus sedes | Solo las sedes que le asignaron |
-| **Puede escribir datos del gimnasio** | No | Sí | Sí (su gimnasio) | Sí (operación diaria, sus sedes) |
+| | Administrador (admin) | Recepción (receptionist) |
+|---|---|---|
+| **Quién es** | Dueño o gerente del gimnasio | Personal de mostrador |
+| **Lo crea** | Atmósfera (consola) o otro administrador | Un administrador |
+| **Alcance** | Todas las sedes del gimnasio en el que trabaja | Solo las sedes que le asignaron |
 
 ### 4.2 Qué ve cada rol
 
-| Pantalla | Propietario | Administrador | Recepción | Superadmin |
-|---|---|---|---|---|
-| Resumen (dashboard) | Sí | Sí | No (entra a Control de acceso) | Consulta |
-| Miembros | Sí | Sí | Sí | Consulta |
-| Control de acceso | Sí | Sí | Sí | Consulta (sin botones de verificar) |
-| Pagos e ingresos | Sí | Sí | Sí, **sin indicadores (KPIs)** | Consulta |
-| Usuarios | Todos | Recepción de su gimnasio y él mismo | No | Consulta |
-| Tarifas | Todos los gimnasios | Su gimnasio | No | Consulta |
-| Identidad | No | No | No | **Edita** (cualquier gimnasio) |
-| Clientes y gimnasios (panel de plataforma) | No | No | No | **Sí** (es su pantalla de inicio) |
+| Pantalla | Administrador | Recepción |
+|---|---|---|
+| Resumen (dashboard) | Sí | No (entra a Control de acceso) |
+| Miembros | Sí | Sí |
+| Control de acceso | Sí | Sí |
+| Pagos e ingresos | Sí | Sí, **sin indicadores (KPIs)** |
+| Usuarios | Sí | No |
+| Tarifas | Sí | No |
+| Color del gimnasio | Sí | No |
 
 ### 4.3 Diferencias clave, rol por rol
 
-**Superadmin (Atmósfera)**
-- Crea clientes (propietario + gimnasios + sedes), agrega gimnasios a un cliente o sedes a un gimnasio.
-- Es el único que crea gimnasios y sedes, y el único que cambia la identidad de un gimnasio (nombre, color y logo).
-- Puede **consultar** (nunca modificar) cualquier organización, una a la vez.
-- Corrige datos de propietarios (por ejemplo el DNI) y gestiona sus accesos.
-- No pertenece a ninguna organización.
-
-**Propietario**
-- Ve y administra todo su negocio: todos los gimnasios y sedes.
-- **Es el único que crea administradores.** También crea y gestiona recepción.
-- Configura la identidad (nombre visible, color y logo) de cada gimnasio.
-- No puede crear gimnasios ni sedes (eso lo acuerda con Atmósfera).
-- Nadie, salvo el superadmin, puede modificar a un propietario.
-
 **Administrador**
-- Gestiona **un solo gimnasio**: sus sedes, su equipo de recepción y sus tarifas.
-- **Solo crea personal de recepción**, y solo para sedes de su gimnasio. Nunca otros administradores.
+- Es el **único que crea usuarios** (otros administradores y recepción). La consola le da el permiso de gestionar usuarios (`manage_users`).
+- Gestiona el equipo, las tarifas, la regla de acceso entre sedes y el color del gimnasio en el que trabaja.
+- No crea ni quita gimnasios ni sedes, ni cambia el nombre o el logo: eso lo hace Atmósfera.
 - No se edita a sí mismo (ni su rol ni su alcance).
+- Si trabaja para varios gimnasios, elige uno con el selector.
 
 **Recepción**
 - Opera el día a día en las sedes asignadas: inscribir y renovar miembros, registrar pagos, controlar el acceso, vender pases del día.
@@ -109,21 +90,23 @@ Hay **cuatro roles**. Cada persona tiene un solo usuario y su **DNI es su identi
 
 ### 4.4 Reglas comunes de usuarios
 
-- Desactivar un usuario **surte efecto de inmediato** (su sesión deja de valer en la siguiente acción). Nunca se borra el historial. Nadie puede desactivarse a sí mismo.
-- Nadie edita su propio rol ni su alcance. Cada usuario sí puede editar en su **perfil** su nombre y celular, y cambiar su contraseña (los datos de rol y alcance son de solo lectura).
-- El **DNI solo lo corrige el superior autorizado**: superadmin a propietarios, propietario a administradores y recepción, administrador a recepción de su propio gimnasio. Nadie corrige el suyo, y la corrección cierra sus sesiones.
-- Quién aparece en la lista de Usuarios: el propietario ve a todos los de su organización; el administrador se ve a sí mismo y a la recepción de su gimnasio; **nadie ve al superadmin**.
+- Desactivar un usuario **surte efecto de inmediato** en Pulso. Nunca se borra el historial. Nadie puede desactivarse a sí mismo.
+- Nadie edita su propio rol ni su alcance. Cada usuario sí puede editar en su **perfil** su nombre y celular, y cambiar su contraseña.
+- El **DNI no se corrige** en Pulso: es la identidad del usuario en atm-auth-api.
+- Quién aparece en la lista de Usuarios: el administrador ve a todas las personas del gimnasio.
 
 ---
 
 ## 5. Acceso y contraseñas
 
+El inicio de sesión **no vive en Pulso: lo hace atm-auth-api**, y el navegador lo llama directamente (login, renovación, cierre de sesión y cambio de contraseña). Pulso solo recibe el token y lo valida.
+
 - Se ingresa con **DNI + contraseña**. No hay correo ni "olvidé mi contraseña".
-- Al crear un usuario, su **contraseña inicial es su DNI**, y debe cambiarla en su primer ingreso. Mientras no la cambie, solo puede ver su perfil y cambiar la contraseña.
-- Si alguien olvida su contraseña, su superior autorizado la **restablece** (vuelve a ser el DNI y se pide cambiarla otra vez). Eso cierra las sesiones anteriores.
-- La contraseña nueva tiene al menos 8 caracteres y es distinta de la actual.
-- Tras cambiarla en el primer ingreso, la persona vuelve a la pantalla de login y entra con su contraseña nueva.
-- Seguridad: contraseñas con argon2id, sesión con token que no se guarda en el servidor (se valida en cada acción contra el usuario real), bloqueo temporal tras varios intentos fallidos y límite de peticiones por IP.
+- Al crear un usuario, su **contraseña inicial es su DNI**, y debe cambiarla en su primer ingreso. Mientras no la cambie, auth no entrega sesión: Pulso muestra la pantalla "Crea tu contraseña" y, al guardarla, entra con la nueva.
+- Si alguien olvida su contraseña, un administrador la **restablece** (vuelve a ser el DNI y se pide cambiarla otra vez).
+- La contraseña nueva tiene al menos 8 caracteres y es distinta de la actual y del DNI.
+- La sesión dura mientras el navegador conserve el token de renovación (según la política del sistema en auth: persistente o temporal). El token de acceso vive solo en memoria y dura minutos.
+- Seguridad: argon2id y bloqueo por intentos en atm-auth-api; tokens RS256 que pulso-api valida con la llave pública (JWKS).
 
 ---
 
@@ -164,7 +147,7 @@ Se elige al inscribir y define **en qué sedes puede entrar** el miembro:
 
 Por defecto quedan marcadas todas las sedes del alcance y el personal puede **desmarcar** algunas (por ejemplo, una promoción válida en 3 de 5 sedes). La sede de inscripción siempre se incluye. Si la organización tiene una sola sede, esta elección se oculta.
 
-Además, cada **gimnasio** tiene la regla **"acceso entre sedes"**, que decide su administrador o el propietario: si se apaga, los miembros de ese gimnasio solo pueden entrar por su sede de inscripción.
+Además, cada **gimnasio** tiene la regla **"acceso entre sedes"**, que decide su administrador: si se apaga, los miembros de ese gimnasio solo pueden entrar por su sede de inscripción.
 
 ### 6.5 Boletas (comprobantes)
 - Numeración **`R-000001`**, secuencial **por organización**, sin saltos ni repetidos aunque se vendan dos membresías a la vez.
@@ -190,7 +173,7 @@ Recepción digita el documento del miembro (teclado numérico) y el sistema resp
 
 ### 6.7 Pase del día
 - Entrada única para quien no es miembro. **No** crea miembro ni lleva datos obligatorios: recepción solo confirma el medio de pago (por defecto Efectivo). Documento, nombre y celular son **opcionales** (sirven para promociones futuras).
-- El **precio es fijo por gimnasio** (15.00 por defecto) y solo lo cambia el administrador o el propietario en **Tarifas**. No se imprime ticket.
+- El **precio es fijo por gimnasio** (15.00 por defecto) y solo lo cambia el administrador en **Tarifas**. No se imprime ticket.
 - Cada venta crea, a la vez: el pase, una boleta **`D-000001`** (serie propia), un pago y un ingreso permitido.
 - Cuenta en el listado de pagos, en los indicadores y en los ingresos del mes.
 
@@ -204,23 +187,19 @@ Recepción digita el documento del miembro (teclado numérico) y el sistema resp
 Para la sede activa: **miembros activos**, **ingresos del mes** (incluye pases del día), **por vencer** y los primeros cinco por vencer con sus acciones rápidas. Solo se muestran datos reales, nunca cifras de ejemplo.
 
 ### 6.10 Tarifas
-La **lista de precios** de cada gimnasio: una tarifa por duración (de 1 a 24 meses; por ejemplo 1 mes S/ 100, 2 meses S/ 180) y el precio del **pase del día**. Las define el dueño o el administrador del gimnasio. Al inscribir o renovar, la tarifa se propone como importe base y quien cobra puede cambiarlo; lo que se cobra queda registrado en el pago y en la boleta. Si el gimnasio aún no tiene tarifas, el importe se escribe a mano.
+La **lista de precios** de cada gimnasio: una tarifa por duración (de 1 a 24 meses; por ejemplo 1 mes S/ 100, 2 meses S/ 180) y el precio del **pase del día**. Las define el administrador del gimnasio. Al inscribir o renovar, la tarifa se propone como importe base y quien cobra puede cambiarlo; lo que se cobra queda registrado en el pago y en la boleta. Si el gimnasio aún no tiene tarifas, el importe se escribe a mano.
 
-### 6.11 Identidad
-Por gimnasio: **nombre visible**, **color de marca** (selector con código hexadecimal) y **logo** (PNG, JPG o WebP de hasta 10 MB; un logo por gimnasio, se sube una vez por cada gimnasio que lo use). Solo lo define el superadmin; el dueño y el administrador no ven esta pantalla. El color tiñe botones, elementos seleccionados y boletas; el logo aparece en la navegación y en la boleta impresa. Las sedes de un gimnasio comparten la identidad. Los archivos se guardan en Cloudflare R2.
+### 6.11 Color del gimnasio
+Por gimnasio: **color de marca** (selector con código hexadecimal) y **logo** (PNG, JPG o WebP de hasta 10 MB; un logo por gimnasio, se sube una vez por cada gimnasio que lo use). El nombre y el logo los define Atmósfera desde la consola; el administrador solo cambia el **color** de su gimnasio. El color tiñe botones, elementos seleccionados y boletas; el logo aparece en la navegación y en la boleta impresa. Las sedes de un gimnasio comparten la identidad. Los archivos se guardan en Cloudflare R2.
 
 ### 6.12 Usuarios y permisos
 Alta, edición, activación y desactivación del equipo, con las reglas de cada rol de la sección 4. Cada usuario tiene nombre completo, DNI, rol, gimnasio (administradores) o sedes (recepción) y estado.
 
 ### 6.13 Perfil
-Disponible **para todos los roles** (incluida recepción y el superadmin): ver sus datos, editar nombre y celular, cambiar contraseña. DNI, rol y alcance son de solo lectura.
+Disponible **para todos los roles**: ver sus datos, editar nombre y celular, cambiar contraseña. DNI, rol y alcance son de solo lectura.
 
-### 6.14 Panel de plataforma (solo superadmin)
-- Lista de **clientes** con su propietario, gimnasios (nombre y RUC), sedes, estado del plan y si está activo. Búsqueda por cliente, gimnasio o RUC.
-- Métricas: clientes, gimnasios, sedes y usuarios de clientes.
-- **Crear cliente**: documento del propietario (con botón de búsqueda), nombres y apellidos, correo, celular, y sus gimnasios con sedes (con búsqueda de RUC). No se pide "tipo de cliente". El nombre del cliente es el nombre del propietario.
-- Agregar un gimnasio a un cliente o una sede a un gimnasio, sin límites.
-- Correo y celular del propietario son datos de contacto de la organización, no de ingreso.
+### 6.14 Cliente, gimnasios y sedes (en la consola)
+Ya no hay panel de plataforma en Pulso. Desde `atm-console-web` Atmósfera crea el cliente, sus empresas (gimnasios), habilita Pulso, da de alta a los administradores y crea las sedes de cada gimnasio.
 
 ---
 
@@ -262,8 +241,8 @@ Los clientes son dueños de gimnasio y recepcionistas, no usuarios de software. 
 | **Web** | **Conectada a la API real** (planes WEB-01 a 06): ya no hay datos de demostración. Probada con 21 pruebas de extremo a extremo contra la API real. Falta desplegar. |
 | **Despliegue** | **Pendiente.** Hay que desplegar primero la API (migraciones 00003 a 00006), insertar el primer superadmin a mano y luego la web (la imagen necesita la dirección de la API al construirse). |
 
-### 8.3 Primer superadmin
-No hay cuentas de ejemplo ni código de "seed" en el backend. El primer superadmin lo inserta **el dueño del producto a mano** en la base de datos, con el script `scripts/first-superadmin`, que genera el `INSERT` con la contraseña ya protegida. A partir de él se crea todo lo demás desde la propia aplicación.
+### 8.3 Cómo se entra por primera vez
+No hay cuentas de ejemplo ni código de "seed". Atmósfera crea el cliente, las empresas y los usuarios en la consola (atm-console-web), habilita el sistema `pulso` para cada empresa y da a cada administrador el acceso con el rol `admin` y el permiso de gestionar usuarios. La web necesita `VITE_AUTH_API_URL` además de `VITE_API_URL` al construirse.
 
 ---
 
@@ -305,12 +284,12 @@ Quedan fuera del alcance actual y requieren decisión del dueño del producto:
 
 | Término | Significado |
 |---|---|
-| Organización / cliente | Cuenta de un propietario; agrupa sus gimnasios y sedes |
-| Gimnasio | Negocio con RUC e identidad propia |
+| Organización / cliente | El cliente de atm-auth-api; agrupa sus gimnasios |
+| Gimnasio | Una empresa (tenant) de atm-auth-api con Pulso habilitado |
 | Sede | Local físico de un gimnasio |
 | Miembro | Persona inscrita con una o más membresías |
 | Membresía / periodo | Tramo de meses vendidos, con inicio y fin |
 | Boleta | Comprobante numerado de cada venta (no tributario) |
 | Pase del día | Entrada única para quien no es miembro |
 | Alcance de acceso | Sedes donde un miembro puede entrar |
-| Superadmin | Atmósfera; crea clientes y consulta cuentas en solo lectura |
+| Consola | atm-console-web: donde Atmósfera crea clientes, empresas, usuarios y sedes |

@@ -41,3 +41,12 @@ Running them against the real API found and fixed a real bug: the API's CORS pre
 
 - A cross-repository e2e job in CI.
 - Logo upload (Cloudflare R2) and the ideas listed in `docs/product-overview.md` section 9.
+
+## Central authentication (atm-auth-api)
+
+Login no longer goes through pulso-api. Before deploying:
+
+1. atm-auth-api must have the system `pulso` with roles `admin` and `receptionist`, the client's companies enabled for it, and an `admin` access (with `manage_users`) per person.
+2. The image needs a second build argument: `VITE_AUTH_API_URL` (for example `https://auth.atmosferast.com`). `Dockerfile` takes it; **`.github/workflows/deploy.yml` must pass it next to `VITE_API_URL`** (not changed here).
+3. atm-auth-api's `CORS_ALLOWED_ORIGINS` must list `https://pulso.atmosferast.com` (the browser calls it directly).
+4. The earlier smoke test (superadmin, owner) no longer applies: sign in as an `admin`, change the first password, enroll a member, see the receipt; with two gyms, use the gym selector.

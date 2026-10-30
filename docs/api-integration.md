@@ -4,27 +4,33 @@
 
 - Dependencies: `@tanstack/react-query`, `openapi-typescript` (dev), nothing else for HTTP (use `fetch`).
 - Script: `"api:types": "openapi-typescript ../atm-pulso-api/docs/openapi.yaml -o src/types/api.generated.ts"`. Regenerate whenever the contract changes. Commit the generated file.
-- Env: `VITE_API_URL` (default `http://localhost:3001/api/v1`; use the API's real port); document it in `.env.example`. Production value is set by the deployer at build time (do not hardcode URLs).
+- Env: `VITE_API_URL` (pulso-api, default `http://localhost:3001/api/v1`) and `VITE_AUTH_API_URL` (atm-auth-api, default `http://localhost:3130`); both in `.env.example`. Production value is set by the deployer at build time (do not hardcode URLs).
 - Client in `src/config/apiClient.ts` (or `src/services/`): a typed `request<T>(method, path, {body, query, signal})` that
-  - adds `Authorization: Bearer <token>` from the auth store (memory),
-  - sends `X-Organization-Id` only when a superadmin is inspecting a client (GET only),
+  - adds `Authorization: Bearer <access token>` that atm-auth-api issued (`authSession.getAccessToken` renews it before it expires),
   - parses `{ "data": ..., "meta": ... }` and errors `{ "error": { "code", "message", "details" } }` into an `ApiError(status, code, details)`,
-  - on `401` clears the session and sends the user to the login page (once, no loops).
+  - on `401` asks atm-auth-api for a new token and retries once; if that fails it clears the session and sends the user to the login page.
 - `QueryClientProvider` in `main.tsx`; defaults: `retry: false` for mutations, 1 retry for queries except 4xx; `staleTime` 30 s.
 
 ## Conventions
 
 - Query keys per feature: `['members', filters]`, `['catalog']`, `['clients', filters]`... Mutations invalidate the keys they affect.
-- Every creation sends a client-generated `id` (`crypto.randomUUID()`) so a double click or retry is idempotent.
+- Creations of business records send a client-generated `id` (`crypto.randomUUID()`) so a double click or retry is idempotent. Team users are the exception: their id is the atm-auth-api user id, assigned by the API.
 - Money stays a string end to end; format with `formatCurrency`. Dates are `YYYY-MM-DD` strings; show them in Lima time; use `DEMO_DATE` only inside tests.
 - Lists use `page` and `page_size` and render `meta`; filters live in the URL query string where the prototype already did.
 - Disable the submit button while a mutation is pending; show field errors from `details[{field, code}]` next to their `Field`.
 
-## Auth store
+## Auth
 
-`src/store/authStore.ts` (Context or Zustand) with `{ token, user, login(dni, password), logout() }`. `user` is what `GET /me` returns
-(id, full_name, document_number, role, organization, gym, branches). Permissions helpers in `features/auth` read `user`; they must match
-business-rules (owner: all; admin: own gym; reception: assigned branches; superadmin: read-only inspection).
+The browser calls **atm-auth-api directly**: `POST /v1/login {dni, password, system: "pulso"}`, `/v1/refresh`, `/v1/logout`,
+`/v1/password/change`, and `GET /v1/session/tenants` + `POST /v1/refresh {refresh_token, tenant_id}` for the gym selector.
+A first login answers `403 password_change_required` (no token); the first-password page changes it and signs in again.
+`src/features/auth/services/authSession.ts` keeps the access token in memory and the refresh token in `localStorage`
+(`persistent`) or `sessionStorage` (`temporary`), and serializes renewals between tabs with `navigator.locks`.
+
+`src/store/authStore.ts` exposes `{ user, tenants, login, logout, switchGym }`. `user` is what pulso-api's `GET /me` returns
+(id, full_name, document_number, role `admin|receptionist`, organization, gym, branches). Permission helpers in `features/auth`
+read `user`: admin sees every branch of the gym, reception only the assigned ones. Pulso-api answers `NO_ACCESS` (403) when
+the person has no role in Pulso and `USER_INACTIVE` when an admin deactivated them.
 
 ## Lookups (DNI/RUC)
 
@@ -34,5 +40,5 @@ Show a loading state, and a Spanish message when the API answers `404 NOT_FOUND`
 ## Local run
 
 1. Start Postgres and the API as described in `../atm-pulso-api/README.md` (`scripts/dev.sh`).
-2. Create the first superadmin by hand with `go run ./scripts/first-superadmin` (piped to psql). Never add seed code.
-3. `pnpm dev`. For e2e, create the data each test needs through the API (see plan WEB-01 for the helper) and clean up after.
+2. Start atm-auth-api and, in the console, create a client, a company with the system `pulso` enabled and an `admin` user (with `manage_users`). Never add seed code.
+3. `pnpm dev`. The e2e tests mock both APIs in the browser (`tests/README.md`).

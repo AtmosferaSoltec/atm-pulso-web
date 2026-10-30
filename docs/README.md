@@ -22,7 +22,7 @@ These documents are for the AI (or developer) that connects this prototype to th
 - [ ] The demo store no longer feeds the slice: its code in `src/store` for that domain is deleted, not left unused.
 - [ ] No hardcoded dates or sample data; loading, empty and error states exist and are in Spanish.
 - [ ] UI follows AGENTS.md section 5 (icons with labels, status colours, `Field`, `OptionCards`, `DatePicker`).
-- [ ] Roles verified in the browser: superadmin, owner, admin, receptionist.
+- [ ] Roles verified in the browser: admin, receptionist.
 - [ ] A short summary is added at the end of the plan file (what changed, gaps, questions for the owner).
 
 ## Global rules for this work
@@ -32,3 +32,5 @@ These documents are for the AI (or developer) that connects this prototype to th
 - The access token lives **in memory only** (no `localStorage`); a page reload means login again. See `api-integration.md`.
 - Show what the API returns; never compute money, status or receipt numbers on the client.
 - Error mapping: API error `code` to Spanish messages in one place per feature (`errorMessages.ts`), with a generic fallback.
+
+> The numbered plans in `plans/` are the history of the first build. Where they mention login handled by pulso-api, the superadmin, owners, creating clients/gyms/branches from Pulso, or free-plan limits, they are superseded by [api-integration.md](api-integration.md) and [product-overview.md](product-overview.md): login is atm-auth-api's, only `admin` and `receptionist` exist, and gyms and branches are created by Atmósfera in the console.
