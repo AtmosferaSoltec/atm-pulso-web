@@ -44,7 +44,6 @@ const paths = {
   phone: "M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z M11 18h2",
   bank: "M3 10l9-6 9 6 M5 10v8 M9 10v8 M15 10v8 M19 10v8 M3 21h18",
   building: "M4 21V5l8-3 8 3v16 M9 21v-5h6v5 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01",
-  network: "M12 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M5 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M19 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6 M12 9v3 M6.5 15L12 12l5.5 3",
   pin: "M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4",
 };
 export type IconName = keyof typeof paths;

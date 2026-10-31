@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import { BranchSwitcher, GymSwitcher, type BranchOption } from '@/features/organization';
+import { BranchSwitcher, GymSwitcher, type BranchOption } from '@/features/gym';
 import type { SessionTenant } from '@/features/auth/types/auth.types';
 import { canVisitPage } from '@/features/auth';
 import type { Role, SessionUser } from '@/types/api.types';

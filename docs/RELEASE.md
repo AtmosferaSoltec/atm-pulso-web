@@ -1,5 +1,7 @@
 # Release notes: web connected to the API (WEB-01 to WEB-06)
 
+> **Superseded by the groups model (API plan 07):** "client", "organization" and "owner" below are history. Today a *group* is an internal label (never shown), a gym is a brand, members belong to a gym, and only `admin` and `receptionist` exist.
+
 Hand-over for whoever deploys. Nothing was pushed or deployed.
 
 ## What changed
@@ -35,7 +37,7 @@ Running them against the real API found and fixed a real bug: the API's CORS pre
 
 - A reload signs the user out (the token is never stored). This is deliberate.
 - The dashboard's "próximos vencimientos" list uses the members list (`status=expiring`) so its rows keep the quick actions; the counts come from `/dashboard`.
-- Renewal start date: the form suggests the current end date; the server takes the one sent. Gym logos are not uploaded yet (monogram and colour only).
+- Renewal start date: the form suggests the current end date; the server takes the one sent. The gym logo is shown from `logo_url` (a temporary signed link of the company profile logo, resolved by pulso-api); without it, or if it fails to load, the monogram is shown.
 
 ## Open points
 

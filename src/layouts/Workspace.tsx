@@ -16,7 +16,7 @@ import type { Sale } from '@/types/api.types';
 import { ProfileDialog } from '@/features/auth';
 import { TeamPage } from '@/features/team';
 import { brandTheme, brandFavicon } from '@/features/branding';
-import { useCatalog, gymTitle } from '@/features/organization';
+import { useCatalog, gymTitle } from '@/features/gym';
 
 export function Workspace(): ReactElement {
   const user = useCurrentUser();

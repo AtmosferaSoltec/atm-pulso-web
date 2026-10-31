@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import type { BranchOption } from '@/features/organization/types/organization.types';
+import type { BranchOption } from '@/features/gym/types/gym.types';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Icon } from '@/components/ui/icon';

@@ -10,7 +10,7 @@ type Schemas = components['schemas'];
 export type Role = 'admin' | 'receptionist';
 export type PaymentMethod = 'yape_plin' | 'cash' | 'card' | 'transfer';
 export type MemberStatus = 'active' | 'expiring' | 'expired' | 'scheduled';
-export type AccessScope = 'branch' | 'gym' | 'network';
+export type AccessScope = 'branch' | 'gym';
 export type DocumentType = 'dni' | 'ce';
 
 export interface Named {
@@ -37,7 +37,6 @@ export interface SessionUser {
   full_name: string;
   phone: string | null;
   role: Role;
-  organization: Named;
   /** The gym (auth company) the session works in. */
   gym: SessionGym;
   /** The branches a receptionist works in; empty for an admin. */

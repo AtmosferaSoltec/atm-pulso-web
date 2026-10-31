@@ -27,8 +27,10 @@ A first login answers `403 password_change_required` (no token); the first-passw
 `src/features/auth/services/authSession.ts` keeps the access token in memory and the refresh token in `localStorage`
 (`persistent`) or `sessionStorage` (`temporary`), and serializes renewals between tabs with `navigator.locks`.
 
+`logo_url` (in `/me` and `/catalog`) is a temporary signed https link, not an API path: `GymBrand` uses it as it is (`features/branding/services/logoSource.ts`) and falls back to the monogram when it is null or fails to load.
+
 `src/store/authStore.ts` exposes `{ user, tenants, login, logout, switchGym }`. `user` is what pulso-api's `GET /me` returns
-(id, full_name, document_number, role `admin|receptionist`, organization, gym, branches). Permission helpers in `features/auth`
+(id, full_name, document_number, role `admin|receptionist`, gym, branches; the group is internal and never returned). Permission helpers in `features/auth`
 read `user`: admin sees every branch of the gym, reception only the assigned ones. Pulso-api answers `NO_ACCESS` (403) when
 the person has no role in Pulso and `USER_INACTIVE` when an admin deactivated them.
 
@@ -40,5 +42,5 @@ Show a loading state, and a Spanish message when the API answers `404 NOT_FOUND`
 ## Local run
 
 1. Start Postgres and the API as described in `../atm-pulso-api/README.md` (`scripts/dev.sh`).
-2. Start atm-auth-api and, in the console, create a client, a company with the system `pulso` enabled and an `admin` user (with `manage_users`). Never add seed code.
+2. Start atm-auth-api and, in the console, create a company with the system `pulso` enabled and an `admin` user (with `manage_users`). Never add seed code.
 3. `pnpm dev`. The e2e tests mock both APIs in the browser (`tests/README.md`).

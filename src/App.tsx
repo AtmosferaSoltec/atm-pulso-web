@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ApiError } from '@/config/apiClient';
 import { LoginPage } from '@/features/auth';
-import { CatalogProvider } from '@/features/organization';
+import { CatalogProvider } from '@/features/gym';
 import { Workspace } from '@/layouts/Workspace';
 import { AuthProvider } from '@/store/AuthProvider';
 import { useAuth } from '@/store/authStore';

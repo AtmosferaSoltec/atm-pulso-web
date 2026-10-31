@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { describeError } from '@/config/errorMessages';
-import { useCatalog, branchTitle } from '@/features/organization';
+import { useCatalog, branchTitle } from '@/features/gym';
 import { useTeamMutations, useTeamUsers, type AssignableRole } from '@/features/team/hooks/useTeam';
 import type { Role, TeamUser } from '@/types/api.types';
 import { Button } from '@/components/ui/button';

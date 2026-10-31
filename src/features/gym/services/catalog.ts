@@ -1,12 +1,12 @@
 import type { Catalog, CatalogGym } from '@/types/api.types';
-import type { BranchOption } from '@/features/organization/types/organization.types';
+import type { BranchOption } from '@/features/gym/types/gym.types';
 
 /** What the screens call a gym: its display name when it has one. */
 export function gymTitle(gym: Pick<CatalogGym, 'name' | 'display_name'>): string {
   return gym.display_name?.trim() || gym.name;
 }
 
-/** Every branch of the organization, with the data of its gym. */
+/** Every branch of the current gym, with the data of its gym. */
 export function flattenBranches(catalog: Catalog): BranchOption[] {
   return catalog.gyms.flatMap((gym) =>
     gym.branches.map((branch) => ({

@@ -156,7 +156,7 @@ export interface paths {
         };
         trace?: never;
     };
-    "/admin/clients": {
+    "/admin/groups": {
         parameters: {
             query?: never;
             header?: never;
@@ -164,10 +164,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Every client with its gyms and branches (superadmin).
-         * @description First records every company that has Pulso enabled in atm-auth-api (its client as an organization,
-         *     itself as a gym with a default branch "Sede principal"); if atm-auth-api does not answer, the stored
-         *     clients are listed.
+         * Every group with its gyms and branches (superadmin).
+         * @description First records every company that has Pulso enabled in atm-auth-api (itself as a gym with a default
+         *     branch "Sede principal", inside the group that already holds a gym of the same auth client, or a new
+         *     group named after that client); if atm-auth-api does not answer, the stored groups are listed.
          */
         get: {
             parameters: {
@@ -185,7 +185,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data?: components["schemas"]["AdminClient"][];
+                            data?: components["schemas"]["AdminGroup"][];
                         };
                     };
                 };
@@ -194,11 +194,116 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /** Create a group (superadmin). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The group (no gyms yet). */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["AdminGroup"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/admin/groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an empty group (superadmin). A group that still has gyms answers 409 GROUP_IN_USE. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Rename a group (superadmin). */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The group. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["AdminGroup"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
+            };
+        };
         trace?: never;
     };
     "/admin/gyms/{gym_id}": {
@@ -214,7 +319,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Set the look of a gym (superadmin). */
+        /** Set the look of a gym and/or move it to another group (superadmin). */
         patch: {
             parameters: {
                 query?: never;
@@ -227,7 +332,12 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        brand_color: string;
+                        brand_color?: string;
+                        /**
+                         * Format: uuid
+                         * @description Moves the gym to that group; an unknown group answers 400 SCOPE_NOT_ALLOWED.
+                         */
+                        group_id?: string;
                     };
                 };
             };
@@ -388,8 +498,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Read the shared organization directory and accessible branches.
-         * @description Other roles ignore the inspection header and use their live organization.
+         * Read the current gym with its branches and which ones the person may operate.
+         * @description Only the gym of the token; other gyms (even of the same group) are never listed.
          */
         get: {
             parameters: {
@@ -400,7 +510,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Organization directory. */
+                /** @description The current gym. */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -414,7 +524,7 @@ export interface paths {
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
                 403: components["responses"]["Forbidden"];
-                /** @description Organization does not exist. */
+                /** @description The gym does not exist. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -481,7 +591,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description NOT_FOUND (also for resources of another organization). */
+                /** @description NOT_FOUND (also for resources of another gym). */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -499,7 +609,7 @@ export interface paths {
          *     must be changed at the first login). Admin only. An admin takes no branches; a receptionist needs
          *     one or more branches of the current gym. Errors: `AUTH_UNAVAILABLE` (503), `USER_IN_OTHER_COMPANY` (409,
          *     the person already works for another company: only Atmósfera can add them to a second one),
-         *     `ROLE_NOT_ASSIGNABLE`, `SCOPE_NOT_ALLOWED` (a branch of another gym or client).
+         *     `ROLE_NOT_ASSIGNABLE`, `SCOPE_NOT_ALLOWED` (a branch of another gym).
          */
         post: {
             parameters: {
@@ -536,7 +646,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description NOT_FOUND (also for resources of another organization). */
+                /** @description NOT_FOUND (also for resources of another gym). */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -616,7 +726,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description NOT_FOUND (also for resources of another organization). */
+                /** @description NOT_FOUND (also for resources of another gym). */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -684,7 +794,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description NOT_FOUND (also for resources of another organization). */
+                /** @description NOT_FOUND (also for resources of another gym). */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -747,7 +857,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description NOT_FOUND (also for resources of another organization). */
+                /** @description NOT_FOUND (also for resources of another gym). */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -810,7 +920,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description NOT_FOUND (also for resources of another organization). */
+                /** @description NOT_FOUND (also for resources of another gym). */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -885,7 +995,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description NOT_FOUND (also for resources of another organization). */
+                /** @description NOT_FOUND (also for resources of another gym). */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -907,7 +1017,7 @@ export interface paths {
         };
         /**
          * List the shared member directory with status counts.
-         * @description Every role of the organization sees every member. Counts ignore the status filter but respect q and home_branch_id.
+         * @description Every role of the gym sees every member of the gym (all its branches). Counts ignore the status filter but respect q and home_branch_id.
          */
         get: {
             parameters: {
@@ -1361,7 +1471,7 @@ export interface paths {
         };
         /**
          * Printable data of a receipt (membership or day pass).
-         * @description Any past receipt can be reprinted. A receipt of another organization answers 404.
+         * @description Any past receipt can be reprinted. A receipt of another gym answers 404.
          */
         get: {
             parameters: {
@@ -1833,7 +1943,7 @@ export interface paths {
         };
         /**
          * Figures of a gym or branch for today and this month.
-         * @description Admin only (reception gets 403). A new organization answers zeros, never sample data. `expiring_soon` has at most five members, nearest end date first.
+         * @description Admin only (reception gets 403). A new gym answers zeros, never sample data. `expiring_soon` has at most five members, nearest end date first.
          */
         get: {
             parameters: {
@@ -1981,7 +2091,7 @@ export interface components {
             accessible: boolean;
         };
         Catalog: {
-            organization: components["schemas"]["Named"];
+            /** @description Exactly one entry, the current gym. */
             gyms: components["schemas"]["Gym"][];
         };
         Gym: {
@@ -1992,7 +2102,7 @@ export interface components {
             /** @description RUC; null when the company has none. */
             tax_id: string | null;
             brand_color: string;
-            /** @description Always null for now; the logo will come from the company profile of atm-auth-api. */
+            /** @description Temporary signed https link (atm-storage-api) to the logo of the gym's company profile; null when the gym has no logo or the link cannot be obtained right now. It expires (about an hour): never store it, ask again; fall back to the monogram when it fails to load. */
             logo_url: string | null;
             /** @example 15.00 */
             day_pass_price: string;
@@ -2124,7 +2234,7 @@ export interface components {
             /** @example 270.00 */
             amount: string;
             /** @enum {string} */
-            access_scope: "branch" | "gym" | "network";
+            access_scope: "branch" | "gym";
             access_branches: components["schemas"]["AccessBranch"][];
             receipt: components["schemas"]["ReceiptRef"] | null;
         };
@@ -2170,7 +2280,7 @@ export interface components {
              * @default branch
              * @enum {string}
              */
-            access_scope: "branch" | "gym" | "network";
+            access_scope: "branch" | "gym";
             /** @description Defaults to every branch of the scope; must contain the home branch and be a subset of the scope. */
             access_branch_ids?: string[];
         };
@@ -2192,7 +2302,7 @@ export interface components {
              * @default branch
              * @enum {string}
              */
-            access_scope: "branch" | "gym" | "network";
+            access_scope: "branch" | "gym";
             access_branch_ids?: string[];
         };
         ReceiptSummary: {
@@ -2220,7 +2330,7 @@ export interface components {
                 name: string;
                 tax_id: string | null;
                 brand_color: string;
-                /** @description Address of the logo relative to the API prefix; null when the gym has none. */
+                /** @description Temporary signed https link to the gym's logo (same as `Gym.logo_url`); null when none or unavailable. */
                 logo_url: string | null;
             };
             branch: {
@@ -2386,14 +2496,13 @@ export interface components {
             phone: string | null;
             /** @enum {string} */
             role: "admin" | "receptionist";
-            /** @description The client (owner of one or more gyms). */
-            organization: components["schemas"]["Named"];
             /** @description The company of the token, the gym the person is working in. */
             gym: {
                 /** Format: uuid */
                 id: string;
                 name: string;
                 brand_color: string;
+                /** @description Temporary signed https link to the gym's logo (same as `Gym.logo_url`); null when none or unavailable. */
                 logo_url: string | null;
             };
             /** @description All the branches of the gym for an admin, the assigned ones for a receptionist. */
@@ -2416,18 +2525,21 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
+            group_id: string;
+            /** Format: uuid */
             auth_tenant_id: string;
+            /** Format: uuid */
+            auth_client_id: string;
             /** @description Null when the company has none. */
             ruc: string | null;
             name: string;
             brand_color: string;
             branches: components["schemas"]["AdminBranch"][];
         };
-        AdminClient: {
+        /** @description An internal label that bundles related gyms. Not a user. */
+        AdminGroup: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
-            auth_client_id: string;
             name: string;
             gyms: components["schemas"]["AdminGym"][];
         };

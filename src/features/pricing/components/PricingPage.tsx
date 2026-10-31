@@ -5,7 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useCurrentUser } from '@/store/authStore';
 import { canManageAccount } from '@/features/auth';
 import { describeError } from '@/config/errorMessages';
-import { gymTitle, useUpdateGym } from '@/features/organization';
+import { gymTitle, useUpdateGym } from '@/features/gym';
 import { MAX_MONTHS } from '@/features/members/services/enrollment';
 import type { CatalogGym, CatalogMembershipPrice } from '@/types/api.types';
 import { Button } from '@/components/ui/button';

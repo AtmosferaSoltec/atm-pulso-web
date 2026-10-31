@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { api } from '@/config/apiClient';
-import { catalogKey } from '@/features/organization/hooks/useCatalog';
+import { catalogKey } from '@/features/gym/hooks/useCatalog';
 import type { CatalogGym, CatalogMembershipPrice } from '@/types/api.types';
 
 export interface GymChanges {

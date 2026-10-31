@@ -8,7 +8,7 @@ Documento de referencia del producto, de punta a punta. Describe qué hace Pulso
 
 ## 1. Qué es Pulso
 
-**Pulso** es un sistema web para administrar gimnasios, de **Atmósfera**. Está pensado para dueños de gimnasio y personal de recepción, no para gente técnica: pantallas simples, íconos con etiqueta, colores para los estados y poco texto.
+**Pulso** es un sistema web para administrar gimnasios, de **Atmósfera**. Está pensado para administradores de gimnasio y personal de recepción, no para gente técnica: pantallas simples, íconos con etiqueta, colores para los estados y poco texto.
 
 Con Pulso un gimnasio puede:
 
@@ -17,7 +17,7 @@ Con Pulso un gimnasio puede:
 - Controlar el **ingreso** de cada persona en la puerta (permitido o denegado, con el motivo).
 - Vender **pases del día** a quien no es miembro.
 - Ver un **resumen** del gimnasio (miembros vigentes, ingresos del mes, quién está por vencer).
-- Manejar **varias sedes** por gimnasio y **varios gimnasios** bajo un mismo cliente, con un equipo de usuarios con permisos distintos.
+- Manejar **varias sedes** por gimnasio y **varios gimnasios** agrupados por Atmósfera, con un equipo de usuarios con permisos distintos.
 
 Todo lo que ve el usuario está en **español**. Se ingresa con **DNI y contraseña**; no hay correo ni recuperación por correo.
 
@@ -27,7 +27,7 @@ Todo lo que ve el usuario está en **español**. Se ingresa con **DNI y contrase
 
 Atmósfera **orquesta todo desde la consola web** (`atm-console-web`, que es el superadmin de la plataforma):
 
-- Se da de alta un **cliente** y, dentro de él, sus **empresas**. Cada empresa habilitada para Pulso es un **gimnasio**.
+- Se da de alta una **empresa** (cliente de atm-auth-api). Cada empresa habilitada para Pulso es un **gimnasio**; Atmósfera los agrupa en **grupos**.
 - Las **sedes** de cada gimnasio las crea y las quita **solo Atmósfera**, desde la consola. Atmósfera cobra un monto por sede; ese precio se acuerda con el cliente y **no se gestiona dentro de los sistemas**.
 - Ni el administrador ni la recepción crean gimnasios ni sedes, y Pulso no tiene planes ni límites propios.
 
@@ -36,16 +36,16 @@ Atmósfera **orquesta todo desde la consola web** (`atm-console-web`, que es el 
 ## 3. Cómo se organiza una cuenta
 
 ```
-Cliente (organización, dueño de uno o varios gimnasios)
- └── Gimnasio = empresa de atm-auth-api  (nombre, RUC, color, logo)
+Grupo (etiqueta interna de Atmósfera; no es un usuario)
+ └── Gimnasio = marca / empresa de atm-auth-api  (nombre, RUC opcional, color, logo)
       └── Sede (nombre, dirección; la crea Atmósfera)
 ```
 
-- **Organización**: el cliente de atm-auth-api. Agrupa sus gimnasios.
-- **Gimnasio**: una empresa con RUC, nombre visible, logo y color de marca. La sesión siempre trabaja en **un** gimnasio; una persona con acceso a varios cambia de uno a otro con el **selector de gimnasio**.
+- **Grupo**: etiqueta interna con la que Atmósfera agrupa gimnasios que considera relacionados (por ejemplo, una persona con tres marcas). No es un usuario, no tiene dueño y **hoy no comparte nada**: solo reserva el lugar para poder hacerlo más adelante. Solo Atmósfera lo crea, desde la consola; ninguna pantalla de Pulso lo muestra.
+- **Gimnasio**: una marca (con RUC opcional), nombre visible, logo y color de marca. La sesión siempre trabaja en **un** gimnasio; una persona con acceso a varios cambia de uno a otro con el **selector de gimnasio**.
 - **Sede**: local físico donde se atiende. Las sedes de un mismo gimnasio comparten identidad.
-- El **directorio de miembros es compartido** entre todos los gimnasios del mismo cliente: un miembro se registra una sola vez y puede pertenecer a varios gimnasios.
-- Los datos de un cliente **nunca** se mezclan con los de otro.
+- Cada **miembro pertenece a un gimnasio**; el directorio se comparte entre las **sedes de ese gimnasio**. La misma persona puede ser miembro de dos gimnasios (incluso del mismo grupo) como dos registros independientes: el documento es único por gimnasio.
+- Los datos de un gimnasio **nunca** se mezclan con los de otro, ni siquiera dentro de un grupo. Las boletas (R-000001) y los pases del día (D-000001) tienen su numeración **por gimnasio**.
 
 ---
 
@@ -57,7 +57,7 @@ Hay **dos roles**, definidos en atm-auth-api para el sistema `pulso`. Cada perso
 
 | | Administrador (admin) | Recepción (receptionist) |
 |---|---|---|
-| **Quién es** | Dueño o gerente del gimnasio | Personal de mostrador |
+| **Quién es** | Administrador o gerente del gimnasio | Personal de mostrador |
 | **Lo crea** | Atmósfera (consola) o otro administrador | Un administrador |
 | **Alcance** | Todas las sedes del gimnasio en el que trabaja | Solo las sedes que le asignaron |
 
@@ -143,9 +143,10 @@ La fecha de "hoy" es la de **Lima**. El servidor calcula el estado y los días r
 Se elige al inscribir y define **en qué sedes puede entrar** el miembro:
 - **Solo su sede** (por defecto).
 - **Su gimnasio** (todas las sedes de ese gimnasio).
-- **Toda la red** (todas las sedes de la organización).
 
-Por defecto quedan marcadas todas las sedes del alcance y el personal puede **desmarcar** algunas (por ejemplo, una promoción válida en 3 de 5 sedes). La sede de inscripción siempre se incluye. Si la organización tiene una sola sede, esta elección se oculta.
+No existe un alcance más amplio: entre gimnasios distintos no se comparte nada.
+
+Por defecto quedan marcadas todas las sedes del alcance y el personal puede **desmarcar** algunas (por ejemplo, una promoción válida en 3 de 5 sedes). La sede de inscripción siempre se incluye. Si el gimnasio tiene una sola sede, esta elección se oculta.
 
 Además, cada **gimnasio** tiene la regla **"acceso entre sedes"**, que decide su administrador: si se apaga, los miembros de ese gimnasio solo pueden entrar por su sede de inscripción.
 
@@ -190,7 +191,7 @@ Para la sede activa: **miembros activos**, **ingresos del mes** (incluye pases d
 La **lista de precios** de cada gimnasio: una tarifa por duración (de 1 a 24 meses; por ejemplo 1 mes S/ 100, 2 meses S/ 180) y el precio del **pase del día**. Las define el administrador del gimnasio. Al inscribir o renovar, la tarifa se propone como importe base y quien cobra puede cambiarlo; lo que se cobra queda registrado en el pago y en la boleta. Si el gimnasio aún no tiene tarifas, el importe se escribe a mano.
 
 ### 6.11 Color del gimnasio
-Por gimnasio: **color de marca** (selector con código hexadecimal) y **logo** (PNG, JPG o WebP de hasta 10 MB; un logo por gimnasio, se sube una vez por cada gimnasio que lo use). El nombre y el logo los define Atmósfera desde la consola; el administrador solo cambia el **color** de su gimnasio. El color tiñe botones, elementos seleccionados y boletas; el logo aparece en la navegación y en la boleta impresa. Las sedes de un gimnasio comparten la identidad. Los archivos se guardan en Cloudflare R2.
+Por gimnasio: **color de marca** (selector con código hexadecimal) y **logo** (PNG, JPG o WebP de hasta 10 MB; un logo por gimnasio, se sube una vez por cada gimnasio que lo use). El nombre y el logo los define Atmósfera desde la consola (el logo es el del perfil de la empresa; pulso-api entrega un enlace temporal en `logo_url`); el administrador solo cambia el **color** de su gimnasio. El color tiñe botones, elementos seleccionados y boletas; el logo aparece en la navegación y en la boleta impresa. Las sedes de un gimnasio comparten la identidad. Los archivos los guarda atm-storage-api (Cloudflare R2); Pulso no almacena ni sirve archivos de logo.
 
 ### 6.12 Usuarios y permisos
 Alta, edición, activación y desactivación del equipo, con las reglas de cada rol de la sección 4. Cada usuario tiene nombre completo, DNI, rol, gimnasio (administradores) o sedes (recepción) y estado.
@@ -198,14 +199,14 @@ Alta, edición, activación y desactivación del equipo, con las reglas de cada 
 ### 6.13 Perfil
 Disponible **para todos los roles**: ver sus datos, editar nombre y celular, cambiar contraseña. DNI, rol y alcance son de solo lectura.
 
-### 6.14 Cliente, gimnasios y sedes (en la consola)
-Ya no hay panel de plataforma en Pulso. Desde `atm-console-web` Atmósfera crea el cliente, sus empresas (gimnasios), habilita Pulso, da de alta a los administradores y crea las sedes de cada gimnasio.
+### 6.14 Grupos, gimnasios y sedes (en la consola)
+Ya no hay panel de plataforma en Pulso. Desde `atm-console-web` Atmósfera crea las empresas (gimnasios), habilita Pulso, da de alta a los administradores, agrupa los gimnasios en **grupos** y crea las sedes de cada gimnasio.
 
 ---
 
 ## 7. Principios de diseño de la interfaz
 
-Los clientes son dueños de gimnasio y recepcionistas, no usuarios de software. "Se enseña una vez y se recuerda."
+Las personas que usan Pulso son administradores de gimnasio y recepcionistas, no usuarios de software. "Se enseña una vez y se recuerda."
 
 - **Íconos antes que palabras**; cada ícono lleva etiqueta (nombre accesible + tooltip). El texto se reserva para la acción principal de la pantalla.
 - **Mismo ícono, mismo lugar, en todas partes** (agregar, editar, ver, renovar, WhatsApp, buscar). Las acciones de fila mantienen posiciones fijas.
@@ -263,7 +264,7 @@ y hacer la prueba de humo en producción.
 | 5 | API-06 | WEB-06 | Revisión de seguridad, contrato verificado, limpieza del código demo |
 
 ### 9.2 Ya decidido para más adelante
-- **Logo del gimnasio y subida de imágenes**: diferido hasta terminar la funcionalidad real; el almacenamiento futuro previsto es **Cloudflare R2**. Mientras tanto se usan el color y el monograma.
+- **Logo del gimnasio**: se muestra desde `logo_url` (enlace temporal de atm-storage-api, vía el perfil de la empresa en atm-auth-api); sin logo se usa el monograma. La subida del logo se hace solo en la consola.
 - **Cobro de extras**: hoy el acuerdo queda **registrado** (quién y cuándo) para poder cobrarlo, pero el cobro lo hace Atmósfera fuera del sistema.
 
 ### 9.3 Ideas posibles (aún sin decidir ni planificar)
@@ -292,4 +293,5 @@ Quedan fuera del alcance actual y requieren decisión del dueño del producto:
 | Boleta | Comprobante numerado de cada venta (no tributario) |
 | Pase del día | Entrada única para quien no es miembro |
 | Alcance de acceso | Sedes donde un miembro puede entrar |
-| Consola | atm-console-web: donde Atmósfera crea clientes, empresas, usuarios y sedes |
+| Grupo | Etiqueta interna que agrupa gimnasios relacionados; no es un usuario |
+| Consola | atm-console-web: donde Atmósfera crea empresas, grupos, usuarios y sedes |

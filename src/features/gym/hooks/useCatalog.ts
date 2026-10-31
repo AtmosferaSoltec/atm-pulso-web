@@ -1,9 +1,8 @@
 import { createContext, useContext } from 'react';
-import type { BranchOption } from '@/features/organization/types/organization.types';
-import type { CatalogGym, Named } from '@/types/api.types';
+import type { BranchOption } from '@/features/gym/types/gym.types';
+import type { CatalogGym } from '@/types/api.types';
 
 export interface CatalogValue {
-  organization: Named;
   gyms: CatalogGym[];
   branches: BranchOption[];
   branchLabel: (id: string) => string;

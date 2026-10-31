@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { describeError } from '@/config/errorMessages';
-import { accessScopeOptions, branchTitle, useCatalog, type AccessScope } from '@/features/organization';
+import { accessScopeOptions, branchTitle, useCatalog, type AccessScope } from '@/features/gym';
 import type { EnrollmentTerms } from '@/features/members/types/enrollment.types';
 import type { Member } from '@/features/members/types/member.types';
 import { EnrollmentFields } from '@/features/members/components/EnrollmentFields';
@@ -62,7 +62,6 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
   const scopeDescriptions: Record<AccessScope, string> = {
     branch: homeBranch?.name ?? '',
     gym: countLabel(gymBranches.length),
-    network: countLabel(branches.length),
   };
   const scopeOptions: Option<AccessScope>[] = accessScopeOptions.map((option) => ({ ...option, description: scopeDescriptions[option.value] }));
   // A gym may turn branch sharing off through the API; its members then stay at their own gym.

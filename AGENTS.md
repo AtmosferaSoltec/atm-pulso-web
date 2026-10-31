@@ -130,7 +130,7 @@ Before completing any task, ensure:
 
 ## 5. UI Simplicity Principles
 
-Our clients are gym owners and reception staff, not software users. Teach once, they remember.
+Our users are gym administrators and reception staff, not software users. Teach once, they remember.
 
 - **Icons over words.** Row and toolbar actions use `IconButton` (`src/components/ui/icon-button.tsx`) and always carry a `label` (accessible name + tooltip). Text is reserved for the single primary action of a screen (e.g. "Nuevo miembro").
 - **Same icon, same place, everywhere.** Add `plus`, edit `edit`, view `eye`, renew `renewals`, WhatsApp `message`, search `search`. Row actions keep fixed slots so icons never jump between rows.
@@ -145,7 +145,7 @@ Our clients are gym owners and reception staff, not software users. Teach once, 
 
 ## 6. Business Rules to Remember
 
-- **Pulso has no plans or limits of its own.** Atmósfera orchestrates everything from `atm-console-web`: it creates the client, its companies (each company enabled for Pulso is a **gym**) and the **branches** of each gym, for which it charges directly. Owners/admins never create gyms or branches, and neither does this web.
+- **Pulso has no plans or limits of its own.** Atmósfera orchestrates everything from `atm-console-web`: it creates the companies (each company enabled for Pulso is a **gym**, a brand), bundles related gyms into **groups** (an internal label, not a user; the web never shows it) and creates the **branches** of each gym, for which it charges directly. Admins never create gyms, groups or branches, and neither does this web.
 - **Login is atm-auth-api's.** The browser calls it directly (`VITE_AUTH_API_URL`) and sends the access token to pulso-api. Never reintroduce passwords, tokens or sessions handled by Pulso.
 - Roles are only `admin` and `receptionist` (no owner, no superadmin). Only an admin creates users. A person with access to several gyms switches with the gym selector.
-- The member directory is shared across the client's gyms. "Access between branches" is a per-gym rule set by that gym's administrator.
+- A member belongs to one gym; the directory is shared by the branches of that gym and never across gyms (not even of the same group). Document numbers are unique per gym and receipt series (R-/D-) are per gym. "Access between branches" is a per-gym rule set by that gym's administrator. Membership scopes are only `branch` and `gym`. A future `member` role is planned but not active.
