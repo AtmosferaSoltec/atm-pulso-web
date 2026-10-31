@@ -15,6 +15,13 @@ import { formatDate } from '@/utils/formatDate';
 import type { PaymentMethod } from '@/types/api.types';
 import { VouchersDialog } from '@/features/vouchers';
 import { IconButton } from '@/components/ui/icon-button';
+import { PeriodEditDialog } from '@/features/members/components/PeriodEditDialog';
+import { canAmend, periodState, type PeriodState } from '@/features/members/services/renewal';
+import { MemberSalesPanel } from '@/features/sales';
+import { BodyTrackingPanel } from '@/features/body-tracking';
+import { todayInLima } from '@/utils/limaDate';
+import '@/features/members/members.css';
+import type { MembershipView } from '@/types/api.types';
 
 interface MemberSheetProps {
   member: Member;
@@ -22,18 +29,34 @@ interface MemberSheetProps {
   receiptId?: string;
   onClose: () => void;
   onEdit: (member: Member) => void;
-  onRenew: (member: Member) => void;
+  /** `planId` renews that plan (from one of the periods listed); without it the form asks. */
+  onRenew: (member: Member, planId?: string) => void;
+  /** The branch where the user works: where a pending sale of this member is collected. */
+  branchId?: string;
+  /** Shows a message to the user (a toast). */
+  onNotify?: (message: string) => void;
 }
 
+const stateLabels: Record<PeriodState, string> = { current: 'Vigente', scheduled: 'Programada', ended: 'Terminó' };
+
 /** The member's receipt ("boleta"): printable; the terms and conditions appear only on paper. Reprints any past one. */
-export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit }: MemberSheetProps): ReactElement {
+export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit, branchId, onNotify }: MemberSheetProps): ReactElement {
   const detail = useMemberDetail(member.id);
   const [chosen, setChosen] = useState<string | null>(receiptId ?? null);
   const periods = detail.data?.memberships.filter((period) => period.receipt) ?? [];
+  // Receipts are labelled with their plan only when the member has more than one.
+  const severalPlans = new Set(periods.map((period) => period.plan_id)).size > 1;
   const currentId = chosen ?? periods[0]?.receipt?.id ?? null;
   const receipt = useReceipt(currentId);
   const data = receipt.data;
   const [vouchersOpen, setVouchersOpen] = useState(false);
+  const [amending, setAmending] = useState<MembershipView | null>(null);
+  const today = todayInLima();
+  const allPeriods = detail.data?.memberships ?? [];
+  // The latest period of each plan is the one a renewal continues.
+  const latestOfPlan = new Set(
+    allPeriods.flatMap((period) => (allPeriods.find((other) => other.plan_id === period.plan_id && other.ends_on > period.ends_on) ? [] : [period.id])),
+  );
 
   return (
     <Dialog title="Boleta de membresía" wide onClose={onClose}>
@@ -41,11 +64,43 @@ export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit }: Mem
         <OptionCards
           label="Boleta a mostrar"
           variant="chip"
-          options={periods.map((period) => ({ value: period.receipt!.id, label: period.receipt!.number }))}
+          options={periods.map((period) => ({ value: period.receipt!.id, label: severalPlans ? `${period.receipt!.number} · ${period.plan_name}` : period.receipt!.number }))}
           value={currentId ?? ''}
           onChange={setChosen}
         />
       )}
+      {allPeriods.length > 0 && (
+        <section className="member-periods no-print" aria-label="Membresías del miembro">
+          <ul>
+            {allPeriods.map((period) => {
+              const state = periodState(period, today);
+              return (
+                <li key={period.id} className={`period-row ${state}`}>
+                  <span className="period-text">
+                    <strong>
+                      {period.plan_name} · {period.plan_label}
+                      <span className={`badge period-${state}`}>
+                        <i />
+                        {stateLabels[state]}
+                      </span>
+                      {period.amended_at && <span className="subtle-pill">Corregida</span>}
+                    </strong>
+                    <small>
+                      {formatDate(period.starts_on)} al {formatDate(period.ends_on)} · {formatCurrency(period.amount)}
+                    </small>
+                  </span>
+                  {latestOfPlan.has(period.id) && (
+                    <IconButton icon="renewals" label={`Renovar ${period.plan_name}`} onClick={() => onRenew(member, period.plan_id)} />
+                  )}
+                  {canAmend(period, today) && <IconButton icon="edit" label={`Modificar ${period.plan_name}`} onClick={() => setAmending(period)} />}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+      {branchId && <MemberSalesPanel memberId={member.id} memberName={member.full_name} branchId={branchId} onDone={(message) => onNotify?.(message)} />}
+      <BodyTrackingPanel memberId={member.id} />
       {(receipt.isError || detail.isError) && (
         <p className="error" role="alert">
           {describeError(receipt.error ?? detail.error)}
@@ -99,7 +154,9 @@ export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit }: Mem
                 <tbody>
                   <tr>
                     <td>
-                      <strong>Membresía {data.membership.plan_label}</strong>
+                      <strong>
+                        {data.membership.plan_name} · {data.membership.plan_label}
+                      </strong>
                       <small>Acceso: {data.membership.access_branches.map((branch) => branch.label).join(', ')}</small>
                     </td>
                     <td>
@@ -153,6 +210,18 @@ export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit }: Mem
           <Icon name="print" size={16} /> Imprimir boleta
         </Button>
       </div>
+      {amending && (
+        <PeriodEditDialog
+          memberId={member.id}
+          memberName={member.full_name}
+          period={amending}
+          onClose={() => setAmending(null)}
+          onSaved={() => {
+            setAmending(null);
+            onNotify?.('Membresía corregida. La boleta muestra los nuevos datos.');
+          }}
+        />
+      )}
       {vouchersOpen && data && (
         <VouchersDialog receiptId={data.id} receiptNumber={data.number} method={data.payment.method as PaymentMethod} onClose={() => setVouchersOpen(false)} />
       )}

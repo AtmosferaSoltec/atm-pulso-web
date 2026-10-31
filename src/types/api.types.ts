@@ -18,9 +18,13 @@ export interface Named {
   name: string;
 }
 
+/** An optional module of a gym, switched on by Atmósfera from the console. */
+export type GymFeature = Schemas['Features'][number];
+
 export interface SessionGym extends Named {
   brand_color: string;
   logo_url: string | null;
+  features: GymFeature[];
 }
 
 export interface SessionBranch {
@@ -46,6 +50,7 @@ export interface SessionUser {
 export type Catalog = Schemas['Catalog'];
 export type CatalogGym = Schemas['Gym'];
 export type CatalogMembershipPrice = Schemas['MembershipPrice'];
+export type MembershipPlan = Schemas['MembershipPlan'];
 export type CatalogBranch = CatalogGym['branches'][number];
 export interface TeamUser {
   id: string;
@@ -71,6 +76,13 @@ export type DayPass = Schemas['DayPass'];
 export type PaymentRow = Schemas['PaymentRow'];
 export type PaymentTotals = Schemas['PaymentTotals'];
 export type Dashboard = Schemas['Dashboard'];
+export type MembershipAmendment = Schemas['MembershipAmendment'];
+export type Product = Schemas['Product'];
+export type ProductSale = Schemas['ProductSale'];
+export type PendingBalance = Schemas['PendingBalance'];
+export type MemberPending = Schemas['MemberPending'];
+export type Collection = Schemas['Collection'];
+export type ProductsReport = Schemas['ProductsReport'];
 
 export interface Pagination {
   page: number;
@@ -82,3 +94,9 @@ export interface Page<T, Meta = Pagination> {
   data: T[];
   meta: Meta;
 }
+
+/** Body tracking (module `body_tracking`): sensitive health data. */
+export type BodyMeasurement = Schemas['BodyMeasurement'];
+export type BodyMeasurementInput = Schemas['BodyMeasurementInput'];
+export type BodyRoutine = Schemas['BodyRoutine'];
+export type BodyRoutineInput = Schemas['BodyRoutineInput'];

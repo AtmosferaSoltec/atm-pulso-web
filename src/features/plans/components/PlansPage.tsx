@@ -6,134 +6,86 @@ import { useCurrentUser } from '@/store/authStore';
 import { canManageAccount } from '@/features/auth';
 import { describeError } from '@/config/errorMessages';
 import { gymTitle, useUpdateGym } from '@/features/gym';
-import { MAX_MONTHS } from '@/features/members/services/enrollment';
-import type { CatalogGym, CatalogMembershipPrice } from '@/types/api.types';
+import { PlanDialog } from '@/features/plans/components/PlanDialog';
+import { useMembershipPlans, usePlanMutations } from '@/features/plans/hooks/usePlans';
+import type { CatalogGym, MembershipPlan } from '@/types/api.types';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
-import { IconButton } from '@/components/ui/icon-button';
 import { Icon } from '@/components/ui/icon';
+import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
+import { formatCurrency } from '@/utils/formatCurrency';
 
-interface PricingPageProps {
+interface PlansPageProps {
   gym: CatalogGym;
 }
 
-/** A price row while it is being edited: both values stay text until saved. */
-interface PriceRow {
-  key: string;
-  months: string;
-  amount: string;
+function priceSummary(plan: MembershipPlan): string {
+  if (plan.prices.length === 0) return 'Sin tarifas';
+  return plan.prices.map((price) => `${price.months} ${price.months === 1 ? 'mes' : 'meses'} · ${formatCurrency(price.amount)}`).join('  ·  ');
 }
 
-function toRows(prices: CatalogMembershipPrice[]): PriceRow[] {
-  return prices.map((price) => ({ key: crypto.randomUUID(), months: String(price.months), amount: price.amount }));
+interface PlanCardProps {
+  plan: MembershipPlan;
+  onEdit: (plan: MembershipPlan) => void;
 }
 
-/** Returns the prices ready to send, or an error message in Spanish for the first bad row. */
-function readRows(rows: PriceRow[]): { prices: CatalogMembershipPrice[] } | { error: string } {
-  const seen = new Set<number>();
-  const prices: CatalogMembershipPrice[] = [];
-  for (const row of rows) {
-    const months = Number(row.months);
-    const amount = Number(row.amount);
-    if (row.months.trim() === '' || !Number.isInteger(months) || months < 1 || months > MAX_MONTHS) {
-      return { error: `La duración debe ser de 1 a ${MAX_MONTHS} meses.` };
-    }
-    if (row.amount.trim() === '' || !Number.isFinite(amount) || amount < 0) return { error: 'Ingresa un precio válido en cada tarifa.' };
-    if (seen.has(months)) return { error: `Hay más de una tarifa de ${months} ${months === 1 ? 'mes' : 'meses'}.` };
-    seen.add(months);
-    prices.push({ months, amount: amount.toFixed(2) });
-  }
-  return { prices };
-}
-
-interface PriceRowFieldsProps {
-  row: PriceRow;
-  editable: boolean;
-  onChange: (changes: Partial<PriceRow>) => void;
-  onRemove: () => void;
-}
-
-/** One membership price; the grip moves it, and the list order is the order offered when selling. */
-function PriceRowFields({ row, editable, onChange, onRemove }: PriceRowFieldsProps): ReactElement {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: row.key, disabled: !editable });
+/** One plan; the grip moves it (the list order is the order offered when selling). */
+function PlanCard({ plan, onEdit }: PlanCardProps): ReactElement {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: plan.id });
   const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition };
   return (
-    <div className={`price-row${isDragging ? ' dragging' : ''}`} ref={setNodeRef} style={style}>
-      {editable && (
-        <IconButton
-          icon="grip"
-          label={`Mover la tarifa de ${row.months || '—'} meses`}
-          className="drag-handle"
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
-        />
-      )}
-      <Field label="Duración (meses)" required>
-        <Input type="number" min="1" max={MAX_MONTHS} step="1" required disabled={!editable} value={row.months} onChange={(event) => onChange({ months: event.target.value })} />
-      </Field>
-      <Field label="Precio (S/)" required>
-        <Input type="number" min="0" step="0.01" required disabled={!editable} value={row.amount} onChange={(event) => onChange({ amount: event.target.value })} />
-      </Field>
-      {editable && <IconButton icon="close" label={`Quitar la tarifa de ${row.months || '—'} meses`} onClick={onRemove} />}
-    </div>
+    <li className={`plan-card${isDragging ? ' dragging' : ''}${plan.is_active ? '' : ' inactive'}`} ref={setNodeRef} style={style}>
+      <IconButton icon="grip" label={`Mover el plan ${plan.name}`} className="drag-handle" ref={setActivatorNodeRef} {...attributes} {...listeners} />
+      <div className="plan-card-body">
+        <strong>
+          {plan.name}
+          {!plan.is_active && <span className="badge expired"><i />Inactivo</span>}
+        </strong>
+        {plan.description && <small>{plan.description}</small>}
+        <small>{priceSummary(plan)}</small>
+      </div>
+      <IconButton icon="edit" label={`Editar el plan ${plan.name}`} onClick={() => onEdit(plan)} />
+    </li>
   );
 }
 
-/** Prices a gym's administrator controls: the base price of each membership length and the day pass. */
-export function PricingPage({ gym }: PricingPageProps): ReactElement {
+/** Plans and rates a gym's administrator controls: its membership plans with their prices, and the day pass. */
+export function PlansPage({ gym }: PlansPageProps): ReactElement {
   const user = useCurrentUser();
-  const update = useUpdateGym(gym.id);
+  const editable = canManageAccount(user);
+  const plans = useMembershipPlans();
+  const { update } = usePlanMutations();
+  const updateGym = useUpdateGym(gym.id);
+  const [dialog, setDialog] = useState<{ plan?: MembershipPlan } | null>(null);
   const [price, setPrice] = useState(gym.day_pass_price);
-  const [rows, setRows] = useState<PriceRow[]>(() => toRows(gym.membership_prices));
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const editable = canManageAccount(user);
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const list = plans.data ?? [];
 
-  function moveRow({ active, over }: DragEndEvent): void {
+  async function movePlan({ active, over }: DragEndEvent): Promise<void> {
     if (!over || active.id === over.id) return;
-    const from = rows.findIndex((row) => row.key === active.id);
-    const to = rows.findIndex((row) => row.key === over.id);
-    setRows(arrayMove(rows, from, to));
-    setMessage('');
+    const reordered = arrayMove(list, list.findIndex((plan) => plan.id === active.id), list.findIndex((plan) => plan.id === over.id));
+    try {
+      await Promise.all(reordered.flatMap((plan, index) => (plan.position === index ? [] : [update.mutateAsync({ id: plan.id, changes: { position: index } })])));
+    } catch (failure) {
+      setError(describeError(failure));
+    }
   }
 
-  function changeRow(key: string, changes: Partial<PriceRow>): void {
-    setRows(rows.map((row) => (row.key === key ? { ...row, ...changes } : row)));
-    setMessage('');
-  }
-
-  function addRow(): void {
-    // Suggests the next whole month not priced yet, so a new row is usually ready to fill in.
-    const taken = new Set(rows.map((row) => Number(row.months)));
-    let next = 1;
-    while (taken.has(next) && next < MAX_MONTHS) next += 1;
-    setRows([...rows, { key: crypto.randomUUID(), months: String(next), amount: '' }]);
-    setMessage('');
-  }
-
-  async function save(event: FormEvent<HTMLFormElement>): Promise<void> {
+  async function saveDayPass(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!editable) return;
     const dayPass = Number(price);
     if (price.trim() === '' || !Number.isFinite(dayPass) || dayPass < 0) {
       setError('Ingresa un importe válido para el pase del día.');
       setMessage('');
       return;
     }
-    const read = readRows(rows);
-    if ('error' in read) {
-      setError(read.error);
-      setMessage('');
-      return;
-    }
     try {
-      await update.mutateAsync({ day_pass_price: dayPass.toFixed(2), membership_prices: read.prices });
-      setRows(toRows(read.prices));
+      await updateGym.mutateAsync({ day_pass_price: dayPass.toFixed(2) });
       setError('');
-      setMessage('Tarifas actualizadas. Se proponen al inscribir, renovar y cobrar pases del día.');
+      setMessage('Pase del día actualizado.');
     } catch (failure) {
       setError(describeError(failure));
       setMessage('');
@@ -141,70 +93,75 @@ export function PricingPage({ gym }: PricingPageProps): ReactElement {
   }
 
   return (
-    <form className="card pricing-form" onSubmit={(event) => void save(event)}>
-      <div className="card-heading">
-        <h2>Tarifas de {gymTitle(gym)}</h2>
-      </div>
-      <div className="pricing-fields">
-        <div className="price-rows">
-          <h3 className="price-heading">Membresías</h3>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={moveRow}>
-            <SortableContext items={rows.map((row) => row.key)} strategy={verticalListSortingStrategy}>
-              {rows.map((row) => (
-                <PriceRowFields
-                  key={row.key}
-                  row={row}
-                  editable={editable}
-                  onChange={(changes) => changeRow(row.key, changes)}
-                  onRemove={() => {
-                    setRows(rows.filter((item) => item.key !== row.key));
-                    setMessage('');
-                  }}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-          {rows.length === 0 && (
-            <p className="empty">
-              <Icon name="tag" size={20} /> Aún no hay tarifas. Al inscribir, el importe se escribe a mano.
-            </p>
-          )}
-          {editable && rows.length < MAX_MONTHS && (
-            <Button variant="secondary" onClick={addRow}>
-              <Icon name="plus" size={16} /> Agregar tarifa
+    <div className="plans-page">
+      <section className="card pricing-form">
+        <div className="card-heading">
+          <h2>Planes de {gymTitle(gym)}</h2>
+          {editable && (
+            <Button onClick={() => setDialog({})}>
+              <Icon name="plus" size={16} /> Nuevo plan
             </Button>
           )}
         </div>
-        <Field label="Pase del día (S/)" required hint="Una sola entrada, sin membresía.">
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            disabled={!editable}
-            value={price}
-            onChange={(event) => {
-              setPrice(event.target.value);
-              setMessage('');
-            }}
-          />
-        </Field>
-        {error && (
-          <p role="alert" className="error">
-            {error}
-          </p>
-        )}
-        {message && (
-          <p role="status" className="notice">
-            {message}
-          </p>
-        )}
-        {editable && (
-          <Button type="submit" disabled={update.isPending}>
-            Guardar tarifas
-          </Button>
-        )}
-      </div>
-    </form>
+        <div className="pricing-fields">
+          {plans.isError && (
+            <p role="alert" className="error">
+              {describeError(plans.error)}
+            </p>
+          )}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => void movePlan(event)}>
+            <SortableContext items={list.map((plan) => plan.id)} strategy={verticalListSortingStrategy}>
+              <ul className="plan-list">
+                {list.map((plan) => (
+                  <PlanCard key={plan.id} plan={plan} onEdit={(chosen) => setDialog({ plan: chosen })} />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
+          {!plans.isPending && list.length === 0 && (
+            <p className="empty">
+              <Icon name="tag" size={20} /> Aún no hay planes. Al inscribir a un miembro se crea el plan «Membresía».
+            </p>
+          )}
+        </div>
+      </section>
+      <form className="card pricing-form" onSubmit={(event) => void saveDayPass(event)}>
+        <div className="card-heading">
+          <h2>Pase del día</h2>
+        </div>
+        <div className="pricing-fields">
+          <Field label="Pase del día (S/)" required hint="Una sola entrada, sin membresía.">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              disabled={!editable}
+              value={price}
+              onChange={(event) => {
+                setPrice(event.target.value);
+                setMessage('');
+              }}
+            />
+          </Field>
+          {error && (
+            <p role="alert" className="error">
+              {error}
+            </p>
+          )}
+          {message && (
+            <p role="status" className="notice">
+              {message}
+            </p>
+          )}
+          {editable && (
+            <Button type="submit" disabled={updateGym.isPending}>
+              Guardar pase del día
+            </Button>
+          )}
+        </div>
+      </form>
+      {dialog && <PlanDialog plan={dialog.plan} onClose={() => setDialog(null)} />}
+    </div>
   );
 }

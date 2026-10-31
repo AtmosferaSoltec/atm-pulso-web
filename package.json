@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "test:unit": "node --experimental-strip-types --test tests/enrollment.test.mjs tests/logoSource.test.mjs",
+    "test:unit": "node --experimental-strip-types --test tests/enrollment.test.mjs tests/logoSource.test.mjs tests/cart.test.mjs tests/renewal.test.mjs tests/kioskScreen.test.mjs tests/bodyTracking.test.mjs",
     "api:types": "openapi-typescript ../atm-pulso-api/docs/openapi.yaml -o src/types/api.generated.ts"
   },
   "dependencies": {

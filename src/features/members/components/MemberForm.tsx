@@ -5,8 +5,11 @@ import type { EnrollmentTerms } from '@/features/members/types/enrollment.types'
 import type { Member } from '@/features/members/types/member.types';
 import { EnrollmentFields } from '@/features/members/components/EnrollmentFields';
 import { BranchAccessPicker } from '@/features/members/components/BranchAccessPicker';
-import { useMemberMutations } from '@/features/members/hooks/useMembers';
+import { useMemberDetail, useMemberMutations } from '@/features/members/hooks/useMembers';
+import { renewalStart } from '@/features/members/services/renewal';
+import { formatDate } from '@/utils/formatDate';
 import { documentLabel, documentRules, documentTypeOptions, type DocumentType } from '@/config/documentTypes';
+import { sellablePlans, useMembershipPlans } from '@/features/plans';
 import { lookupPerson } from '@/services/documentLookup';
 import { todayInLima } from '@/utils/limaDate';
 import type { Sale } from '@/types/api.types';
@@ -21,6 +24,8 @@ import { OptionCards, type Option } from '@/components/ui/option-cards';
 interface MemberFormProps {
   /** When set, the form renews this member instead of enrolling a new one. */
   member?: Member;
+  /** The plan to renew (from a period of the file); otherwise the person picks it when there are several. */
+  planId?: string;
   /** The branch where the user works: where the sale is collected, and the new member's home. */
   branchId: string;
   /** `voucherFailures` is how many proofs of payment could not be uploaded after the sale was saved. */
@@ -28,7 +33,7 @@ interface MemberFormProps {
   onClose: () => void;
 }
 
-export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormProps): ReactElement {
+export function MemberForm({ member, planId, branchId, onSaved, onClose }: MemberFormProps): ReactElement {
   const { branches, gyms } = useCatalog();
   const { enroll, renew } = useMemberMutations();
   const homeBranchId = member?.home_branch.id ?? branchId;
@@ -45,16 +50,39 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
   const [accessScope, setAccessScope] = useState<AccessScope>('branch');
   const [accessBranchIds, setAccessBranchIds] = useState<string[]>([homeBranchId]);
   const today = todayInLima();
-  const gymPrices = gyms.find((gym) => gym.id === homeBranch?.gymId)?.membership_prices ?? [];
-  const oneMonth = gymPrices.find((price) => price.months === 1);
+  const plansQuery = useMembershipPlans();
+  const plans = sellablePlans(plansQuery.data ?? []);
+  // With a single plan there is nothing to choose and the selector stays hidden; with several, the person picks one.
+  const [chosenPlanId, setChosenPlanId] = useState(planId ?? '');
+  const plan = plans.length === 1 ? plans[0] : plans.find((item) => item.id === chosenPlanId);
+  const planPrices = plan?.prices ?? [];
   const [terms, setTerms] = useState<EnrollmentTerms>({
     months: 1,
     // A hint only: the server starts a renewal where the current period ends, or today.
     start: member && member.ends_on > today ? member.ends_on : today,
-    // The gym's one-month price when it has one; otherwise the receptionist types it.
-    amount: oneMonth ? Number(oneMonth.amount) : NaN,
+    // Brought by the plan's price for the duration once a plan is known; otherwise the receptionist types it.
+    amount: NaN,
     method: 'yape_plin',
   });
+  // Each time the plan in use changes (loaded, or picked) it brings its price for the duration on screen;
+  // with no such price the amount stays as it is. Adjusted during render, not in an effect.
+  const [pricedFor, setPricedFor] = useState('');
+  // A renewal continues the plan: it starts where the member's last period of that plan ends (the API enforces it).
+  const detail = useMemberDetail(member?.id ?? null);
+  const renewal = member && plan ? renewalStart(detail.data?.memberships ?? [], plan.id, today) : null;
+  const [startedFor, setStartedFor] = useState('');
+  let nextTerms = terms;
+  if (plan && pricedFor !== plan.id) {
+    setPricedFor(plan.id);
+    const priced = plan.prices.find((price) => price.months === terms.months);
+    if (priced) nextTerms = { ...nextTerms, amount: Number(priced.amount) };
+  }
+  const startKey = renewal ? `${plan?.id}:${detail.isSuccess}` : '';
+  if (renewal && startedFor !== startKey) {
+    setStartedFor(startKey);
+    nextTerms = { ...nextTerms, start: renewal.start };
+  }
+  if (nextTerms !== terms) setTerms(nextTerms);
   const rule = documentRules[documentType];
   const saving = enroll.isPending || renew.isPending;
 
@@ -114,10 +142,19 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
       setError('Revisa la duración y el importe ingresados.');
       return;
     }
+    if (plans.length > 1 && !plan) {
+      setError('Elige el plan de la membresía.');
+      return;
+    }
+    if (renewal?.continues && renewal.lastEnd && terms.start < renewal.start) {
+      setError(`${plan?.name ?? 'Este plan'} ya está vigente hasta el ${formatDate(renewal.lastEnd)}. La renovación empieza ese día o después.`);
+      return;
+    }
     const scope = crossBranch ? accessScope : 'branch';
     const sale = {
       id: saleId,
       branch_id: branchId,
+      ...(plans.length > 1 && plan ? { plan_id: plan.id } : {}),
       months: terms.months,
       starts_on: terms.start,
       amount: terms.amount.toFixed(2),
@@ -177,8 +214,13 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
             </Field>
           </>
         )}
-        {member && (
-          <p className="notice full">El inicio se propone desde el vencimiento actual si aún está vigente. Puedes modificarlo antes de guardar.</p>
+        {member && renewal?.continues && renewal.lastEnd && (
+          <p className="notice full">
+            Renueva {plan?.name}: empieza el {formatDate(renewal.start)}, cuando termina el periodo actual. No puede empezar antes.
+          </p>
+        )}
+        {member && !renewal?.continues && (
+          <p className="notice full">{plan ? `${plan.name} no está vigente: la membresía empieza hoy.` : 'El inicio se propone desde hoy.'} Puedes modificarlo antes de guardar.</p>
         )}
         {branches.length > 1 && (
           <Field label="Acceso de la membresía" className="full" as="div">
@@ -189,7 +231,18 @@ export function MemberForm({ member, branchId, onSaved, onClose }: MemberFormPro
             )}
           </Field>
         )}
-        <EnrollmentFields value={terms} onChange={setTerms} prices={gymPrices} />
+        {plans.length > 1 && (
+          <Field label="Plan" required className="full" as="div">
+            <OptionCards
+              label="Plan"
+              variant="chip"
+              options={plans.map((item) => ({ value: item.id, label: item.name }))}
+              value={plan?.id ?? ''}
+              onChange={setChosenPlanId}
+            />
+          </Field>
+        )}
+        <EnrollmentFields value={terms} onChange={setTerms} prices={planPrices} />
         {terms.method !== 'cash' && <VoucherPicker files={vouchers} onChange={setVouchers} />}
         {error && (
           <p role="alert" className="error full">

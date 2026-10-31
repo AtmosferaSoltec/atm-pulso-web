@@ -1,0 +1,45 @@
+/* Body tracking module: the "Medidas y rutinas" section of the member's file. */
+.bt-panel{border:1px solid var(--border);border-radius:14px;margin-bottom:12px;background:var(--surface,#fff)}
+.bt-toggle{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;min-height:46px;border:0;background:none;font:inherit;font-weight:650;font-size:14px;color:inherit;text-align:left;border-radius:14px}
+.bt-toggle>span:nth-child(2){flex:1}
+.bt-chevron{display:inline-flex;transition:transform .15s}.bt-chevron.open{transform:rotate(90deg)}
+.bt-body{display:flex;flex-direction:column;gap:14px;padding:0 14px 14px}
+.bt-chart{margin:0;display:flex;flex-direction:column;gap:6px}
+.bt-chart figcaption{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.bt-chart figcaption strong{font-size:24px;letter-spacing:-.5px}
+.bt-chart svg{width:100%;max-width:560px;height:auto}
+.bt-grid{stroke:#ece9ea;stroke-width:1}
+.bt-axis{font-size:12px;fill:#8f8c8d}
+.bt-line{fill:none;stroke:var(--primary,#31282b);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.bt-dot{fill:#fff;stroke:var(--primary,#31282b);stroke-width:2.5}
+.bt-delta{font-size:12px;font-weight:650;color:#6d696a}.bt-delta.down{color:#2d7a55}.bt-delta.up{color:#b0623d}
+.bt-form{display:flex;flex-direction:column;gap:10px}
+.bt-quick{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.bt-quick .field{min-width:130px}.bt-quick .bt-grow{flex:1;min-width:180px}
+.bt-quick .button{min-height:42px}
+.bt-more-toggle{align-self:flex-start;border:0;background:none;padding:4px 0;font:inherit;font-size:12px;font-weight:600;color:#6d696a;text-decoration:underline;min-height:32px}
+.bt-extra{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.bt-extra .bt-notes-field{grid-column:1/-1}
+.bt-textarea{resize:vertical;min-height:110px;font-family:inherit;line-height:1.5}
+.bt-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.bt-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid var(--border);border-radius:12px;flex-wrap:wrap}
+.bt-row.editing{display:block}
+.bt-date{min-width:92px;font-size:13px;color:#6d696a}
+.bt-values{flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.bt-values strong{white-space:nowrap;display:inline-flex;align-items:baseline;gap:8px;font-size:15px}
+.bt-chip{white-space:nowrap;padding:3px 8px;border-radius:999px;background:#f4f1f2;font-size:12px;color:#5d5759}
+.bt-note{flex-basis:100%;color:#6d696a;font-size:12px;white-space:pre-wrap}
+.bt-actions,.bt-confirm{display:inline-flex;align-items:center;gap:6px}
+.bt-confirm .button{padding:8px 12px}
+.bt-subhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bt-subhead h4{margin:0;font-size:15px}
+.bt-routines{display:flex;flex-direction:column;gap:10px}
+.bt-routine{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;margin-top:6px}
+.bt-routine.current{border-color:var(--primary,#31282b);background:#faf8f9;box-shadow:0 0 0 1px color-mix(in srgb,var(--primary,#31282b) 18%,transparent)}
+.bt-routine header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bt-routine header>span:first-child{display:flex;flex-direction:column;gap:2px}
+.bt-routine-text{white-space:pre-wrap;font-size:14px;line-height:1.55}
+.bt-history summary{cursor:pointer;font-size:13px;font-weight:600;color:#6d696a;min-height:36px;display:flex;align-items:center}
+.bt-empty{font-size:13px}
+.bt-privacy{color:#8f8c8d}
+@media(max-width:560px){.bt-quick .field{flex:1}.bt-row{align-items:center;gap:6px 10px}.bt-date{flex-basis:100%;min-width:0}.bt-values{flex:1 1 60%}}

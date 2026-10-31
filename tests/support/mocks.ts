@@ -12,7 +12,7 @@ const json = (route: Route, status: number, body: unknown): Promise<void> =>
 
 const tokens = { access_token: 'access-1', refresh_token: 'refresh-1', expires_in: 600, session_mode: 'persistent' };
 
-const gym = { id: GYM_ID, name: 'Atlas Fitness', brand_color: '#17677b', logo_url: null };
+const gym = { id: GYM_ID, name: 'Atlas Fitness', brand_color: '#17677b', logo_url: null, features: [] as string[] };
 const me = {
   id: '00000000-0000-4000-8000-000000000009',
   document_number: '74455518',
@@ -31,7 +31,7 @@ const catalog = {
       day_pass_price: '15.00',
       day_pass_price_is_default: true,
       branch_sharing: true,
-      membership_prices: [],
+      features: [] as string[],
       branches: [{ id: BRANCH_ID, name: 'Sede Central', address: null, accessible: true }],
     },
   ],
@@ -42,12 +42,24 @@ interface MockOptions {
   firstLogin?: boolean;
   /** More than one gym, so the selector shows. */
   gyms?: number;
+  /** Membership plans of the gym; defaults to a single one. */
+  plans?: { id: string; name: string; prices?: { months: number; amount: string }[]; is_active?: boolean }[];
+  /** Optional modules switched on for the gym. */
+  features?: string[];
 }
 
 /** Stands in for atm-auth-api and pulso-api. Returns the calls made, so a test can assert on them. */
 export async function mockBackends(page: Page, options: MockOptions = {}): Promise<{ calls: string[] }> {
   const calls: string[] = [];
   const count = options.gyms ?? 1;
+  const plans = (options.plans ?? [{ id: 'plan-1', name: 'Membresía' }]).map((plan, index) => ({
+    description: null,
+    is_active: true,
+    position: index,
+    prices: [],
+    ...plan,
+  }));
+  catalog.gyms[0].features = options.features ?? [];
   let current = 0;
   let passwordChanged = false;
 
@@ -87,6 +99,7 @@ export async function mockBackends(page: Page, options: MockOptions = {}): Promi
     if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     if (path === '/me') return json(route, 200, { data: me });
     if (path === '/catalog') return json(route, 200, { data: catalog });
+    if (path === '/membership-plans') return json(route, 200, { data: plans });
     if (path === '/dashboard') {
       return json(route, 200, {
         data: {

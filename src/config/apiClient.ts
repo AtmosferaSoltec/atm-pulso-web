@@ -113,6 +113,8 @@ async function send(method: string, path: string, options: RequestOptions): Prom
 /** Calls the API and returns the `data` of the answer. */
 export async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
   const response = await send(method, path, options);
+  // 204 No Content (a logical delete) has no body.
+  if (response.status === 204) return undefined as T;
   return ((await response.json()) as { data: T }).data;
 }
 
@@ -142,6 +144,7 @@ export const api = {
   get: <T>(path: string, query?: Query, signal?: AbortSignal): Promise<T> => request<T>('GET', path, { query, signal }),
   post: <T>(path: string, body?: unknown): Promise<T> => request<T>('POST', path, { body: body ?? {} }),
   patch: <T>(path: string, body: unknown): Promise<T> => request<T>('PATCH', path, { body }),
+  putJson: <T>(path: string, body: unknown): Promise<T> => request<T>('PUT', path, { body }),
   put: <T>(path: string, file: Blob): Promise<T> => request<T>('PUT', path, { file }),
   postFile: <T>(path: string, file: Blob): Promise<T> => request<T>('POST', path, { file }),
   delete: <T>(path: string): Promise<T> => request<T>('DELETE', path),

@@ -39,3 +39,4 @@ coverage/
 
 # Local assistant settings
 .claude/
+shots/

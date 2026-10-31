@@ -25,6 +25,13 @@ pnpm test:unit
 pnpm test:e2e              # mocks atm-auth-api and pulso-api in the browser: see tests/README.md
 ```
 
+## Kiosk mode
+
+`/kiosk` is a full-screen route without sidebar for a tablet at the door (gyms with the `kiosk` module). Log in on the tablet with a
+receptionist account pinned to a branch and open `/kiosk` (or "Quiosco" in settings). The admin sets the exit PIN first; hold the logo
+3 seconds to exit. Code: `src/features/kiosk` (pure screen logic in `services/kioskScreen.ts`, unit-tested). Live check against the
+local stack: `pnpm exec playwright test -c playwright.live.config.ts` (screenshots go to `shots/`).
+
 ## Types from the contract
 
 `src/types/api.generated.ts` is generated from the API's `docs/openapi.yaml`. Run `pnpm api:types` after the

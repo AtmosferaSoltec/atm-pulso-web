@@ -10,7 +10,9 @@ import { Dashboard } from '@/features/dashboard';
 import { useMemberFilters, MembersPage, MemberForm, MemberSheet, MemberEditForm, type Member, type StatusFilter } from '@/features/members';
 import { AccessAlert, AccessPage, QuickAccessCheck, type AccessResult } from '@/features/access';
 import { PaymentsPage } from '@/features/payments';
-import { PricingPage } from '@/features/pricing';
+import { PlansPage } from '@/features/plans';
+import { KioskPage } from '@/features/kiosk';
+import { ProductsPage, QuickSalePage, SalesPage } from '@/features/sales';
 import type { Page } from '@/types/navigation.types';
 import type { Sale } from '@/types/api.types';
 import { ProfileDialog } from '@/features/auth';
@@ -35,6 +37,7 @@ export function Workspace(): ReactElement {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [renewing, setRenewing] = useState<Member | undefined>();
+  const [renewingPlanId, setRenewingPlanId] = useState<string | undefined>();
   const [editing, setEditing] = useState<Member | null>(null);
   const [selected, setSelected] = useState<{ member: Member; receiptId?: string } | null>(null);
   const [toast, setToast] = useState('');
@@ -78,10 +81,12 @@ export function Workspace(): ReactElement {
   function closeEnrollment(): void {
     setRegistering(false);
     setRenewing(undefined);
+    setRenewingPlanId(undefined);
   }
 
-  function openEnrollment(member?: Member): void {
+  function openEnrollment(member?: Member, planId?: string): void {
     setRenewing(member);
+    setRenewingPlanId(planId);
     setSelected(null);
     setRegistering(true);
   }
@@ -162,14 +167,20 @@ export function Workspace(): ReactElement {
           )}
           {page === 'payments' && <PaymentsPage key={branch.id} branchId={branch.id} showSummary={user.role !== 'receptionist'} />}
           {page === 'team' && <TeamPage />}
-          {page === 'pricing' && <PricingPage key={gym.id} gym={gym} />}
+          {page === 'plans' && <PlansPage key={gym.id} gym={gym} />}
+          {page === 'kiosk' && <KioskPage />}
+          {page === 'sell' && <QuickSalePage key={branch.id} branchId={branch.id} onDone={setToast} />}
+          {page === 'sales' && <SalesPage branchId={branch.id} showReport={user.role === 'admin'} onDone={setToast} />}
+          {page === 'products' && <ProductsPage />}
         </main>
       </div>
-      {registering && <MemberForm member={renewing} branchId={branch.id} onSaved={saved} onClose={closeEnrollment} />}
+      {registering && <MemberForm member={renewing} planId={renewingPlanId} branchId={branch.id} onSaved={saved} onClose={closeEnrollment} />}
       {selected && (
         <MemberSheet
           member={selected.member}
           receiptId={selected.receiptId}
+          branchId={branch.id}
+          onNotify={setToast}
           onClose={() => setSelected(null)}
           onRenew={openEnrollment}
           onEdit={(member) => {

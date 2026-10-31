@@ -361,6 +361,62 @@ export interface paths {
         };
         trace?: never;
     };
+    "/admin/gyms/{gym_id}/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Switch the optional modules of a gym on or off (superadmin).
+         * @description Sends the COMPLETE list of modules the gym should have; what is not listed is switched off. The list is closed:
+         *     `sales` (sales of products, paid now or pending collection, and the product catalog), `body_tracking` (measurements and routines), `kiosk` (access
+         *     tablet). An unknown name answers 400 `FEATURES_INVALID`. The gym sees the result in `GET /me` and `GET /catalog`
+         *     (`features`) at its next request. A route of a module the gym does not have answers 403 `FEATURE_DISABLED`.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    gym_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        features: components["schemas"]["Features"];
+                    };
+                };
+            };
+            responses: {
+                /** @description The gym. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["AdminGym"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
+            };
+        };
+        trace?: never;
+    };
     "/admin/gyms/{gym_id}/branches": {
         parameters: {
             query?: never;
@@ -953,7 +1009,7 @@ export interface paths {
         /**
          * Change the rules of the current gym (admin).
          * @description Send only the fields to change; null for day_pass_price restores the default. A gym admin changes
-         *     `day_pass_price`, `branch_sharing` and `membership_prices` of the gym of their token. The identity
+         *     `day_pass_price` and `branch_sharing` of the gym of their token (membership prices are per plan: `/membership-plans`). The identity
          *     (`display_name`, `brand_color`, logo, name) is configured by Atmósfera from the console
          *     (`PATCH /admin/gyms/{gym_id}`): sending `display_name` or `brand_color` here answers 403 `FORBIDDEN`.
          *     A gym that is not the one of the token answers 403 `SCOPE_NOT_ALLOWED`.
@@ -1004,6 +1060,140 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
+            };
+        };
+        trace?: never;
+    };
+    "/membership-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The membership plans of the gym with their prices.
+         * @description An admin sees every plan (active or not); reception sees only the active ones (the ones that can be sold).
+         *     Ordered by `position`. A plan never restricts access by itself: entry is allowed when any current period
+         *     of the member, of any plan, opens the branch.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The plans. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["MembershipPlan"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        /**
+         * Create a membership plan (admin).
+         * @description Errors: PLAN_NAME_TAKEN (409, names are unique per gym, case-insensitive, also among inactive plans), CONFLICT (409,
+         *     the `id` belongs to something else), VALIDATION_FAILED (400: PLAN_NAME_INVALID, PLAN_DESCRIPTION_INVALID,
+         *     PLAN_PRICES_INVALID, PLAN_POSITION_INVALID), FORBIDDEN (403, reception).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewMembershipPlan"];
+                };
+            };
+            responses: {
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["MembershipPlan"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/membership-plans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit, reorder or deactivate a membership plan (admin).
+         * @description Send only the fields to change; `prices`, when sent, replaces the whole price list. A plan is never deleted
+         *     (its name stays on old receipts): deactivate it with `is_active: false` and it can no longer be sold. Periods
+         *     already sold keep their plan.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MembershipPlanChanges"];
+                };
+            };
+            responses: {
+                /** @description The updated plan. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["MembershipPlan"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
             };
         };
         trace?: never;
@@ -1060,6 +1250,9 @@ export interface paths {
          * @description The branch must be one the caller works in. Repeating the same `id` returns the original sale with 200.
          *     Errors: MEMBER_DOCUMENT_TAKEN (409, details.member_id), BRANCH_NOT_ACCESSIBLE (403), SCOPE_NOT_ALLOWED (400, foreign branch),
          *     ACCESS_BRANCHES_INVALID (400), VALIDATION_FAILED (400).
+         *     `plan_id` is optional when the gym has exactly one active plan (a gym that never configured any gets the default
+         *     plan "Membresía"); with several active plans it is required (400 `PLAN_REQUIRED`), and a plan that is not an active
+         *     plan of the gym answers 400 `PLAN_INVALID`.
          */
         post: {
             parameters: {
@@ -1196,7 +1389,11 @@ export interface paths {
         put?: never;
         /**
          * Renew a member (new period, payment and receipt).
-         * @description `starts_on` defaults to the latest end date when it is in the future, otherwise today (the server decides).
+         * @description Buying a plan the member already holds (current or scheduled) is a RENEWAL: `starts_on` defaults to the end date of the member's
+         *     latest period OF THE SAME PLAN when it is in the future, otherwise today (the server decides). `plan_id` follows the same rules as
+         *     when enrolling. A period of the same plan can never overlap another one of that plan (periods are half-open `[starts_on, ends_on)`:
+         *     starting on the previous end date is fine, one day earlier is not): an explicit `starts_on` that collides is refused with
+         *     `409 MEMBERSHIP_OVERLAP` and `details { membership_id, starts_on, ends_on, suggested_starts_on }`. Different plans may overlap freely.
          *     `branch_id` is where it is collected and may differ from the home branch, which never changes.
          *     Repeating the same `id` (the period id) returns the original sale with 200.
          */
@@ -1241,8 +1438,116 @@ export interface paths {
                 401: components["responses"]["Unauthorized"];
                 403: components["responses"]["ApiError"];
                 404: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{id}/memberships/{membership_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Correct a membership period that has not ended (months, start, amount, payment method).
+         * @description Send only the fields to change (at least one). The end date is never sent: the server recalculates it from `starts_on` + `months`.
+         *     Allowed only while the period has not ended (`ends_on >= today`, Lima) and its new end is not in the past; it cannot overlap another
+         *     period of the SAME plan (409 `MEMBERSHIP_OVERLAP`, same details as renewals); the plan itself cannot be changed. The payment and the
+         *     receipt are corrected IN PLACE (same receipt number; the printable receipt shows the new values) and one row is added to the period's
+         *     history (`GET .../amendments`) with the author and the values before and after. Admin and reception; reception needs access to the branch that
+         *     collected the payment (403 `BRANCH_NOT_ACCESSIBLE`). Sending the current values changes and records nothing.
+         *     Errors: MEMBERSHIP_NOT_FOUND (404, also for another gym), MEMBERSHIP_ENDED (409), MEMBERSHIP_OVERLAP (409), VALIDATION_FAILED (400:
+         *     MONTHS_INVALID, START_DATE_INVALID, AMOUNT_INVALID, METHOD_INVALID, PERIOD_ENDS_IN_PAST, NO_CHANGES on `body`).
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    membership_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AmendMembership"];
+                };
+            };
+            responses: {
+                /** @description The corrected sale (member with recalculated status */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Sale"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        trace?: never;
+    };
+    "/members/{id}/memberships/{membership_id}/amendments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * History of corrections of a period (admin).
+         * @description Oldest first. Who changed it, when, and the values before and after (`months`, `starts_on`, `ends_on`, `amount`, `method`).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    membership_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The corrections. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["MembershipAmendment"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1280,6 +1585,509 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The product catalog of the gym (module `sales`).
+         * @description Ordered by `position` then name. Reception always gets the active products (what can be sold); an admin may add `include_inactive=true`.
+         *     Every route of this module answers `403 FEATURE_DISABLED` when the gym has not switched `sales` on.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Admin only (ignored for reception). */
+                    include_inactive?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The products. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Product"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        /**
+         * Add a product (admin).
+         * @description `price` is text, 0.01 to 10000.00. Names are unique per gym ignoring case. Repeating the same `id` of the gym answers the stored product with 200.
+         *     Errors: PRODUCT_NAME_TAKEN (409), CONFLICT (409, the id belongs to another gym), VALIDATION_FAILED (400: PRODUCT_NAME_INVALID, PRODUCT_PRICE_INVALID, PRODUCT_POSITION_INVALID), FORBIDDEN (403, reception).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewProduct"];
+                };
+            };
+            responses: {
+                /** @description Repeated request. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Product"];
+                        };
+                    };
+                };
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Product"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit, reorder or deactivate a product (admin).
+         * @description Only the fields sent change. A product is never deleted (old sales keep their own photo of name and price); deactivate it with `is_active` false.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProductChanges"];
+                };
+            };
+            responses: {
+                /** @description The product. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Product"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        trace?: never;
+    };
+    "/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List product sales, newest first.
+         * @description Admin: the whole gym. Reception: only the branches it works in (`branch_id` of another branch is 403 `BRANCH_NOT_ACCESSIBLE`).
+         *     `from`/`to` filter the Lima sale date (inclusive).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                    branch_id?: string;
+                    member_id?: string;
+                    status?: "paid" | "pending";
+                    page?: number;
+                    page_size?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A page of sales. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ProductSale"][];
+                            meta: components["schemas"]["Pagination"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        /**
+         * Register a sale of one or several products, paid now or charged to a member (pending sale).
+         * @description Quick: no receipt, no series, no inventory. The unit price of each item is taken from the catalog at that moment and kept on the sale
+         *     (a photo). Repeated products are merged. Limits: 1 to 30 different products, 1 to 99 units each, 100000.00 per sale.
+         *     `status` is `paid` (default; `method` required) or `pending` (the pending sale; `member_id` required, `method` ignored: the collection carries it).
+         *     `member_id` is optional on a paid sale. The branch must be one the caller works in. Repeating the same `id` answers the stored sale with 200.
+         *     Errors: BRANCH_NOT_ACCESSIBLE (403), SCOPE_NOT_ALLOWED (400, branch of another gym), CONFLICT (409, id of another gym),
+         *     VALIDATION_FAILED (400: METHOD_INVALID, STATUS_INVALID, MEMBER_REQUIRED, MEMBER_INVALID, ITEMS_INVALID, PRODUCT_INVALID, TOTAL_TOO_LARGE).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewProductSale"];
+                };
+            };
+            responses: {
+                /** @description Repeated request; the stored sale. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["ProductSale"];
+                        };
+                    };
+                };
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["ProductSale"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Members who owe something (open pending sales), the biggest balance first.
+         * @description Balances are the gym's (the member directory is shared between branches): both roles see the same list.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The balances. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["PendingBalance"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Collect whole pending sales of a member.
+         * @description Pays the listed pending sales (`sale_ids`) or, when absent or empty, ALL the open pending sales of the member, in one transaction, with the payment method and who
+         *     collected it. Partial payments of one sale do not exist: a sale is paid whole or not at all. The paid sales become `paid` (`was_pending: true`, with
+         *     `collection_id`). Repeating the same `id` answers the stored collection with 200. The branch is where it is collected and must be reachable by the caller.
+         *     Errors: SALE_NOT_FOUND (404, not a pending sale of that member in this gym), SALE_NOT_PENDING (409, someone already collected it; nothing is changed),
+         *     NOTHING_TO_COLLECT (409, the member owes nothing), MEMBER_NOT_FOUND (404), BRANCH_NOT_ACCESSIBLE (403), CONFLICT (409), VALIDATION_FAILED (400: METHOD_INVALID, SALE_IDS_INVALID).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewCollection"];
+                };
+            };
+            responses: {
+                /** @description Repeated request; the stored collection. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Collection"];
+                        };
+                    };
+                };
+                /** @description Collected. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Collection"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Product sales report (admin).
+         * @description Units and money by product and by day or month over a Lima date range (default: from the 1st of the current month to today; at most 800 days),
+         *     optionally for one branch. SEPARATE from the membership income: nothing here is counted in `/payments`, `/payments/export` or `/dashboard`.
+         *     `total_sold` = every sale of the period; `collected_total` = those already paid (including pending sales collected since); `pending_total` = pending sales still open.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                    branch_id?: string;
+                    group_by?: "day" | "month";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The report. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["ProductsReport"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{id}/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Purchase history of a member (product sales), newest first.
+         * @description Every product sale charged to the member, paid or pending, from every branch of the gym (the member directory is shared). Paginated. 404 `MEMBER_NOT_FOUND` for a member of another gym.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    page_size?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A page of sales. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ProductSale"][];
+                            meta: components["schemas"]["Pagination"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{id}/pending-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a member owes (open pending sales) and the sales behind it.
+         * @description Oldest first. `balance` is the sum of the open pending sales; "0.00" when none. 404 `MEMBER_NOT_FOUND` for a member of another gym.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The balance. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["MemberPending"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
                 404: components["responses"]["ApiError"];
             };
         };
@@ -1522,6 +2330,8 @@ export interface paths {
          *     MEMBERSHIP_VALID, MEMBERSHIP_EXPIRED (ends_on = last end), MEMBERSHIP_NOT_STARTED (ends_on = start date),
          *     BRANCH_NOT_ALLOWED, NOT_REGISTERED. An allowed answer ending within 7 days has `expiring_in_days`.
          *     Unknown `member_id` is 404 MEMBER_NOT_FOUND. Repeating the same `id` returns the original answer without a second entry.
+         *     Like every route it is limited per IP (`RATE_LIMIT_PER_MINUTE`, 120 by default): beyond that, 429 `TOO_MANY_REQUESTS`
+         *     with `Retry-After`. The kiosk (`atm-pulso-web` `/kiosk`) uses this endpoint and shows a plain notice on a 429.
          */
         post: {
             parameters: {
@@ -1981,6 +2791,555 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kiosk/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether the gym has the kiosk exit PIN (admin and reception). Never returns the PIN.
+         * @description Needs the `kiosk` module (403 `FEATURE_DISABLED` otherwise). The kiosk screen refuses to start without a PIN.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The settings. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["KioskSettings"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set or replace the kiosk exit PIN (admin only).
+         * @description 4 to 8 digits (400 `VALIDATION_FAILED`, field code `PIN_INVALID`). Only a bcrypt hash is stored. Needs the `kiosk` module.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        pin: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The settings. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["KioskSettings"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk/exit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check the exit PIN that takes the access tablet out of kiosk mode (admin and reception).
+         * @description `200 { data: { ok: true } }` when it matches. 403 `KIOSK_PIN_INVALID` when it does not, 409 `KIOSK_PIN_NOT_SET`
+         *     when the gym has none. Five wrong PINs in a row lock that user for 5 minutes: 429 `KIOSK_PIN_LOCKED`, even for the
+         *     right PIN. Needs the `kiosk` module.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        pin: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The PIN matches. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: {
+                                ok?: boolean;
+                            };
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+                429: components["responses"]["ApiError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{id}/measurements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Body measurements of a member, newest first (admin and reception).
+         * @description SENSITIVE health data (law 29733). Needs the `body_tracking` module (403 `FEATURE_DISABLED` otherwise). The member must belong to the
+         *     gym of the token (another gym, even of the same group: 404 `MEMBER_NOT_FOUND`) and a receptionist needs access to the member's home
+         *     branch (403 `BRANCH_NOT_ACCESSIBLE`). Every read is recorded in the access log (who, member, time; never the values). Answers `[]`
+         *     when the member has none (up to the newest 1000).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The measurements. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BodyMeasurement"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        /**
+         * Record a measurement (admin and reception).
+         * @description Only the date (default today in Lima) and at least one value are required. Decimals are JSON numbers or strings with at most one
+         *     decimal digit. Ranges: weight 20-400 kg, height 50-250 cm, body fat 2-70 %, waist/chest/hip 20-300 cm. The date is a Lima date,
+         *     not in the future and not before 2000-01-01. Notes: up to 500 characters.
+         *     Repeating the same `id` for the same member answers the stored record with 200 (idempotent); an id that belongs to another member or gym
+         *     or to a deleted record is 409 `CONFLICT`. Errors: 400 `VALIDATION_FAILED` (field codes `DATE_INVALID`, `DATE_FUTURE`, `WEIGHT_INVALID`,
+         *     `HEIGHT_INVALID`, `BODY_FAT_INVALID`, `WAIST_INVALID`, `CHEST_INVALID`, `HIP_INVALID`, `VALUE_REQUIRED`, `NOTES_INVALID`),
+         *     403 `FEATURE_DISABLED` / `BRANCH_NOT_ACCESSIBLE`, 404 `MEMBER_NOT_FOUND`. The write is recorded in the access log.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BodyMeasurementInput"];
+                };
+            };
+            responses: {
+                /** @description The id was already stored. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BodyMeasurement"];
+                        };
+                    };
+                };
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BodyMeasurement"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{id}/measurements/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Edit a measurement (replaces the whole record; values left out are cleared).
+         * @description Same body and rules as the creation (without `id`). Errors add 404 `MEASUREMENT_NOT_FOUND`. Updates who and when; recorded in the access log.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    record_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BodyMeasurementInput"];
+                };
+            };
+            responses: {
+                /** @description The updated record. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BodyMeasurement"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        post?: never;
+        /**
+         * Delete a measurement logically (who and when are kept).
+         * @description 204. A record already deleted is 404 `MEASUREMENT_NOT_FOUND`. Recorded in the access log.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    record_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{id}/routines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Routines of a member, current ones first, then newest start first (admin and reception).
+         * @description Same access rules as the measurements (module, gym, branch). Every read is recorded in the access log. Up to 500.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The routines. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BodyRoutine"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        /**
+         * Record a routine (admin and reception).
+         * @description `title` 1-80 characters; `content` free text up to 5000; `notes` up to 500; `started_on` defaults to today in Lima and cannot be in the
+         *     future; `is_current` defaults to true (several routines may be current). Idempotent by `id` like the measurements. Field codes:
+         *     `TITLE_INVALID`, `CONTENT_INVALID`, `NOTES_INVALID`, `DATE_INVALID`, `DATE_FUTURE`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BodyRoutineInput"];
+                };
+            };
+            responses: {
+                /** @description The id was already stored. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BodyRoutine"];
+                        };
+                    };
+                };
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BodyRoutine"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{id}/routines/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Edit a routine (replaces the whole record).
+         * @description Same body and rules as the creation (without `id`). 404 `ROUTINE_NOT_FOUND`. Recorded in the access log.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    record_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BodyRoutineInput"];
+                };
+            };
+            responses: {
+                /** @description The updated record. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BodyRoutine"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        post?: never;
+        /**
+         * Delete a routine logically.
+         * @description 204. 404 `ROUTINE_NOT_FOUND` when already deleted. Recorded in the access log.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    record_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{id}/body-access-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who read or wrote the health data of a member (admin only), newest 200 first.
+         * @description Ids, action, resource and time only; never the values. Reading this log is not itself logged. Reception gets 403 `FORBIDDEN`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The entries. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BodyAccessEntry"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents/persons/{document_number}": {
         parameters: {
             query?: never;
@@ -2108,8 +3467,7 @@ export interface components {
             day_pass_price: string;
             day_pass_price_is_default: boolean;
             branch_sharing: boolean;
-            /** @description Base price per duration, in the order the gym set (the order offered when selling). Empty until the gym sets them. */
-            membership_prices: components["schemas"]["MembershipPrice"][];
+            features: components["schemas"]["Features"];
             branches: {
                 /** Format: uuid */
                 id: string;
@@ -2158,8 +3516,6 @@ export interface components {
             /** @example 15.00 */
             day_pass_price?: string | null;
             branch_sharing?: boolean;
-            /** @description Replaces the whole list and keeps its order. One price per duration, 1 to 24 months, at most 24 entries. */
-            membership_prices?: components["schemas"]["MembershipPrice"][];
         };
         Voucher: {
             /** Format: uuid */
@@ -2170,10 +3526,53 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        /**
+         * @description The optional modules a gym has switched on (closed list), in a fixed order. Only the platform superadmin changes them.
+         * @example [
+         *       "kiosk"
+         *     ]
+         */
+        Features: ("sales" | "body_tracking" | "kiosk")[];
         MembershipPrice: {
             months: number;
             /** @example 100.00 */
             amount: string;
+        };
+        MembershipPlan: {
+            /** Format: uuid */
+            id: string;
+            /** @example Baile */
+            name: string;
+            description: string | null;
+            is_active: boolean;
+            /** @description Order the plans are offered in (ascending). */
+            position: number;
+            /** @description Suggested price per duration, ordered by months. The amount charged may still be any other. */
+            prices: components["schemas"]["MembershipPrice"][];
+        };
+        NewMembershipPlan: {
+            /**
+             * Format: uuid
+             * @description Optional; makes the request idempotent.
+             */
+            id?: string;
+            name: string;
+            description?: string | null;
+            /** @default true */
+            is_active: boolean;
+            /** @description Defaults to last. */
+            position?: number;
+            /** @description One price per duration, 1 to 24 months, amount like "100.00". */
+            prices?: components["schemas"]["MembershipPrice"][];
+        };
+        /** @description Send only the fields to change. */
+        MembershipPlanChanges: {
+            name?: string;
+            description?: string | null;
+            is_active?: boolean;
+            position?: number;
+            /** @description Replaces the whole price list. */
+            prices?: components["schemas"]["MembershipPrice"][];
         };
         BranchName: {
             /** Format: uuid */
@@ -2199,10 +3598,12 @@ export interface components {
             home_branch: components["schemas"]["BranchName"];
             /** @enum {string} */
             status: "active" | "expiring" | "expired" | "scheduled";
-            /** @description Days until the latest end date; negative when expired. */
+            /** @description Covered member: days until the coverage end (see business-rules, section 4: the latest end among the current periods of any plan, extended by periods that continue it). Otherwise days until the latest end of any period; negative when expired. */
             days_remaining: number;
             /** @example 3 meses */
             plan_label: string;
+            /** @description The plans the member holds today; for a member with none current, the last one they held. */
+            plan_names: string[];
             /** Format: date */
             starts_on: string;
             /** Format: date */
@@ -2225,6 +3626,10 @@ export interface components {
         MembershipView: {
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            plan_id: string;
+            /** @description The plan's name when the period was sold (a photo; never changes). */
+            plan_name: string;
             months: number;
             plan_label: string;
             /** Format: date */
@@ -2237,6 +3642,11 @@ export interface components {
             access_scope: "branch" | "gym";
             access_branches: components["schemas"]["AccessBranch"][];
             receipt: components["schemas"]["ReceiptRef"] | null;
+            /**
+             * Format: date-time
+             * @description When the period was last corrected (PATCH); null if never.
+             */
+            amended_at?: string | null;
         };
         MemberDetail: components["schemas"]["MemberView"] & {
             memberships: components["schemas"]["MembershipView"][];
@@ -2245,6 +3655,251 @@ export interface components {
             member: components["schemas"]["MemberView"];
             membership: components["schemas"]["MembershipView"];
             receipt: components["schemas"]["ReceiptRef"];
+        };
+        /** @description At least one field. The end date is recalculated by the server. */
+        AmendMembership: {
+            months?: number;
+            /** Format: date */
+            starts_on?: string;
+            /** @example 270.00 */
+            amount?: string;
+            /** @enum {string} */
+            method?: "yape_plin" | "cash" | "card" | "transfer";
+        };
+        MembershipAmendment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            changed_at: string;
+            changed_by: {
+                /** Format: uuid */
+                id: string;
+                full_name: string;
+            };
+            before: components["schemas"]["PeriodState"];
+            after: components["schemas"]["PeriodState"];
+        };
+        PeriodState: {
+            months?: number;
+            /** Format: date */
+            starts_on?: string;
+            /** Format: date */
+            ends_on?: string;
+            /** @example 270.00 */
+            amount?: string;
+            method?: string;
+        };
+        Product: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @example 8.50 */
+            price: string;
+            is_active: boolean;
+            position: number;
+        };
+        NewProduct: {
+            /**
+             * Format: uuid
+             * @description Optional; makes the request idempotent.
+             */
+            id?: string;
+            name: string;
+            /**
+             * @description 0.01 to 10000.00.
+             * @example 8.50
+             */
+            price: string;
+            /** @default true */
+            is_active: boolean;
+            /** @description Omit to put it last. */
+            position?: number;
+        };
+        ProductChanges: {
+            name?: string;
+            price?: string;
+            is_active?: boolean;
+            position?: number;
+        };
+        NewProductSale: {
+            /**
+             * Format: uuid
+             * @description Optional; makes the request idempotent.
+             */
+            id?: string;
+            /** Format: uuid */
+            branch_id: string;
+            /**
+             * Format: uuid
+             * @description Optional when paid; required for a pending sale.
+             */
+            member_id?: string | null;
+            /**
+             * @default paid
+             * @enum {string}
+             */
+            status: "paid" | "pending";
+            /**
+             * @description Required when paid; ignored for a pending sale.
+             * @enum {string}
+             */
+            method?: "yape_plin" | "cash" | "card" | "transfer";
+            items: {
+                /** Format: uuid */
+                product_id: string;
+                quantity: number;
+            }[];
+        };
+        ProductSale: {
+            /** Format: uuid */
+            id: string;
+            branch: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            /**
+             * @description `pending` is an open pending sale.
+             * @enum {string}
+             */
+            status: "paid" | "pending";
+            /** @description The sale was born as a pending sale (even when collected now). */
+            was_pending: boolean;
+            /** @description Null for an open pending sale. */
+            method: string | null;
+            /** @example 26.50 */
+            total: string;
+            units: number;
+            /** Format: date-time */
+            sold_at: string;
+            /**
+             * Format: date
+             * @description Lima date.
+             */
+            sold_on: string;
+            sold_by: {
+                /** Format: uuid */
+                id: string;
+                full_name: string;
+            };
+            member: components["schemas"]["SaleMember"] | null;
+            /** Format: uuid */
+            collection_id: string | null;
+            /** Format: date-time */
+            collected_at: string | null;
+            items: {
+                /** Format: uuid */
+                product_id: string;
+                /** @description The product's name at the time of the sale. */
+                name: string;
+                quantity: number;
+                /** @example 8.00 */
+                unit_price: string;
+                /** @example 24.00 */
+                line_total: string;
+            }[];
+        };
+        SaleMember: {
+            /** Format: uuid */
+            id: string;
+            full_name: string;
+            document_number: string;
+        };
+        PendingBalance: {
+            member: components["schemas"]["SaleMember"];
+            /** @example 21.00 */
+            balance: string;
+            pending_count: number;
+            /** Format: date */
+            oldest_sold_on: string;
+        };
+        MemberPending: {
+            /** Format: uuid */
+            member_id: string;
+            /** @example 21.00 */
+            balance: string;
+            pending_count: number;
+            sales: components["schemas"]["ProductSale"][];
+        };
+        NewCollection: {
+            /**
+             * Format: uuid
+             * @description Optional; makes the request idempotent.
+             */
+            id?: string;
+            /** Format: uuid */
+            member_id: string;
+            /**
+             * Format: uuid
+             * @description The branch that collects.
+             */
+            branch_id: string;
+            /** @enum {string} */
+            method: "yape_plin" | "cash" | "card" | "transfer";
+            /** @description Whole pending sales to collect; absent or empty = all of the member's. */
+            sale_ids?: string[];
+        };
+        Collection: {
+            /** Format: uuid */
+            id: string;
+            member: components["schemas"]["SaleMember"];
+            branch: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            method: string;
+            /** @example 13.00 */
+            amount: string;
+            /** Format: date-time */
+            collected_at: string;
+            collected_by: {
+                /** Format: uuid */
+                id: string;
+                full_name: string;
+            };
+            sale_ids: string[];
+            /**
+             * @description What the member still owes after this collection.
+             * @example 0.00
+             */
+            remaining_balance: string;
+        };
+        ProductsReport: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @enum {string} */
+            group_by: "day" | "month";
+            /** Format: uuid */
+            branch_id: string | null;
+            totals: {
+                sales_count: number;
+                units: number;
+                /** @example 63.00 */
+                total_sold: string;
+                /** @example 47.00 */
+                collected_total: string;
+                /** @example 16.00 */
+                pending_total: string;
+            };
+            /** @description Most units first. */
+            by_product: {
+                /** Format: uuid */
+                product_id: string;
+                name: string;
+                units: number;
+                total: string;
+            }[];
+            /** @description Oldest first. `period` is `YYYY-MM-DD` or `YYYY-MM`. */
+            by_period: {
+                /** @example 2026-10-30 */
+                period: string;
+                sales_count: number;
+                units: number;
+                total: string;
+            }[];
         };
         EnrollMember: {
             /**
@@ -2263,6 +3918,11 @@ export interface components {
             document_number: string;
             full_name: string;
             phone: string;
+            /**
+             * Format: uuid
+             * @description Required when the gym has more than one active plan; optional otherwise (the only active plan is used).
+             */
+            plan_id?: string;
             months: number;
             /**
              * Format: date
@@ -2292,6 +3952,11 @@ export interface components {
             id?: string;
             /** Format: uuid */
             branch_id: string;
+            /**
+             * Format: uuid
+             * @description Required when the gym has more than one active plan; optional otherwise.
+             */
+            plan_id?: string;
             months: number;
             /** Format: date */
             starts_on?: string;
@@ -2312,6 +3977,8 @@ export interface components {
             /** Format: date */
             issued_on: string;
             plan_label: string;
+            /** @description The membership plan sold; null for a day pass. */
+            plan_name?: string | null;
             amount: string;
             /** @enum {string} */
             method: "yape_plin" | "cash" | "card" | "transfer";
@@ -2344,6 +4011,8 @@ export interface components {
                 phone: string;
             } | null;
             membership: {
+                /** @description The plan's name when it was sold. */
+                plan_name: string;
                 months: number;
                 plan_label: string;
                 /** Format: date */
@@ -2427,6 +4096,8 @@ export interface components {
             kind: "membership" | "day_pass";
             /** @example 3 meses */
             plan_label: string;
+            /** @description The membership plan sold; null for a day pass. */
+            plan_name?: string | null;
             /** @example 270.00 */
             amount: string;
             /** @enum {string} */
@@ -2501,6 +4172,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 name: string;
+                features: components["schemas"]["Features"];
                 brand_color: string;
                 /** @description Temporary signed https link to the gym's logo (same as `Gym.logo_url`); null when none or unavailable. */
                 logo_url: string | null;
@@ -2534,6 +4206,7 @@ export interface components {
             ruc: string | null;
             name: string;
             brand_color: string;
+            features: components["schemas"]["Features"];
             branches: components["schemas"]["AdminBranch"][];
         };
         /** @description An internal label that bundles related gyms. Not a user. */
@@ -2567,6 +4240,111 @@ export interface components {
                 message?: string;
                 details?: unknown;
             };
+        };
+        KioskSettings: {
+            pin_set: boolean;
+        };
+        /** @description At least one value is required. Decimals have at most one digit and may be numbers or strings. */
+        BodyMeasurementInput: {
+            /**
+             * Format: uuid
+             * @description Client id; makes a retry idempotent (POST only).
+             */
+            id?: string;
+            /**
+             * Format: date
+             * @description Lima date
+             */
+            measured_on?: string;
+            weight_kg?: number;
+            height_cm?: number;
+            body_fat_pct?: number;
+            waist_cm?: number;
+            chest_cm?: number;
+            hip_cm?: number;
+            notes?: string;
+        };
+        BodyMeasurement: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            member_id: string;
+            /** Format: date */
+            measured_on: string;
+            weight_kg?: number | null;
+            height_cm?: number | null;
+            body_fat_pct?: number | null;
+            waist_cm?: number | null;
+            chest_cm?: number | null;
+            hip_cm?: number | null;
+            notes: string;
+            /** Format: uuid */
+            created_by: string;
+            created_by_name: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            updated_by: string;
+            updated_by_name: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        BodyRoutineInput: {
+            /**
+             * Format: uuid
+             * @description Client id; makes a retry idempotent (POST only).
+             */
+            id?: string;
+            /**
+             * Format: date
+             * @description Lima date
+             */
+            started_on?: string;
+            title: string;
+            /** @description Free text. */
+            content?: string;
+            notes?: string;
+            /** @default true */
+            is_current: boolean;
+        };
+        BodyRoutine: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            member_id: string;
+            /** Format: date */
+            started_on: string;
+            title: string;
+            content: string;
+            notes: string;
+            is_current: boolean;
+            /** Format: uuid */
+            created_by: string;
+            created_by_name: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            updated_by: string;
+            updated_by_name: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        BodyAccessEntry: {
+            id: number;
+            /** Format: uuid */
+            user_id: string;
+            user_name: string;
+            /** @enum {string} */
+            action: "read" | "create" | "update" | "delete";
+            /** @enum {string} */
+            resource: "measurements" | "routines";
+            /**
+             * Format: uuid
+             * @description Null for a read of the whole list.
+             */
+            resource_id: string | null;
+            /** Format: date-time */
+            occurred_at: string;
         };
     };
     responses: {

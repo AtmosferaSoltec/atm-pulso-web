@@ -290,12 +290,20 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .date-range .date-trigger{height:40px;padding:0 12px;font-size:13px}
 @media(max-width:760px){.payments-filters{padding:4px 16px 16px}.date-range{flex-wrap:wrap}.metrics.payment-metrics{grid-template-columns:1fr 1fr;gap:10px}.payment-metrics .metric{padding:12px 14px}.payment-metrics .metric-icon{display:none}.payment-metrics .metric-value{font-size:19px}}
 
-/* Tarifas and the day pass dialog. */
+/* Planes y tarifas and the day pass dialog. */
+.plans-page{display:flex;flex-direction:column;gap:20px}
 .pricing-form{max-width:560px}
+.plan-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.plan-card{display:grid;grid-template-columns:38px 1fr 38px;gap:10px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface,#fff)}
+.plan-card.dragging{position:relative;z-index:1;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.plan-card.inactive{opacity:.65}
+.plan-card-body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.plan-card-body strong{display:flex;align-items:center;gap:8px}
+.plan-card-body small{color:#6d8493;font-size:12px}
 .price-rows{display:flex;flex-direction:column;gap:12px}
 .price-heading{font-size:14px;color:#3f5d6f}
-.price-row{display:grid;grid-template-columns:38px 1fr 1fr 38px;gap:10px;align-items:end;background:var(--surface,#fff)}
-.price-row:not(:has(.drag-handle)){grid-template-columns:1fr 1fr}
+.price-row{display:grid;grid-template-columns:1fr 1fr 38px;gap:10px;align-items:end;background:var(--surface,#fff)}
+
 .price-row.dragging{position:relative;z-index:1;box-shadow:0 6px 20px rgba(0,0,0,.15);border-radius:10px}
 .drag-handle{cursor:grab;touch-action:none}
 .drag-handle:active{cursor:grabbing}

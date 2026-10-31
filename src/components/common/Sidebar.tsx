@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import { BranchSwitcher, GymSwitcher, type BranchOption } from '@/features/gym';
+import { BranchSwitcher, GymSwitcher, useGymFeatures, type BranchOption } from '@/features/gym';
 import type { SessionTenant } from '@/features/auth/types/auth.types';
 import { canVisitPage } from '@/features/auth';
 import type { Role, SessionUser } from '@/types/api.types';
@@ -48,10 +48,11 @@ export function Sidebar({
   gymName,
   gymLogoUrl,
 }: SidebarProps): ReactElement {
+  const features = useGymFeatures();
   const isReceptionist = user.role === 'receptionist';
   const home: Page = isReceptionist ? 'access' : 'dashboard';
-  const visibleMain = mainPages.filter((id) => canVisitPage(user, id));
-  const visibleSettings = settingsPages.filter((id) => canVisitPage(user, id));
+  const visibleMain = mainPages.filter((id) => canVisitPage(user, id, features));
+  const visibleSettings = settingsPages.filter((id) => canVisitPage(user, id, features));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const showSettings = settingsOpen || settingsPages.includes(page);
 

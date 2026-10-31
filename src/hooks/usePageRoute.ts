@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { pageDetails } from '@/config/pages';
 import { canVisitPage } from '@/features/auth';
+import { useGymFeatures } from '@/features/gym';
 import type { SessionUser } from '@/types/api.types';
 import type { Page } from '@/types/navigation.types';
 
@@ -12,10 +13,11 @@ function pageFromHash(): Page | null {
 
 /** Keeps the current page in sync with the URL hash, honouring the user's permissions. */
 export function usePageRoute(user: SessionUser): { page: Page; goTo: (next: Page) => void } {
+  const features = useGymFeatures();
   const fallback: Page = user.role === 'receptionist' ? 'access' : 'dashboard';
   const resolve = (): Page => {
     const requested = pageFromHash();
-    return requested && canVisitPage(user, requested) ? requested : fallback;
+    return requested && canVisitPage(user, requested, features) ? requested : fallback;
   };
   const [page, setPage] = useState<Page>(resolve);
 
@@ -24,10 +26,10 @@ export function usePageRoute(user: SessionUser): { page: Page; goTo: (next: Page
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, fallback]);
+  }, [user, fallback, features]);
 
   function goTo(next: Page): void {
-    if (!canVisitPage(user, next)) return;
+    if (!canVisitPage(user, next, features)) return;
     setPage(next);
     window.location.hash = next;
   }

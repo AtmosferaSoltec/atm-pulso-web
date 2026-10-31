@@ -1,8 +1,9 @@
-import type { ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ApiError } from '@/config/apiClient';
 import { LoginPage } from '@/features/auth';
 import { CatalogProvider } from '@/features/gym';
+import { KioskRoute, isKioskPath } from '@/features/kiosk';
 import { Workspace } from '@/layouts/Workspace';
 import { AuthProvider } from '@/store/AuthProvider';
 import { useAuth } from '@/store/authStore';
@@ -22,13 +23,25 @@ const queryClient = new QueryClient({
   },
 });
 
+/** The kiosk is a route of its own (/kiosk); everything else is the workspace, which routes by hash. */
+function useKioskRoute(): boolean {
+  const [kiosk, setKiosk] = useState(() => isKioskPath(window.location.pathname));
+  useEffect(() => {
+    const onChange = (): void => setKiosk(isKioskPath(window.location.pathname));
+    window.addEventListener('popstate', onChange);
+    return () => window.removeEventListener('popstate', onChange);
+  }, []);
+  return kiosk;
+}
+
 function Application(): ReactElement {
   const { user, restoring } = useAuth();
+  const kiosk = useKioskRoute();
   if (restoring) return <div className="empty">Cargando…</div>;
   if (!user) return <LoginPage />;
   return (
     <CatalogProvider key={`${user.id}-${user.gym.id}`}>
-      <Workspace />
+      {kiosk ? <KioskRoute /> : <Workspace />}
     </CatalogProvider>
   );
 }

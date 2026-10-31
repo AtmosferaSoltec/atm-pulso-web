@@ -10,6 +10,8 @@ const paths = {
   payments: "M3 9h15v10H3z M10.5 14a2.5 2.5 0 1 0 0-.01 M6 9V6h15v10h-3",
   arrow: "M5 12h14 M13 6l6 6-6 6",
   plus: "M12 5v14 M5 12h14",
+  minus: "M5 12h14",
+  cart: "M3 4h2l2.4 11h11l2-8H6 M9 20h.01 M17 20h.01",
   search: "M21 21l-5-5 M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14",
   bell: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4",
   calendar: "M4 5h16v16H4z M8 2v6 M16 2v6 M4 11h16",

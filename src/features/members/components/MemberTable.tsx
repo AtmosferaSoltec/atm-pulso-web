@@ -75,7 +75,7 @@ export function MemberTable({
                     <div>
                       <strong>{member.full_name}</strong>
                       <small>
-                        {member.plan_label} · {documentLabel(member.document_type, member.document_number)}
+                        {member.plan_names.length > 0 ? `${member.plan_names.join(' + ')} · ` : ''}{member.plan_label} · {documentLabel(member.document_type, member.document_number)}
                       </small>
                     </div>
                   </div>

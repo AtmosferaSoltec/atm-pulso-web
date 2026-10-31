@@ -38,6 +38,8 @@ export function useReceipt(id: string | null): UseQueryResult<ReceiptDetail> {
 export interface EnrollInput {
   id: string;
   branch_id: string;
+  /** Omitted when the gym has a single plan: the API uses it. */
+  plan_id?: string;
   document_type: DocumentType;
   document_number: string;
   full_name: string;
@@ -54,12 +56,34 @@ export interface RenewInput {
   memberId: string;
   id: string;
   branch_id: string;
+  /** Omitted when the gym has a single plan: the API uses it. */
+  plan_id?: string;
   months: number;
   starts_on: string;
   amount: string;
   method: PaymentMethod;
   access_scope: AccessScope;
   access_branch_ids: string[];
+}
+
+export interface AmendInput {
+  memberId: string;
+  membershipId: string;
+  months?: number;
+  starts_on?: string;
+  amount?: string;
+  method?: PaymentMethod;
+}
+
+/** Corrects a period that has not ended (months, start, amount, method). The server recalculates the end. */
+export function useAmendMembership(): UseMutationResult<Sale, Error, AmendInput> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ memberId, membershipId, ...changes }: AmendInput) => api.patch<Sale>(`/members/${memberId}/memberships/${membershipId}`, changes),
+    onSuccess: async () => {
+      await Promise.all(['members', 'payments', 'dashboard', 'receipts'].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
+    },
+  });
 }
 
 export function useMemberMutations(): {

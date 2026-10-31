@@ -1,0 +1,114 @@
+/* Kiosk mode: a tablet at the door, read from a distance. Light by default, keys of 72 px or more.
+   Everything is scoped under .kiosk so it never touches the workspace styles. */
+
+.kiosk-root { height: 100dvh; }
+.kiosk {
+  --kiosk-bg: #f4f8f9;
+  --kiosk-ink: #14262f;
+  --kiosk-line: #c9d8de;
+  --kiosk-ok: #137a43;
+  --kiosk-no: #b3261e;
+  --kiosk-fail: #2c3e4c;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 2vmin, 24px);
+  height: 100dvh;
+  padding: clamp(14px, 3vmin, 36px);
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--kiosk-bg);
+  color: var(--kiosk-ink);
+  font-family: inherit;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.kiosk-offline {
+  position: absolute; inset: 0 0 auto 0; z-index: 5;
+  padding: 10px 16px; text-align: center; font-size: clamp(16px, 2.4vmin, 24px); font-weight: 700;
+  background: #fff3da; color: #6b4a00; border-bottom: 2px solid #e3b341;
+}
+
+.kiosk-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: clamp(56px, 9vmin, 110px); padding-top: 4px; }
+.kiosk-brand { display: flex; align-items: center; min-height: 56px; cursor: default; }
+.kiosk-brand .gym-brand { font-size: clamp(22px, 4vmin, 48px); font-weight: 800; gap: 16px; }
+.kiosk-brand .gym-brand img, .kiosk-brand .gym-monogram { width: clamp(52px, 9vmin, 110px); height: clamp(52px, 9vmin, 110px); border-radius: 18px; object-fit: contain; font-size: clamp(22px, 4vmin, 44px); }
+.kiosk-brand .gym-monogram { display: grid; place-items: center; background: var(--tenant-primary, #17677b); color: var(--tenant-on-primary, #fff); font-weight: 800; }
+.kiosk-brand .gym-brand-name { font-size: inherit; }
+.kiosk-branch { font-size: clamp(16px, 2.6vmin, 28px); font-weight: 600; color: #4d6572; text-align: right; }
+
+.kiosk-main { flex: 1; min-height: 0; display: grid; gap: clamp(12px, 3vmin, 40px); grid-template-rows: auto 1fr; align-content: stretch; }
+@media (orientation: landscape) {
+  .kiosk-main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 1fr; align-items: center; }
+}
+.kiosk-entry { display: flex; flex-direction: column; gap: clamp(8px, 2vmin, 24px); }
+.kiosk-entry h1 { margin: 0; font-size: clamp(24px, 4.4vmin, 52px); line-height: 1.15; font-weight: 800; }
+.kiosk-display {
+  display: flex; align-items: center; justify-content: center;
+  min-height: clamp(84px, 14vmin, 150px); padding: 0 24px;
+  background: #fff; border: 3px solid var(--tenant-primary, #17677b); border-radius: 24px;
+  font-size: clamp(44px, 9vmin, 104px); font-weight: 800; letter-spacing: .12em; font-variant-numeric: tabular-nums; overflow: hidden;
+}
+.kiosk-placeholder { font-size: clamp(22px, 3.6vmin, 40px); font-weight: 600; letter-spacing: 0; color: #7b919c; }
+.kiosk-hint { margin: 0; min-height: 1.4em; font-size: clamp(16px, 2.4vmin, 26px); color: #4d6572; }
+
+.kiosk-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(10px, 2vmin, 22px); align-self: stretch; min-height: 0; grid-auto-rows: minmax(72px, 1fr); max-height: 100%; }
+.kiosk-key {
+  min-height: 72px; min-width: 72px; padding: 0;
+  font: inherit; font-size: clamp(32px, 6vmin, 68px); font-weight: 800; color: var(--kiosk-ink);
+  background: #fff; border: 2px solid var(--kiosk-line); border-radius: 22px; box-shadow: 0 4px 0 var(--kiosk-line);
+  cursor: pointer; transition: transform .06s, box-shadow .06s, background .1s;
+}
+.kiosk-key:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--kiosk-line); background: #e8f1f4; }
+.kiosk-key:disabled { opacity: .45; cursor: not-allowed; }
+.kiosk-key:focus-visible, .kiosk-link:focus-visible { outline: 4px solid var(--tenant-primary, #17677b); outline-offset: 3px; }
+.kiosk-key-minor { background: #eef3f5; }
+.kiosk-key-submit { font-size: clamp(24px, 4.4vmin, 48px); color: var(--tenant-on-primary, #fff); background: var(--tenant-primary, #17677b); border-color: var(--tenant-primary, #17677b); box-shadow: 0 4px 0 color-mix(in srgb, var(--tenant-primary, #17677b) 70%, black); }
+.kiosk-key-submit:active:not(:disabled) { background: var(--tenant-primary, #17677b); box-shadow: 0 1px 0 color-mix(in srgb, var(--tenant-primary, #17677b) 70%, black); }
+
+.kiosk-footer { display: flex; justify-content: space-between; align-items: center; min-height: 40px; }
+.kiosk-link { min-height: 44px; padding: 0 12px; font: inherit; font-size: clamp(14px, 2vmin, 20px); color: #4d6572; background: none; border: 0; text-decoration: underline; cursor: pointer; }
+
+/* The answer takes the whole screen. */
+.kiosk-overlay {
+  position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(8px, 2vmin, 28px); padding: 4vmin; text-align: center; color: #fff;
+}
+.kiosk-allowed { background: var(--kiosk-ok); }
+.kiosk-denied { background: var(--kiosk-no); }
+.kiosk-failure { background: var(--kiosk-fail); }
+.kiosk-checking { background: rgba(244, 248, 249, .92); color: var(--kiosk-ink); font-size: clamp(36px, 7vmin, 80px); font-weight: 800; }
+.kiosk-overlay svg { width: clamp(100px, 22vmin, 260px); height: clamp(100px, 22vmin, 260px); stroke-width: 2.4; }
+.kiosk-headline { margin: 0; font-size: clamp(44px, 10vmin, 140px); line-height: 1.05; font-weight: 900; }
+.kiosk-detail { margin: 0; font-size: clamp(26px, 5vmin, 64px); font-weight: 600; }
+.kiosk-note { margin: 0; padding: 10px 24px; border-radius: 16px; background: rgba(255, 255, 255, .2); font-size: clamp(20px, 3.4vmin, 40px); font-weight: 700; }
+.kiosk-countdown { position: fixed; z-index: 11; left: 0; bottom: 0; height: clamp(8px, 1.4vmin, 16px); width: 100%; background: rgba(255, 255, 255, .7); transform-origin: left; animation: kiosk-drain linear forwards; }
+@keyframes kiosk-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* Exit PIN. */
+.kiosk-modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgba(20, 38, 47, .7); }
+.kiosk-modal-card { width: min(560px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 14px; padding: clamp(16px, 3vmin, 32px); background: var(--kiosk-bg); border-radius: 28px; text-align: center; }
+.kiosk-modal-card h2 { margin: 0; font-size: clamp(24px, 4vmin, 36px); }
+.kiosk-pin-display { min-height: 64px; display: flex; align-items: center; justify-content: center; background: #fff; border: 3px solid var(--tenant-primary, #17677b); border-radius: 18px; font-size: 44px; letter-spacing: .3em; }
+.kiosk-modal-message { margin: 0; min-height: 1.5em; font-size: 20px; font-weight: 700; color: var(--kiosk-no); }
+.kiosk-modal .kiosk-key { font-size: clamp(28px, 5vmin, 48px); }
+
+/* Setup screens (no PIN yet, which branch, not available). */
+.kiosk-notice { align-items: center; justify-content: center; text-align: center; padding: 24px; }
+.kiosk-notice h1 { margin: 0; font-size: clamp(30px, 6vmin, 64px); }
+.kiosk-notice p { margin: 0; max-width: 40ch; font-size: clamp(18px, 3vmin, 32px); color: #4d6572; }
+.kiosk-notice .button { min-height: 72px; padding: 0 32px; font-size: 22px; }
+.kiosk-branch-list { display: grid; gap: 14px; width: min(520px, 100%); }
+.kiosk-branch-list .kiosk-key { font-size: clamp(22px, 4vmin, 36px); padding: 12px 20px; }
+
+/* The "Quiosco" page of the workspace. */
+.kiosk-page { display: flex; flex-direction: column; gap: 18px; max-width: 640px; }
+.kiosk-page-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kiosk-countdown { animation-duration: 0.01ms !important; }
+  .kiosk-key { transition: none; }
+}

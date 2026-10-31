@@ -1,0 +1,8 @@
+/* Member file: the periods of each plan. Separate file so the shared stylesheet is not touched. */
+.member-periods ul{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px}
+.period-row{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:12px}
+.period-row.ended{opacity:.7}
+.period-text{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.period-text strong{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.period-text small{color:#6d8493}
+.badge.period-current{background:#e8f5ee;color:#2d7a55}.badge.period-scheduled{background:#e6f0fb;color:#2f6aa8}.badge.period-ended{background:#f4e9e7;color:#a2503f}
