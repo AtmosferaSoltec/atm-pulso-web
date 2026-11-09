@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type UseMutationResult, type UseQueryResult } from '@tanstack/react-query';
 import { api, requestPage } from '@/config/apiClient';
-import type { Pagination, Role, TeamUser } from '@/types/api.types';
+import type { AccountDocumentType, Pagination, Role, TeamUser } from '@/types/api.types';
 
 const teamKey = ['team'] as const;
 
@@ -8,13 +8,14 @@ export type AssignableRole = Extract<Role, 'admin' | 'receptionist'>;
 
 export interface NewTeamUser {
   full_name: string;
+  document_type: AccountDocumentType;
   document_number: string;
   role: AssignableRole;
   /** Required for reception; an admin reaches every branch. */
   branch_ids?: string[];
 }
 
-/** The DNI never changes: it is the person's login at atm-auth-api. */
+/** The document never changes: it is the person's login at atm-auth-api. */
 export interface TeamUserChanges {
   full_name?: string;
   role?: AssignableRole;

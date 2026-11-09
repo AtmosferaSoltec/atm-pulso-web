@@ -18,7 +18,7 @@ interface PasswordSetupPageProps {
 }
 
 /**
- * First sign-in: the temporary password is the DNI, so nothing else works until the user creates their own.
+ * First sign-in: the temporary password is the document number, so nothing else works until the user creates their own.
  * atm-auth-api ends every session when the password changes, so the new one is used to sign in right after.
  */
 export function PasswordSetupPage({ documentNumber, temporaryPassword, onCancel }: PasswordSetupPageProps): ReactElement {

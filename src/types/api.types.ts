@@ -12,6 +12,8 @@ export type PaymentMethod = 'yape_plin' | 'cash' | 'card' | 'transfer';
 export type MemberStatus = 'active' | 'expiring' | 'expired' | 'scheduled';
 export type AccessScope = 'branch' | 'gym';
 export type DocumentType = 'dni' | 'ce';
+/** The document of a person who works in a gym (their login at atm-auth-api). */
+export type AccountDocumentType = DocumentType | 'passport';
 
 export interface Named {
   id: string;
@@ -37,6 +39,7 @@ export interface SessionBranch {
 /** The signed-in user, as `GET /me` answers it. */
 export interface SessionUser {
   id: string;
+  document_type: AccountDocumentType;
   document_number: string;
   full_name: string;
   phone: string | null;
@@ -55,6 +58,7 @@ export type CatalogBranch = CatalogGym['branches'][number];
 export interface TeamUser {
   id: string;
   full_name: string;
+  document_type: AccountDocumentType;
   document_number: string;
   phone: string | null;
   role: Role;

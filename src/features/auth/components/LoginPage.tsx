@@ -10,22 +10,23 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { BrandMark } from '@/components/ui/brand-mark';
 import { Icon } from '@/components/ui/icon';
+import { cleanLoginDocument } from '@/config/documentTypes';
 
 export function LoginPage(): ReactElement {
   const { login, notice } = useAuth();
-  const [dni, setDni] = useState('');
+  const [documentNumber, setDocumentNumber] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  // Set when atm-auth-api asks to replace the temporary password (the DNI) before issuing a session.
+  // Set when atm-auth-api asks to replace the temporary password (the document number) before issuing a session.
   const [settingUp, setSettingUp] = useState<string | null>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setBusy(true);
     try {
-      const user = await login(dni.trim(), password);
+      const user = await login(documentNumber, password);
       window.location.hash = user.role === 'receptionist' ? 'access' : 'dashboard';
     } catch (failure) {
       if (failure instanceof ApiError && failure.code === PASSWORD_CHANGE_REQUIRED) setSettingUp(password);
@@ -37,7 +38,7 @@ export function LoginPage(): ReactElement {
   if (settingUp !== null) {
     return (
       <PasswordSetupPage
-        documentNumber={dni.trim()}
+        documentNumber={documentNumber}
         temporaryPassword={settingUp}
         onCancel={() => {
           setSettingUp(null);
@@ -73,25 +74,25 @@ export function LoginPage(): ReactElement {
             <Icon name="shield" size={24} />
           </span>
           <h2>Iniciar sesión</h2>
-          <p>Ingresa con tu DNI y contraseña.</p>
+          <p>Ingresa con tu documento y contraseña.</p>
           {notice && (
             <p className="notice" role="status">
               {notice}
             </p>
           )}
           <form onSubmit={submit} className="login-form">
-            <Field label="DNI">
+            <Field label="Documento">
               <Input
-                inputMode="numeric"
                 autoComplete="username"
-                pattern="[0-9]{8}"
-                maxLength={8}
-                value={dni}
+                autoCapitalize="characters"
+                spellCheck={false}
+                maxLength={12}
+                value={documentNumber}
                 onChange={(event) => {
-                  setDni(event.target.value.replace(/\D/g, ''));
+                  setDocumentNumber(cleanLoginDocument(event.target.value));
                   setError('');
                 }}
-                placeholder="8 dígitos"
+                placeholder="Ingresa tu documento"
                 required
               />
             </Field>

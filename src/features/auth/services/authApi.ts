@@ -23,14 +23,14 @@ export const PASSWORD_CHANGE_REQUIRED = 'PASSWORD_CHANGE_REQUIRED';
 function translate(status: number, authCode: string | undefined, retryAfterSeconds: number, onPasswordChange: boolean): ApiError {
   switch (authCode) {
     case 'invalid_credentials':
-      // The same text for an unknown DNI and a wrong password: nobody learns which DNIs exist.
-      return new ApiError(401, onPasswordChange ? 'CURRENT_PASSWORD_INCORRECT' : 'INVALID_CREDENTIALS', 'DNI o contraseña incorrectos.');
+      // The same text for an unknown document and a wrong password: nobody learns which documents exist.
+      return new ApiError(401, onPasswordChange ? 'CURRENT_PASSWORD_INCORRECT' : 'INVALID_CREDENTIALS', 'Documento o contraseña incorrectos.');
     case 'no_access':
       return new ApiError(403, 'NO_ACCESS', 'Tu cuenta no tiene acceso a Pulso. Contacta a Atmósfera.');
     case 'password_change_required':
       return new ApiError(403, PASSWORD_CHANGE_REQUIRED, 'Debes crear una nueva contraseña para continuar.');
     case 'weak_password':
-      return new ApiError(400, 'WEAK_PASSWORD', 'La nueva contraseña debe ser distinta de la actual y de tu DNI, y tener al menos 8 caracteres.');
+      return new ApiError(400, 'WEAK_PASSWORD', 'La nueva contraseña debe ser distinta de la actual y de tu documento, y tener al menos 8 caracteres.');
     case 'too_many_attempts': {
       const minutes = Math.max(1, Math.ceil((retryAfterSeconds || 60) / 60));
       return new ApiError(429, 'TOO_MANY_ATTEMPTS', `Demasiados intentos. Espera ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'} e inténtalo de nuevo.`);

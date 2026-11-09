@@ -3480,6 +3480,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             full_name: string;
+            /** @enum {string} */
+            document_type: "dni" | "ce" | "passport";
             document_number: string;
             phone: string | null;
             /** @enum {string} */
@@ -3497,6 +3499,12 @@ export interface components {
         };
         NewUser: {
             full_name: string;
+            /**
+             * @default dni
+             * @enum {string}
+             */
+            document_type: "dni" | "ce" | "passport";
+            /** @description DNI 8 digits; CE 9 to 12 digits; passport (or another foreign ID) 6 to 12 letters or digits. Spaces and dashes are removed and letters upper-cased. It is the person's first password in atm-auth-api. */
             document_number: string;
             /** @enum {string} */
             role: "admin" | "receptionist";
@@ -4161,6 +4169,8 @@ export interface components {
         User: {
             /** Format: uuid */
             id: string;
+            /** @enum {string} */
+            document_type: "dni" | "ce" | "passport";
             /** @example 10000002 */
             document_number: string;
             full_name: string;

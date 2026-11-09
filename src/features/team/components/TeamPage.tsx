@@ -2,7 +2,8 @@ import { useState, type FormEvent, type ReactElement } from 'react';
 import { describeError } from '@/config/errorMessages';
 import { useCatalog, branchTitle } from '@/features/gym';
 import { useTeamMutations, useTeamUsers, type AssignableRole } from '@/features/team/hooks/useTeam';
-import type { Role, TeamUser } from '@/types/api.types';
+import type { AccountDocumentType, Role, TeamUser } from '@/types/api.types';
+import { accountDocumentLabel, accountDocumentRules, accountDocumentTypeOptions, cleanAccountDocument } from '@/config/documentTypes';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
@@ -30,6 +31,7 @@ interface Draft {
   id: string;
   isNew: boolean;
   fullName: string;
+  documentType: AccountDocumentType;
   documentNumber: string;
   role: AssignableRole;
   branchIds: string[];
@@ -47,7 +49,7 @@ export function TeamPage(): ReactElement {
   const branchChoices = branches.filter((branch) => branch.accessible);
 
   function newDraft(): Draft {
-    return { id: '', isNew: true, fullName: '', documentNumber: '', role: 'receptionist', branchIds: [] };
+    return { id: '', isNew: true, fullName: '', documentType: 'dni', documentNumber: '', role: 'receptionist', branchIds: [] };
   }
 
   function editDraft(user: TeamUser): Draft {
@@ -55,6 +57,7 @@ export function TeamPage(): ReactElement {
       id: user.id,
       isNew: false,
       fullName: user.full_name,
+      documentType: user.document_type ?? 'dni',
       documentNumber: user.document_number,
       role: user.role === 'admin' ? 'admin' : 'receptionist',
       branchIds: user.branches.map((branch) => branch.id),
@@ -65,12 +68,20 @@ export function TeamPage(): ReactElement {
     event.preventDefault();
     if (!draft) return;
     if (!draft.fullName.trim()) return setError('Ingresa un nombre válido.');
+    const documentRule = accountDocumentRules[draft.documentType];
+    if (draft.isNew && !documentRule.valid.test(draft.documentNumber)) return setError(`${documentRule.label}: ${documentRule.placeholder}.`);
     if (draft.role === 'receptionist' && !draft.branchIds.length) return setError('Selecciona al menos una sede para recepción.');
     const scope = draft.role === 'admin' ? {} : { branch_ids: draft.branchIds };
     try {
       if (draft.isNew) {
-        await create.mutateAsync({ full_name: draft.fullName.trim(), document_number: draft.documentNumber, role: draft.role, ...scope });
-        setMessage(`Usuario creado. Ingresa con su DNI ${draft.documentNumber}; su contraseña inicial es ese mismo DNI y la cambiará al entrar.`);
+        await create.mutateAsync({
+          full_name: draft.fullName.trim(),
+          document_type: draft.documentType,
+          document_number: draft.documentNumber,
+          role: draft.role,
+          ...scope,
+        });
+        setMessage(`Usuario creado. Ingresa con su documento ${draft.documentNumber}; su contraseña inicial es ese mismo documento y la cambiará al entrar.`);
       } else {
         await update.mutateAsync({
           id: draft.id,
@@ -101,7 +112,7 @@ export function TeamPage(): ReactElement {
     if (!resetting) return;
     try {
       await resetPassword.mutateAsync(resetting.id);
-      setMessage(`Contraseña restablecida. ${resetting.full_name} ingresará con su DNI y creará una nueva.`);
+      setMessage(`Contraseña restablecida. ${resetting.full_name} ingresará con su documento y creará una nueva.`);
     } catch (failure) {
       setMessage(describeError(failure));
     }
@@ -159,7 +170,7 @@ export function TeamPage(): ReactElement {
                 <tr key={user.id}>
                   <td>
                     <strong>{user.full_name}</strong>
-                    <small>DNI {user.document_number}</small>
+                    <small>{accountDocumentLabel(user.document_type, user.document_number)}</small>
                   </td>
                   <td>{roleLabels[user.role]}</td>
                   <td>{scopeOf(user)}</td>
@@ -205,16 +216,35 @@ export function TeamPage(): ReactElement {
             <Field label="Nombre completo" required className="full">
               <Input required value={draft.fullName} onChange={(event) => setDraft({ ...draft, fullName: event.target.value })} />
             </Field>
-            <Field label="DNI" required className="full" hint={draft.isNew ? 'Será su usuario; la contraseña inicial es el mismo DNI.' : 'El DNI no se puede cambiar.'}>
+            {draft.isNew && (
+              <Field label="Tipo de documento" className="full" as="div">
+                <OptionCards
+                  label="Tipo de documento"
+                  variant="chip"
+                  options={accountDocumentTypeOptions}
+                  value={draft.documentType}
+                  onChange={(documentType) =>
+                    setDraft({ ...draft, documentType, documentNumber: cleanAccountDocument(documentType, draft.documentNumber) })
+                  }
+                />
+              </Field>
+            )}
+            <Field
+              label={accountDocumentRules[draft.documentType].label}
+              required
+              className="full"
+              hint={draft.isNew ? 'Será su usuario; la contraseña inicial es el mismo número.' : 'El documento no se puede cambiar.'}
+            >
               <Input
                 required
                 readOnly={!draft.isNew}
-                inputMode="numeric"
-                pattern="[0-9]{8}"
-                maxLength={8}
-                placeholder="8 dígitos"
+                inputMode={draft.documentType === 'passport' ? 'text' : 'numeric'}
+                autoCapitalize={draft.documentType === 'passport' ? 'characters' : undefined}
+                pattern={accountDocumentRules[draft.documentType].pattern}
+                maxLength={accountDocumentRules[draft.documentType].maxLength}
+                placeholder={accountDocumentRules[draft.documentType].placeholder}
                 value={draft.documentNumber}
-                onChange={(event) => setDraft({ ...draft, documentNumber: event.target.value.replace(/\D/g, '') })}
+                onChange={(event) => setDraft({ ...draft, documentNumber: cleanAccountDocument(draft.documentType, event.target.value) })}
               />
             </Field>
             <Field label="Rol" className="full" as="div">
@@ -263,7 +293,7 @@ export function TeamPage(): ReactElement {
       {resetting && (
         <Dialog title="Restablecer contraseña" onClose={() => setResetting(null)}>
           <p>
-            La contraseña de <strong>{resetting.full_name}</strong> volverá a ser su DNI y tendrá que crear una nueva al ingresar. Sus sesiones abiertas se cerrarán.
+            La contraseña de <strong>{resetting.full_name}</strong> volverá a ser su número de documento y tendrá que crear una nueva al ingresar. Sus sesiones abiertas se cerrarán.
           </p>
           <div className="form-actions">
             <Button variant="secondary" onClick={() => setResetting(null)}>

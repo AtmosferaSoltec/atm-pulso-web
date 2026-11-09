@@ -79,9 +79,9 @@ export function hasStoredSession(): boolean {
   return access !== null || readStored() !== null;
 }
 
-/** Signs in with DNI and password. Throws `ApiError` (`PASSWORD_CHANGE_REQUIRED` when the first password must be replaced). */
-export async function signIn(dni: string, password: string): Promise<void> {
-  const response = await authRequest<TokenResponse>('/v1/login', { dni, password, system: SYSTEM_CODE });
+/** Signs in with the document number (DNI, CE or passport) and password. Throws `ApiError` (`PASSWORD_CHANGE_REQUIRED` when the first password must be replaced). */
+export async function signIn(document: string, password: string): Promise<void> {
+  const response = await authRequest<TokenResponse>('/v1/login', { document, password, system: SYSTEM_CODE });
   setTokens(toAuthTokens(response));
 }
 
@@ -98,8 +98,8 @@ export async function signOut(): Promise<void> {
 }
 
 /** Changes the password. atm-auth-api ends every session of the person, so this browser's goes too. */
-export async function changePassword(dni: string, currentPassword: string, newPassword: string): Promise<void> {
-  await authRequest('/v1/password/change', { dni, current_password: currentPassword, new_password: newPassword });
+export async function changePassword(document: string, currentPassword: string, newPassword: string): Promise<void> {
+  await authRequest('/v1/password/change', { document, current_password: currentPassword, new_password: newPassword });
   clearTokens();
 }
 

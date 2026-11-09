@@ -15,6 +15,7 @@ const tokens = { access_token: 'access-1', refresh_token: 'refresh-1', expires_i
 const gym = { id: GYM_ID, name: 'Atlas Fitness', brand_color: '#17677b', logo_url: null, features: [] as string[] };
 const me = {
   id: '00000000-0000-4000-8000-000000000009',
+  document_type: 'dni',
   document_number: '74455518',
   full_name: 'Ana Admin',
   phone: null,
@@ -49,8 +50,10 @@ interface MockOptions {
 }
 
 /** Stands in for atm-auth-api and pulso-api. Returns the calls made, so a test can assert on them. */
-export async function mockBackends(page: Page, options: MockOptions = {}): Promise<{ calls: string[] }> {
+export async function mockBackends(page: Page, options: MockOptions = {}): Promise<{ calls: string[]; logins: Record<string, unknown>[] }> {
   const calls: string[] = [];
+  // The bodies sent to POST /v1/login, to check what the form sends.
+  const logins: Record<string, unknown>[] = [];
   const count = options.gyms ?? 1;
   const plans = (options.plans ?? [{ id: 'plan-1', name: 'Membresía' }]).map((plan, index) => ({
     description: null,
@@ -70,6 +73,7 @@ export async function mockBackends(page: Page, options: MockOptions = {}): Promi
     if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     if (path === '/v1/login') {
       const body = request.postDataJSON() as { password: string };
+      logins.push(body);
       if (body.password === 'incorrecta123') return json(route, 401, { error: { code: 'invalid_credentials', message: 'x' } });
       if (options.firstLogin && !passwordChanged) return json(route, 403, { error: { code: 'password_change_required', message: 'x' } });
       return json(route, 200, tokens);
@@ -114,5 +118,5 @@ export async function mockBackends(page: Page, options: MockOptions = {}): Promi
     return json(route, 200, { data: [], meta: { page: 1, page_size: 20, total: 0 } });
   });
 
-  return { calls };
+  return { calls, logins };
 }

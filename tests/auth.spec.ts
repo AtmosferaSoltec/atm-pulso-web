@@ -5,7 +5,7 @@ import { logout, signIn } from './support/ui';
 test('a wrong password shows the message and nothing is kept in the browser', async ({ page }) => {
   await mockBackends(page);
   await signIn(page, '74455518', 'incorrecta123');
-  await expect(page.getByRole('alert')).toHaveText('DNI o contraseña incorrectos.');
+  await expect(page.getByRole('alert')).toHaveText('Documento o contraseña incorrectos.');
   expect(await page.evaluate(() => localStorage.length + sessionStorage.length)).toBe(0);
 });
 
@@ -45,4 +45,18 @@ test('with several gyms the selector switches the session through a refresh', as
   await page.getByRole('button', { name: /Gimnasio 2/ }).click();
   await expect.poll(() => calls.filter((call) => call === 'POST /v1/refresh').length).toBeGreaterThan(0);
   await expect(page.getByRole('heading', { name: 'Resumen del gimnasio' })).toBeVisible();
+});
+
+test('a foreign document signs in: the field takes letters and sends the number as `document`', async ({ page }) => {
+  const { logins } = await mockBackends(page);
+  await page.goto('/');
+  const field = page.getByLabel('Documento', { exact: true });
+  await expect(field).toHaveAttribute('placeholder', 'Ingresa tu documento');
+  await field.fill('ab-123 456');
+  await expect(field).toHaveValue('AB123456');
+  await page.locator('input[autocomplete="current-password"]').fill('Clave12345');
+  await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Resumen del gimnasio' })).toBeVisible();
+  expect(logins[0]).toMatchObject({ document: 'AB123456', password: 'Clave12345' });
+  expect(logins[0]).not.toHaveProperty('dni');
 });

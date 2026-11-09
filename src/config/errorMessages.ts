@@ -3,12 +3,12 @@ import { ApiError } from '@/config/apiClient';
 /** Spanish text for the API's stable error codes. Unknown codes fall back to the API's own message. */
 const messages: Record<string, string> = {
   NETWORK_ERROR: 'No se pudo conectar con el servidor. Revisa tu conexión.',
-  INVALID_CREDENTIALS: 'DNI o contraseña incorrectos.',
+  INVALID_CREDENTIALS: 'Documento o contraseña incorrectos.',
   NO_ACCESS: 'Tu cuenta no tiene acceso a Pulso. Contacta a Atmósfera.',
   USER_INACTIVE: 'Tu usuario está desactivado. Contacta a tu administrador.',
   UNAUTHORIZED: 'Tu sesión terminó. Inicia sesión de nuevo.',
   PASSWORD_CHANGE_REQUIRED: 'Debes crear una nueva contraseña para continuar.',
-  WEAK_PASSWORD: 'La nueva contraseña debe ser distinta de la actual y de tu DNI, y tener al menos 8 caracteres.',
+  WEAK_PASSWORD: 'La nueva contraseña debe ser distinta de la actual y de tu documento, y tener al menos 8 caracteres.',
   TOO_MANY_ATTEMPTS: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
   TOO_MANY_REQUESTS: 'Demasiados intentos. Espera un momento.',
   CURRENT_PASSWORD_INCORRECT: 'La contraseña actual no es correcta.',
@@ -16,7 +16,7 @@ const messages: Record<string, string> = {
   PASSWORD_UNCHANGED: 'La nueva contraseña debe ser distinta de la actual.',
   FORBIDDEN: 'No tienes permiso para hacer esto.',
   NOT_FOUND: 'Este registro ya no existe.',
-  USER_DOCUMENT_TAKEN: 'Este DNI ya pertenece a un usuario.',
+  USER_DOCUMENT_TAKEN: 'Este documento ya pertenece a un usuario.',
   MEMBER_DOCUMENT_TAKEN: 'Este documento ya pertenece a un miembro.',
   MEMBER_NOT_FOUND: 'El miembro ya no existe.',
   ROLE_NOT_ASSIGNABLE: 'No puedes asignar este rol.',

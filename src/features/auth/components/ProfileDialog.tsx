@@ -7,6 +7,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
 import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
+import { accountDocumentRules } from '@/config/documentTypes';
 
 const roleLabels: Record<Role, string> = {
   admin: 'Administrador',
@@ -83,7 +84,7 @@ export function ProfileDialog({ onClose }: ProfileDialogProps): ReactElement {
         </Field>
         <dl className="profile-readonly full">
           <div>
-            <dt>DNI</dt>
+            <dt>{accountDocumentRules[user.document_type ?? 'dni'].label}</dt>
             <dd>{user.document_number}</dd>
           </div>
           <div>

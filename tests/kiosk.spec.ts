@@ -87,7 +87,7 @@ async function mockKiosk(page: Page, options: KioskOptions = {}): Promise<KioskM
 
 async function openKiosk(page: Page): Promise<void> {
   await page.goto('/kiosk');
-  await page.getByLabel('DNI', { exact: true }).fill('74455518');
+  await page.getByLabel('Documento', { exact: true }).fill('74455518');
   await page.locator('input[autocomplete="current-password"]').fill('Clave12345');
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
 }
@@ -101,7 +101,7 @@ const enter = (page: Page) => page.getByRole('button', { name: 'Entrar', exact: 
 test('without the kiosk module the route says so and the sidebar has no entry', async ({ page }) => {
   await mockBackends(page, { features: [] });
   await page.goto('/kiosk');
-  await page.getByLabel('DNI', { exact: true }).fill('74455518');
+  await page.getByLabel('Documento', { exact: true }).fill('74455518');
   await page.locator('input[autocomplete="current-password"]').fill('Clave12345');
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Quiosco no disponible' })).toBeVisible();
@@ -271,7 +271,7 @@ test('with several branches the kiosk asks which one only once', async ({ page }
 test('the admin sets the exit PIN from the Quiosco page and opens the kiosk', async ({ page }) => {
   await mockKiosk(page, { pinSet: false });
   await page.goto('/');
-  await page.getByLabel('DNI', { exact: true }).fill('74455518');
+  await page.getByLabel('Documento', { exact: true }).fill('74455518');
   await page.locator('input[autocomplete="current-password"]').fill('Clave12345');
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
   const nav = page.getByRole('navigation', { name: 'Navegación principal' });
