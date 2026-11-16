@@ -6,6 +6,7 @@ const messages: Record<string, string> = {
   INVALID_CREDENTIALS: 'Documento o contraseña incorrectos.',
   NO_ACCESS: 'Tu cuenta no tiene acceso a Pulso. Contacta a Atmósfera.',
   USER_INACTIVE: 'Tu usuario está desactivado. Contacta a tu administrador.',
+  GYM_SUSPENDED: 'El acceso de tu gimnasio está suspendido. Contacta a Atmósfera.',
   UNAUTHORIZED: 'Tu sesión terminó. Inicia sesión de nuevo.',
   PASSWORD_CHANGE_REQUIRED: 'Debes crear una nueva contraseña para continuar.',
   WEAK_PASSWORD: 'La nueva contraseña debe ser distinta de la actual y de tu documento, y tener al menos 8 caracteres.',

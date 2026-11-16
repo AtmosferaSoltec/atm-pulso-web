@@ -20,6 +20,7 @@ import { canAmend, periodState, type PeriodState } from '@/features/members/serv
 import { MemberSalesPanel } from '@/features/sales';
 import { BodyTrackingPanel } from '@/features/body-tracking';
 import { todayInLima } from '@/utils/limaDate';
+import { useHasManyBranches } from '@/features/gym';
 import '@/features/members/members.css';
 import type { MembershipView } from '@/types/api.types';
 
@@ -48,6 +49,7 @@ export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit, branc
   const severalPlans = new Set(periods.map((period) => period.plan_id)).size > 1;
   const currentId = chosen ?? periods[0]?.receipt?.id ?? null;
   const receipt = useReceipt(currentId);
+  const manyBranches = useHasManyBranches();
   const data = receipt.data;
   const [vouchersOpen, setVouchersOpen] = useState(false);
   const [amending, setAmending] = useState<MembershipView | null>(null);
@@ -113,10 +115,14 @@ export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit, branc
             <div className="receipt-issuer">
               <GymBrand name={data.gym.name} logoUrl={data.gym.logo_url} />
               {data.gym.tax_id && <p>RUC {data.gym.tax_id}</p>}
-              <p>
-                Sede {data.branch.name}
-                {data.branch.address ? ` · ${data.branch.address}` : ''}
-              </p>
+              {manyBranches ? (
+                <p>
+                  Sede {data.branch.name}
+                  {data.branch.address ? ` · ${data.branch.address}` : ''}
+                </p>
+              ) : (
+                data.branch.address && <p>{data.branch.address}</p>
+              )}
             </div>
             <div className="receipt-id">
               <span>BOLETA DE MEMBRESÍA</span>

@@ -5,6 +5,7 @@ export { GymSwitcher } from '@/features/gym/components/GymSwitcher';
 export { CatalogProvider } from '@/features/gym/components/CatalogProvider';
 export { useCatalog } from '@/features/gym/hooks/useCatalog';
 export { useGymFeatures, useHasFeature } from '@/features/gym/hooks/useGymFeatures';
+export { useHasManyBranches } from '@/features/gym/hooks/useHasManyBranches';
 export { gymHasFeature } from '@/features/gym/services/features';
 export { useUpdateGym, type GymChanges } from '@/features/gym/hooks/useUpdateGym';
 export { accessScopeOptions } from '@/features/gym/services/accessScopes';

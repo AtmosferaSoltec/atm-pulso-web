@@ -47,9 +47,11 @@ export function TeamPage(): ReactElement {
   const [message, setMessage] = useState('');
 
   const branchChoices = branches.filter((branch) => branch.accessible);
+  // A gym with one branch never asks which branch: everybody works in it.
+  const singleBranch = branchChoices.length === 1;
 
   function newDraft(): Draft {
-    return { id: '', isNew: true, fullName: '', documentType: 'dni', documentNumber: '', role: 'receptionist', branchIds: [] };
+    return { id: '', isNew: true, fullName: '', documentType: 'dni', documentNumber: '', role: 'receptionist', branchIds: singleBranch ? [branchChoices[0].id] : [] };
   }
 
   function editDraft(user: TeamUser): Draft {
@@ -158,7 +160,7 @@ export function TeamPage(): ReactElement {
               <tr>
                 <th>Usuario</th>
                 <th>Rol</th>
-                <th>Sedes</th>
+                {!singleBranch && <th>Sedes</th>}
                 <th>Estado</th>
                 <th className="right">
                   <span className="visually-hidden">Acciones</span>
@@ -173,7 +175,7 @@ export function TeamPage(): ReactElement {
                     <small>{accountDocumentLabel(user.document_type, user.document_number)}</small>
                   </td>
                   <td>{roleLabels[user.role]}</td>
-                  <td>{scopeOf(user)}</td>
+                  {!singleBranch && <td>{scopeOf(user)}</td>}
                   <td>
                     <span className={`badge ${user.is_active ? 'active' : 'expired'}`}>{user.is_active ? 'Activo' : 'Inactivo'}</span>
                   </td>
@@ -251,7 +253,7 @@ export function TeamPage(): ReactElement {
               <OptionCards label="Rol" options={roleOptions} value={draft.role} onChange={(role) => setDraft({ ...draft, role })} />
             </Field>
             <p className="notice full">{roleNotes[draft.role]}</p>
-            {draft.role === 'receptionist' && (
+            {draft.role === 'receptionist' && !singleBranch && (
               <fieldset className="branch-assignment full">
                 <legend>Sedes asignadas</legend>
                 {branchChoices.map((branch) => (

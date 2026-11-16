@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useCurrentUser } from '@/store/authStore';
+import { useHasManyBranches } from '@/features/gym';
 import type { Role } from '@/types/api.types';
 import { MIN_PASSWORD_LENGTH, useProfile } from '@/features/auth/hooks/useProfile';
 import { Button } from '@/components/ui/button';
@@ -34,8 +35,10 @@ export function ProfileDialog({ onClose }: ProfileDialogProps): ReactElement {
   const [showPasswords, setShowPasswords] = useState(false);
   const [passwordError, setPasswordError] = useState('');
 
-  const scope =
-    user.role === 'admin'
+  const manyBranches = useHasManyBranches();
+  const scope = !manyBranches
+    ? user.gym.name
+    : user.role === 'admin'
       ? `${user.gym.name} · todas las sedes`
       : user.branches.map((branch) => `${branch.gym_name} · ${branch.name}`).join(', ');
 

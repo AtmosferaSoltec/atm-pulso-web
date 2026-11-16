@@ -78,7 +78,8 @@ export function Sidebar({
         <GymBrand name={gymName} logoUrl={gymLogoUrl} />
       </a>
       <GymSwitcher gyms={gyms} onChange={onGymChange} />
-      <BranchSwitcher branches={branches} activeBranchId={branchId} onChange={onBranchChange} />
+      {/* With one branch there is nothing to choose: the whole gym is that branch. */}
+      {branches.length > 1 && <BranchSwitcher branches={branches} activeBranchId={branchId} onChange={onBranchChange} />}
       <nav aria-label="Navegación principal">
         {visibleMain.map(renderLink)}
         {visibleSettings.length > 0 && (

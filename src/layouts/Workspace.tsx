@@ -133,7 +133,7 @@ export function Workspace(): ReactElement {
       />
       {mobileOpen && <Button className="sidebar-backdrop" variant="ghost" aria-label="Cerrar menú" onClick={() => setMobileOpen(false)} />}
       <div className="main-shell">
-        <Topbar locationLabel={branchLabel(branch.id)} userName={user.full_name} onToggleMenu={() => setMobileOpen(!mobileOpen)}>
+        <Topbar locationLabel={hasManyBranches ? branchLabel(branch.id) : brandName} userName={user.full_name} onToggleMenu={() => setMobileOpen(!mobileOpen)}>
           <QuickAccessCheck branchId={branch.id} hidden={page === 'access'} onResult={setAccessAlert} />
         </Topbar>
         <main>
