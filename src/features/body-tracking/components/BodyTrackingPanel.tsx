@@ -4,6 +4,7 @@ import { useHasFeature } from '@/features/gym';
 import { useMeasurements, useRoutines } from '@/features/body-tracking/hooks/useBodyTracking';
 import { MeasurementForm } from '@/features/body-tracking/components/MeasurementForm';
 import { MeasurementList } from '@/features/body-tracking/components/MeasurementList';
+import { MeasurementsPdfButton } from '@/features/body-tracking/components/MeasurementsPdfButton';
 import { RoutinesSection } from '@/features/body-tracking/components/RoutinesSection';
 import { WeightChart } from '@/features/body-tracking/components/WeightChart';
 import { weightPoints } from '@/features/body-tracking/services/measurements';
@@ -12,13 +13,15 @@ import '@/features/body-tracking/body-tracking.css';
 
 interface BodyTrackingPanelProps {
   memberId: string;
+  /** Names the downloaded PDF. */
+  memberName: string;
 }
 
 /**
  * "Medidas y rutinas" in the member's file. Renders nothing when the gym has not switched the module on.
  * It starts folded and loads nothing: the API logs every read of health data, so only an opened section is a read.
  */
-export function BodyTrackingPanel({ memberId }: BodyTrackingPanelProps): ReactElement | null {
+export function BodyTrackingPanel({ memberId, memberName }: BodyTrackingPanelProps): ReactElement | null {
   const enabled = useHasFeature('body_tracking');
   const [open, setOpen] = useState(false);
   const measurements = useMeasurements(memberId, enabled && open);
@@ -44,6 +47,7 @@ export function BodyTrackingPanel({ memberId }: BodyTrackingPanelProps): ReactEl
             <p className="muted">Cargando…</p>
           ) : (
             <>
+              {measurements.data.length > 0 && <MeasurementsPdfButton memberId={memberId} memberName={memberName} />}
               <WeightChart points={weightPoints(measurements.data)} />
               <MeasurementForm memberId={memberId} onDone={() => undefined} />
               <MeasurementList memberId={memberId} records={measurements.data} />

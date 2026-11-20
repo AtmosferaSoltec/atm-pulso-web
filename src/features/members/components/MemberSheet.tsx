@@ -102,7 +102,7 @@ export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit, branc
         </section>
       )}
       {branchId && <MemberSalesPanel memberId={member.id} memberName={member.full_name} branchId={branchId} onDone={(message) => onNotify?.(message)} />}
-      <BodyTrackingPanel memberId={member.id} />
+      <BodyTrackingPanel memberId={member.id} memberName={member.full_name} />
       {(receipt.isError || detail.isError) && (
         <p className="error" role="alert">
           {describeError(receipt.error ?? detail.error)}
