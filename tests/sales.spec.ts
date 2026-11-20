@@ -65,6 +65,8 @@ const receipt = {
 interface Mock {
   sales: Record<string, unknown>[];
   collections: Record<string, unknown>[];
+  /** Paths that received a voucher upload. */
+  voucherUploads: string[];
   products: Record<string, unknown>[];
   amendments: Record<string, unknown>[];
   patches: Record<string, unknown>[];
@@ -74,7 +76,7 @@ interface Mock {
 }
 
 async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promise<Mock> {
-  const state: Mock = { sales: [], collections: [], products: [], amendments: [], patches: [], deletes: [] };
+  const state: Mock = { sales: [], collections: [], voucherUploads: [], products: [], amendments: [], patches: [], deletes: [] };
   const pendingSale = {
     id: 'sale-1',
     branch: { id: BRANCH_ID, name: 'Sede Central' },
@@ -90,7 +92,11 @@ async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promi
     collection_id: null,
     collected_at: null,
     items: [{ product_id: 'p1', name: 'Batido', quantity: 1, unit_price: '8.50', line_total: '8.50' }, { product_id: 'p2', name: 'Agua', quantity: 2, unit_price: '2.00', line_total: '4.00' }],
+    voucher_count: 0,
   };
+  const paidSale = { ...pendingSale, id: 'sale-9', status: 'paid', was_pending: false, method: 'yape_plin', member: null, sold_on: day(0), voucher_count: 1 };
+  const collectedSale = { ...pendingSale, id: 'sale-8', status: 'paid', method: 'transfer', collection_id: 'col-1', collected_at: new Date().toISOString() };
+  const voucher = { id: 'v-1', content_type: 'application/pdf', size_bytes: 12, created_at: new Date().toISOString() };
   let owing = options.owed ?? true;
   await page.route(`${API}/**`, async (route) => {
     const request = route.request();
@@ -118,6 +124,15 @@ async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promi
       const body = request.postDataJSON() as Record<string, unknown>;
       state.sales.push(body);
       return json(route, 201, { data: { ...pendingSale, id: body.id, status: body.status } });
+    }
+    if (path === '/sales' && method === 'GET') {
+      return json(route, 200, { data: [paidSale, collectedSale, pendingSale], meta: { page: 1, page_size: 10, total: 3 } });
+    }
+    if (path === '/sales/sale-9/vouchers' && method === 'GET') return json(route, 200, { data: [voucher] });
+    if (path === '/sales/collections/col-1/vouchers' && method === 'GET') return json(route, 200, { data: [] });
+    if (path.endsWith('/vouchers') && method === 'POST') {
+      state.voucherUploads.push(path);
+      return json(route, 201, { data: { ...voucher, id: 'v-2', content_type: 'image/png' } });
     }
     if (path === '/sales/pending') {
       return json(route, 200, { data: owing ? [{ member: pendingSale.member, balance: '12.50', pending_count: 1, oldest_sold_on: day(-1) }] : [] });
@@ -265,6 +280,29 @@ test('sales: the report totals and the pending sales of each member, with Cobrar
   await expect(page.getByText('Ana Quispe pagó S/ 12.50.')).toBeVisible();
   expect(mock.collections[0]).toMatchObject({ member_id: MEMBER_ID, branch_id: BRANCH_ID, method: 'cash', sale_ids: ['sale-1'] });
   await expect(page.getByText('No hay ventas pendientes de cobro.')).toBeVisible();
+});
+
+test('sales: the list of the period opens the proofs of a sale or of its collection', async ({ page }) => {
+  await signedIn(page);
+  const mock = await mockProducts(page);
+  await signIn(page, '74455518', 'Clave12345');
+  await navigate(page, 'Ventas');
+  const list = page.getByRole('table', { name: 'Ventas', exact: true });
+  await expect(list).toContainText('Yape/Plin');
+  await expect(list).toContainText('Pendiente');
+  await expect(list.getByRole('button', { name: /^Comprobantes \(1\) · venta del/ })).toBeVisible();
+  // A pending sale has no clip; one collected later opens its collection.
+  await expect(list.getByRole('button', { name: /comprobante/i })).toHaveCount(2);
+
+  await list.getByRole('button', { name: /^Comprobantes \(1\)/ }).click();
+  await expect(page.getByRole('heading', { name: /^Comprobantes · venta del/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Abrir comprobante 1' })).toBeVisible();
+  await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
+
+  await list.getByRole('button', { name: /^Agregar comprobante · cobro de la venta/ }).click();
+  await expect(page.getByText('Aún no hay comprobantes.')).toBeVisible();
+  await page.locator('input[type=file]').setInputFiles({ name: 'yape.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 proof') });
+  await expect.poll(() => mock.voucherUploads).toEqual(['/sales/collections/col-1/vouchers']);
 });
 
 test('reception sees the pending sales and sells, but has no report and no catalog', async ({ page }) => {

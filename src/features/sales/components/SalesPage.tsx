@@ -4,13 +4,16 @@ import { describeError } from '@/config/errorMessages';
 import { DownloadMenu } from '@/components/common/DownloadMenu';
 import { useCatalog } from '@/features/gym';
 import { CollectDialog } from '@/features/sales/components/CollectDialog';
-import { usePendingBalances, useSalesReport } from '@/features/sales/hooks/useSales';
-import type { PendingBalance } from '@/types/api.types';
+import { SaleVouchersButton } from '@/features/sales/components/SaleVouchersButton';
+import { usePendingBalances, useSalesList, useSalesReport } from '@/features/sales/hooks/useSales';
+import { paymentMethodLabels } from '@/config/paymentMethods';
+import type { PaymentMethod, PendingBalance } from '@/types/api.types';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Field } from '@/components/ui/field';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { OptionCards, type Option } from '@/components/ui/option-cards';
+import { Pagination } from '@/components/ui/pagination';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
 import { startOfMonth, todayInLima } from '@/utils/limaDate';
@@ -24,6 +27,8 @@ interface SalesPageProps {
   showReport: boolean;
   onDone: (message: string) => void;
 }
+
+const PAGE_SIZES = [5, 10, 25, 50];
 
 const groupOptions: Option<'day' | 'month'>[] = [
   { value: 'day', label: 'Por día' },
@@ -52,7 +57,12 @@ export function SalesPage({ branchId, showReport, onDone }: SalesPageProps): Rea
   const [branchFilter, setBranchFilter] = useState('all');
   const [collecting, setCollecting] = useState<PendingBalance | null>(null);
   const [downloadError, setDownloadError] = useState('');
-  const report = useSalesReport({ from, to, groupBy, branchId: branchFilter === 'all' ? undefined : branchFilter }, showReport);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const branchQuery = branchFilter === 'all' ? undefined : branchFilter;
+  const report = useSalesReport({ from, to, groupBy, branchId: branchQuery }, showReport);
+  const list = useSalesList({ from, to, branchId: branchQuery, page, pageSize });
+  const sales = list.data?.data ?? [];
   const pendings = usePendingBalances();
   const totals = report.data?.totals;
   const owed = (pendings.data ?? []).reduce((sum, row) => sum + Math.round(Number(row.balance) * 100), 0) / 100;
@@ -73,10 +83,12 @@ export function SalesPage({ branchId, showReport, onDone }: SalesPageProps): Rea
   }
 
   function changeFrom(value: string): void {
+    setPage(1);
     setFrom(value);
     if (value > to) setTo(value);
   }
   function changeTo(value: string): void {
+    setPage(1);
     setTo(value);
     if (value < from) setFrom(value);
   }
@@ -122,7 +134,10 @@ export function SalesPage({ branchId, showReport, onDone }: SalesPageProps): Rea
                   variant="chip"
                   options={[{ value: 'all', label: 'Todas' }, ...accessible.map((branch) => ({ value: branch.id, label: branchLabel(branch.id) }))]}
                   value={branchFilter}
-                  onChange={setBranchFilter}
+                  onChange={(value) => {
+                    setBranchFilter(value);
+                    setPage(1);
+                  }}
                 />
               </Field>
             )}
@@ -204,6 +219,61 @@ export function SalesPage({ branchId, showReport, onDone }: SalesPageProps): Rea
           )}
         </section>
       )}
+      <section className="card">
+        <div className="card-heading">
+          <h2>{showReport ? 'Ventas del periodo' : 'Ventas del mes'}</h2>
+        </div>
+        {list.isError && (
+          <p className="error" role="alert">
+            {describeError(list.error)}
+          </p>
+        )}
+        <div className="table-scroll">
+          <table aria-label="Ventas">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Productos</th>
+                <th>Miembro</th>
+                <th>Medio</th>
+                <th className="right">Total</th>
+                <th aria-label="Comprobantes" />
+              </tr>
+            </thead>
+            <tbody>
+              {sales.map((sale) => (
+                <tr key={sale.id}>
+                  <td>{formatDate(sale.sold_on)}</td>
+                  <td>{sale.items.map((item) => `${item.quantity} ${item.name}`).join(', ')}</td>
+                  <td>{sale.member?.full_name ?? '—'}</td>
+                  <td>
+                    <span className="subtle-pill">{sale.status === 'pending' ? 'Pendiente' : sale.method ? paymentMethodLabels[sale.method as PaymentMethod] : '—'}</span>
+                  </td>
+                  <td className="right">
+                    <strong>{formatCurrency(sale.total)}</strong>
+                  </td>
+                  <td className="voucher-cell">
+                    <SaleVouchersButton sale={sale} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {list.isPending && <div className="empty">Cargando…</div>}
+          {list.isSuccess && sales.length === 0 && <div className="empty">No hay ventas en este periodo.</div>}
+        </div>
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={list.data?.meta.total ?? 0}
+          pageSizes={PAGE_SIZES}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
+      </section>
       <section className="card">
         <div className="card-heading">
           <h2>Pendiente de cobro</h2>

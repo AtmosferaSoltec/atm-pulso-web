@@ -2,10 +2,13 @@ import { useMutation, useQuery, useQueryClient, type UseMutationResult, type Use
 import { api, requestBlob } from '@/config/apiClient';
 import type { Voucher } from '@/types/api.types';
 import { uploadVoucher } from '@/features/vouchers/services/uploadVouchers';
+import { voucherPath, type VoucherOwner } from '@/features/vouchers/services/voucherOwner';
 
-/** The vouchers of the payment of a receipt, oldest first. */
-export function useVouchers(receiptId: string): UseQueryResult<Voucher[]> {
-  return useQuery({ queryKey: ['vouchers', receiptId], queryFn: () => api.get<Voucher[]>(`/receipts/${receiptId}/vouchers`) });
+const ownerKey = (owner: VoucherOwner): string[] => ['vouchers', owner.kind, owner.id];
+
+/** The vouchers of a payment, product sale or collection, oldest first. */
+export function useVouchers(owner: VoucherOwner): UseQueryResult<Voucher[]> {
+  return useQuery({ queryKey: ownerKey(owner), queryFn: () => api.get<Voucher[]>(voucherPath(owner)) });
 }
 
 /** A voucher's file, fetched with the session's token (it is private). Files never change, so they are kept. */
@@ -19,11 +22,12 @@ export function useVoucherFile(voucherId: string, enabled = true): UseQueryResul
   });
 }
 
-/** Adds a voucher to a payment already saved, then refreshes its list and the payments report. */
-export function useUploadVoucher(receiptId: string): UseMutationResult<Voucher, Error, File> {
+/** Adds a voucher to something already saved, then refreshes its list and the list that counts them. */
+export function useUploadVoucher(owner: VoucherOwner): UseMutationResult<Voucher, Error, File> {
   const queryClient = useQueryClient();
+  const counted = owner.kind === 'receipt' ? ['payments'] : ['product-sales'];
   return useMutation({
-    mutationFn: (file: File) => uploadVoucher(receiptId, file),
-    onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: ['vouchers', receiptId] }), queryClient.invalidateQueries({ queryKey: ['payments'] })]),
+    mutationFn: (file: File) => uploadVoucher(owner, file),
+    onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: ownerKey(owner) }), queryClient.invalidateQueries({ queryKey: counted })]),
   });
 }

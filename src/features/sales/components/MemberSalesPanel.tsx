@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from 'react';
 import { useHasFeature } from '@/features/gym';
 import { CollectDialog } from '@/features/sales/components/CollectDialog';
+import { SaleVouchersButton } from '@/features/sales/components/SaleVouchersButton';
 import { useMemberPending, useMemberSales } from '@/features/sales/hooks/useSales';
 import type { ProductSale } from '@/types/api.types';
 import { Button } from '@/components/ui/button';
@@ -68,7 +69,10 @@ export function MemberSalesPanel({ memberId, memberName, branchId, onDone }: Mem
                     {formatDate(sale.sold_on)} · {sale.status === 'pending' ? 'Pendiente' : 'Cobrada'}
                   </small>
                 </span>
-                <strong>{formatCurrency(sale.total)}</strong>
+                <span className="purchase-amount">
+                  <strong>{formatCurrency(sale.total)}</strong>
+                  <SaleVouchersButton sale={sale} />
+                </span>
               </li>
             ))}
           </ul>

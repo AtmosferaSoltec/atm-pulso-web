@@ -235,7 +235,7 @@ export function PaymentsPage({ branchId, showSummary = true }: PaymentsPageProps
           {!payments.isPending && rows.length === 0 && <div className="empty">No hay pagos con este filtro en la sede seleccionada.</div>}
         </div>
         {viewing && (
-          <VouchersDialog receiptId={viewing.receipt.id} receiptNumber={viewing.receipt.number} method={viewing.method} onClose={() => setViewing(null)} />
+          <VouchersDialog owner={{ kind: 'receipt', id: viewing.receipt.id }} label={viewing.receipt.number} method={viewing.method} onClose={() => setViewing(null)} />
         )}
         <Pagination
           page={page}

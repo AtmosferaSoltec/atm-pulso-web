@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient, type UseMutationResult, type UseQueryResult } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type UseMutationResult, type UseQueryResult } from '@tanstack/react-query';
 import { api, requestPage } from '@/config/apiClient';
 import type { PendingBalance, MemberPending, PaymentMethod, Pagination, ProductSale, ProductsReport, Collection } from '@/types/api.types';
 
@@ -39,7 +39,26 @@ export function usePendingBalances(): UseQueryResult<PendingBalance[]> {
   return useQuery({ queryKey: [...salesKey, 'pending'], queryFn: () => api.get<PendingBalance[]>('/sales/pending') });
 }
 
-/** What one member still has to pay and the pending sales behind it. */
+export interface SalesListQuery {
+  from: string;
+  to: string;
+  branchId?: string;
+  page: number;
+  pageSize: number;
+}
+
+/** One page of the sales of a period, newest first (reception gets only its branches). */
+export function useSalesList(query: SalesListQuery): UseQueryResult<{ data: ProductSale[]; meta: Pagination }> {
+  return useQuery({
+    queryKey: [...salesKey, 'list', query],
+    queryFn: () =>
+      requestPage<ProductSale, Pagination>('/sales', {
+        query: { from: query.from, to: query.to, branch_id: query.branchId, page: query.page, page_size: query.pageSize },
+      }),
+    placeholderData: keepPreviousData,
+  });
+}
+
 /** The purchase history of a member (paid and pending), newest first. */
 export function useMemberSales(memberId: string | null, enabled = true): UseQueryResult<ProductSale[]> {
   return useQuery({
@@ -49,6 +68,7 @@ export function useMemberSales(memberId: string | null, enabled = true): UseQuer
   });
 }
 
+/** What one member still has to pay and the pending sales behind it. */
 export function useMemberPending(memberId: string | null, enabled = true): UseQueryResult<MemberPending> {
   return useQuery({
     queryKey: [...salesKey, 'member', memberId],

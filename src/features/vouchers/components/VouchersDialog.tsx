@@ -4,20 +4,22 @@ import { Dialog } from '@/components/ui/dialog';
 import type { PaymentMethod } from '@/types/api.types';
 import { useUploadVoucher, useVouchers } from '@/features/vouchers/hooks/useVouchers';
 import { MAX_VOUCHERS } from '@/features/vouchers/services/voucherFile';
+import type { VoucherOwner } from '@/features/vouchers/services/voucherOwner';
 import { VoucherDropzone } from '@/features/vouchers/components/VoucherDropzone';
 import { VoucherThumb } from '@/features/vouchers/components/VoucherThumb';
 
 interface VouchersDialogProps {
-  receiptId: string;
-  receiptNumber: string;
+  owner: VoucherOwner;
+  /** Names what is proven in the title: a receipt number, a sale or a collection. */
+  label: string;
   method: PaymentMethod;
   onClose: () => void;
 }
 
-/** The proofs of payment of one receipt: see them, and add more (up to five) even after the sale. */
-export function VouchersDialog({ receiptId, receiptNumber, method, onClose }: VouchersDialogProps): ReactElement {
-  const list = useVouchers(receiptId);
-  const upload = useUploadVoucher(receiptId);
+/** The proofs of payment of a receipt, product sale or collection: see them, and add more (up to five) even after the sale. */
+export function VouchersDialog({ owner, label, method, onClose }: VouchersDialogProps): ReactElement {
+  const list = useVouchers(owner);
+  const upload = useUploadVoucher(owner);
   const [problem, setProblem] = useState('');
   const vouchers = list.data ?? [];
   const room = MAX_VOUCHERS - vouchers.length;
@@ -37,7 +39,7 @@ export function VouchersDialog({ receiptId, receiptNumber, method, onClose }: Vo
   }
 
   return (
-    <Dialog title={`Comprobantes · ${receiptNumber}`} onClose={onClose}>
+    <Dialog title={`Comprobantes · ${label}`} onClose={onClose}>
       {method === 'cash' && <p className="muted">Los pagos en efectivo no llevan comprobante.</p>}
       {list.isError && (
         <p role="alert" className="error">

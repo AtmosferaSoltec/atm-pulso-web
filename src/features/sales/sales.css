@@ -52,6 +52,7 @@
 .pending-detail li,.purchase-history li{display:flex;justify-content:space-between;gap:12px;font-size:13px}
 .pending-detail small,.purchase-history small{display:block;opacity:.75}
 .purchase-history{border:1px solid var(--border);border-radius:12px;padding:8px 14px}
+.purchase-amount{display:inline-flex;align-items:center;gap:6px}
 .purchase-history summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
 /* Products page: rows with visible actions, groups by category, retired products and categories. */
 .plan-card.product-row{grid-template-columns:38px minmax(0,1fr) auto}

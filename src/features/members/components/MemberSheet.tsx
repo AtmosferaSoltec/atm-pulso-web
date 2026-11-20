@@ -229,7 +229,7 @@ export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit, branc
         />
       )}
       {vouchersOpen && data && (
-        <VouchersDialog receiptId={data.id} receiptNumber={data.number} method={data.payment.method as PaymentMethod} onClose={() => setVouchersOpen(false)} />
+        <VouchersDialog owner={{ kind: 'receipt', id: data.id }} label={data.number} method={data.payment.method as PaymentMethod} onClose={() => setVouchersOpen(false)} />
       )}
     </Dialog>
   );

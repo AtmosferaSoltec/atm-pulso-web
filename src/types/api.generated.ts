@@ -2766,6 +2766,237 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales/{id}/vouchers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the proofs of payment of a product sale paid on the spot.
+         * @description Oldest first. Same reach as the branch of the sale. Needs the gym's `sales` module (403 FEATURE_DISABLED).
+         *     A pending sale, and a sale collected later (its proofs belong to its collection), list none.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The sale id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Voucher"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        /**
+         * Attach a proof of payment (photo or PDF) to a product sale paid on the spot.
+         * @description Same rules as the payments' vouchers: optional and never for cash; the body is the file itself (not JSON): PNG, JPEG, WebP or PDF,
+         *     at most 10 MB, checked by its content. Up to 5 per sale; immutable (no edit, no delete). Needs access to the sale's branch and the
+         *     gym's `sales` module (403 FEATURE_DISABLED). The file is read with `GET /vouchers/{id}/file`.
+         *     Answers 503 STORAGE_UNAVAILABLE when no object store is configured.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The sale id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "image/png": string;
+                    "image/jpeg": string;
+                    "image/webp": string;
+                    "application/pdf": string;
+                };
+            };
+            responses: {
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Voucher"];
+                        };
+                    };
+                };
+                /** @description VALIDATION_FAILED with VOUCHER_NOT_FOR_CASH (field `sale`), VOUCHER_TYPE_INVALID or VOUCHER_SIZE_INVALID (field `voucher`). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                /** @description VOUCHER_LIMIT_REACHED; VOUCHER_SALE_NOT_PAID (the sale is still pending, there is no money yet); VOUCHER_SALE_COLLECTED (the sale was paid later by a collection, attach the proof to `/sales/collections/{collection_id}/vouchers`). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description STORAGE_UNAVAILABLE. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/collections/{id}/vouchers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the proofs of payment of a collection of pending sales.
+         * @description Oldest first. Same reach as the branch of the collection. Needs the gym's `sales` module (403 FEATURE_DISABLED).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The collection id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Voucher"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        /**
+         * Attach a proof of payment (photo or PDF) to a collection of pending sales.
+         * @description Same rules as the payments' vouchers: optional and never for cash; the body is the file itself (not JSON): PNG, JPEG, WebP or PDF,
+         *     at most 10 MB, checked by its content. Up to 5 per collection; immutable (no edit, no delete). Needs access to the collection's branch and the
+         *     gym's `sales` module (403 FEATURE_DISABLED). The file is read with `GET /vouchers/{id}/file`.
+         *     Answers 503 STORAGE_UNAVAILABLE when no object store is configured.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The collection id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "image/png": string;
+                    "image/jpeg": string;
+                    "image/webp": string;
+                    "application/pdf": string;
+                };
+            };
+            responses: {
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Voucher"];
+                        };
+                    };
+                };
+                /** @description VALIDATION_FAILED with VOUCHER_NOT_FOR_CASH (field `collection`), VOUCHER_TYPE_INVALID or VOUCHER_SIZE_INVALID (field `voucher`). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                /** @description VOUCHER_LIMIT_REACHED. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description STORAGE_UNAVAILABLE. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/vouchers/{id}/file": {
         parameters: {
             query?: never;
@@ -2775,8 +3006,10 @@ export interface paths {
         };
         /**
          * Download a voucher's file.
-         * @description Private: only with a valid token and within the reach of the payment's branch. The web fetches it with the token and shows
-         *     it from the received bytes (an `<img src>` cannot send the token). The answer is cacheable only by the browser (`private`).
+         * @description Any voucher: of a receipt's payment, of a product sale or of a collection of pending sales. Private: only with a valid token and
+         *     within the reach of the branch where that money was received. The vouchers of product sales also need the gym's `sales` module
+         *     (403 FEATURE_DISABLED). The web fetches it with the token and shows it from the received bytes (an `<img src>` cannot send the token).
+         *     The answer is cacheable only by the browser (`private`).
          */
         get: {
             parameters: {
@@ -2803,6 +3036,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
                 404: components["responses"]["ApiError"];
                 /** @description STORAGE_UNAVAILABLE. */
                 503: {
@@ -4443,6 +4677,11 @@ export interface components {
                 /** @example 24.00 */
                 line_total: string;
             }[];
+            /**
+             * @description Proofs of payment backing the money of the sale: its own when paid on the spot (`GET /sales/{id}/vouchers`), its collection's when
+             *     it was collected later (`collection_id` set: `GET /sales/collections/{collection_id}/vouchers`), 0 while pending.
+             */
+            voucher_count: number;
         };
         SaleMember: {
             /** Format: uuid */

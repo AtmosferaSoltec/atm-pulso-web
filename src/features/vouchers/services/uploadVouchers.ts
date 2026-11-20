@@ -1,10 +1,11 @@
 import { api } from '@/config/apiClient';
 import type { Voucher } from '@/types/api.types';
 import { prepareVoucher } from '@/features/vouchers/services/voucherFile';
+import { voucherPath, type VoucherOwner } from '@/features/vouchers/services/voucherOwner';
 
-/** Uploads one voucher to the payment of a receipt. */
-export async function uploadVoucher(receiptId: string, file: File): Promise<Voucher> {
-  return api.postFile<Voucher>(`/receipts/${receiptId}/vouchers`, await prepareVoucher(file));
+/** Uploads one voucher to a payment, a product sale or a collection. */
+export async function uploadVoucher(owner: VoucherOwner, file: File): Promise<Voucher> {
+  return api.postFile<Voucher>(voucherPath(owner), await prepareVoucher(file));
 }
 
 /**
@@ -15,7 +16,7 @@ export async function uploadVouchers(receiptId: string, files: File[]): Promise<
   let failed = 0;
   for (const file of files) {
     try {
-      await uploadVoucher(receiptId, file);
+      await uploadVoucher({ kind: 'receipt', id: receiptId }, file);
     } catch {
       failed += 1;
     }

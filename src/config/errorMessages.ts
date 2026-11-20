@@ -50,6 +50,8 @@ const messages: Record<string, string> = {
   KIOSK_PIN_NOT_SET: 'El administrador aún no definió el PIN de salida del quiosco.',
   PAYLOAD_TOO_LARGE: 'El archivo es demasiado grande.',
   VOUCHER_LIMIT_REACHED: 'Este pago ya tiene el máximo de 5 comprobantes.',
+  VOUCHER_SALE_NOT_PAID: 'La venta aún no está pagada: adjunta el comprobante al cobrarla.',
+  VOUCHER_SALE_COLLECTED: 'Esta venta se pagó en un cobro: adjunta el comprobante a ese cobro.',
   STORAGE_UNAVAILABLE: 'El almacenamiento de imágenes no está disponible. Inténtalo más tarde.',
 };
 
