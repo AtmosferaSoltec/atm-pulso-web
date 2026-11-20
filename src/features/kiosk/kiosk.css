@@ -104,9 +104,25 @@
 .kiosk-branch-list { display: grid; gap: 14px; width: min(520px, 100%); }
 .kiosk-branch-list .kiosk-key { font-size: clamp(22px, 4vmin, 36px); padding: 12px 20px; }
 
+/* A phone held sideways (or a very short window): four rows of 72 px keys do not fit, so keys and header shrink.
+   Keys stay at least 44 px, the minimum touch target. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .kiosk { gap: 6px; padding: 10px 16px; }
+  .kiosk-header { min-height: 44px; padding-top: 0; }
+  .kiosk-brand, .kiosk-brand .gym-brand { min-height: 44px; }
+  .kiosk-brand .gym-brand img, .kiosk-brand .gym-monogram { width: 44px; height: 44px; border-radius: 12px; }
+  .kiosk-keypad { gap: 8px; grid-auto-rows: minmax(44px, 1fr); }
+  .kiosk-key { min-height: 44px; border-radius: 14px; font-size: clamp(22px, 7vmin, 40px); box-shadow: 0 3px 0 var(--kiosk-line); }
+  .kiosk-key-submit { font-size: clamp(18px, 5vmin, 30px); }
+  .kiosk-display { min-height: 64px; font-size: clamp(32px, 9vmin, 56px); }
+  .kiosk-footer { min-height: 32px; }
+  .kiosk-link { min-height: 32px; }
+}
+
 /* The "Quiosco" page of the workspace. */
 .kiosk-page { display: flex; flex-direction: column; gap: 18px; max-width: 640px; }
 .kiosk-page-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.kiosk-page form .button[type='submit'] { align-self: flex-start; }
 
 @media (prefers-reduced-motion: reduce) {
   .kiosk-countdown { animation-duration: 0.01ms !important; }
