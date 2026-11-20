@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type UseMutationResult, type UseQueryResult } from '@tanstack/react-query';
 import { api, requestPage } from '@/config/apiClient';
-import type { PendingBalance, MemberPending, PaymentMethod, Pagination, ProductSale, ProductsReport, Collection } from '@/types/api.types';
+import type { PendingBalance, MemberPending, PaymentMethod, Pagination, ProductSale, ProductsReport, Collection, SalesDebtor } from '@/types/api.types';
 
 const salesKey = ['product-sales'] as const;
 
@@ -37,6 +37,26 @@ export function useSalesMutations(): {
 /** Members who owe something, the biggest debt first. */
 export function usePendingBalances(): UseQueryResult<PendingBalance[]> {
   return useQuery({ queryKey: [...salesKey, 'pending'], queryFn: () => api.get<PendingBalance[]>('/sales/pending') });
+}
+
+export interface DebtorsQuery {
+  search: string;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * One page of the members who owe pending sales, the oldest debt first (gym-wide for every role). meta.total is the number
+ * of debtors matching the search: the "Deben" filter shows it. Never a money total: that lives in the report.
+ */
+export function useDebtors(query: DebtorsQuery, enabled: boolean): UseQueryResult<{ data: SalesDebtor[]; meta: Pagination }> {
+  return useQuery({
+    queryKey: [...salesKey, 'debtors', query],
+    queryFn: () =>
+      requestPage<SalesDebtor, Pagination>('/sales/debtors', { query: { q: query.search, page: query.page, page_size: query.pageSize } }),
+    placeholderData: keepPreviousData,
+    enabled,
+  });
 }
 
 export interface SalesListQuery {

@@ -86,6 +86,7 @@ export type ProductCategory = Schemas['ProductCategory'];
 export type ProductSale = Schemas['ProductSale'];
 export type PendingBalance = Schemas['PendingBalance'];
 export type MemberPending = Schemas['MemberPending'];
+export type SalesDebtor = Schemas['SalesDebtor'];
 export type Collection = Schemas['Collection'];
 export type ProductsReport = Schemas['ProductsReport'];
 

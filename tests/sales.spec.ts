@@ -75,10 +75,12 @@ interface Mock {
   deletes: string[];
   /** Overrides what PATCH of a period answers. */
   amendError?: { status: number; code: string };
+  /** Query strings of GET /sales/debtors. */
+  debtorQueries: string[];
 }
 
 async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promise<Mock> {
-  const state: Mock = { sales: [], collections: [], voucherUploads: [], voucherFiles: [], products: [], amendments: [], patches: [], deletes: [] };
+  const state: Mock = { sales: [], collections: [], voucherUploads: [], voucherFiles: [], products: [], amendments: [], patches: [], deletes: [], debtorQueries: [] };
   const pendingSale = {
     id: 'sale-1',
     branch: { id: BRANCH_ID, name: 'Sede Central' },
@@ -146,6 +148,15 @@ async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promi
     if (path === '/sales/pending') {
       return json(route, 200, { data: owing ? [{ member: pendingSale.member, balance: '12.50', pending_count: 1, oldest_sold_on: day(-1) }] : [] });
     }
+    if (path === '/sales/debtors') {
+      state.debtorQueries.push(url.search);
+      const q = (url.searchParams.get('q') ?? '').toLowerCase();
+      const rows = owing && 'ana quispe 45678912'.includes(q)
+        ? [{ member: { id: MEMBER_ID, full_name: 'Ana Quispe', document_type: 'dni', document_number: '45678912', phone: '999111222' }, balance: '36.00', pending_count: 2, oldest_sold_at: new Date(Date.now() - 5 * 86_400_000).toISOString(), oldest_sold_on: day(-5) }]
+        : [];
+      const size = Number(url.searchParams.get('page_size') ?? 50);
+      return json(route, 200, { data: rows.slice(0, size), meta: { page: Number(url.searchParams.get('page') ?? 1), page_size: size, total: rows.length } });
+    }
     if (path === '/sales/report') {
       return json(route, 200, {
         data: {
@@ -208,6 +219,49 @@ test('without the sales module the sales screens do not exist', async ({ page })
   await expect(nav.getByRole('button', { name: 'Productos', exact: true })).toHaveCount(0);
   await page.goto('/#sell');
   await expect(page.getByRole('heading', { name: 'Venta rápida' })).toHaveCount(0);
+});
+
+test('members: "Deben" lists who owes pending sales and opens the file to collect', async ({ page }) => {
+  await signedIn(page);
+  const mock = await mockProducts(page);
+  await signIn(page, '74455518', 'Clave12345');
+  await navigate(page, 'Miembros');
+  const debtorsChip = page.getByRole('button', { name: 'Deben (1)' });
+  await expect(debtorsChip).toBeVisible();
+  await debtorsChip.click();
+  await expect(debtorsChip).toHaveAttribute('aria-pressed', 'true');
+  const table = page.getByRole('table', { name: 'Miembros con ventas pendientes' });
+  await expect(table).toContainText('Ana Quispe');
+  await expect(table).toContainText('DNI 45678912');
+  await expect(table).toContainText('Debe S/ 36.00');
+  await expect(table).toContainText('2 ventas pendientes');
+  await expect(table).toContainText('desde');
+  await expect(table).toContainText('hace 5 días');
+  // No money grand total here: totals live in the report.
+  await expect(page.getByText(/total/i)).toHaveCount(0);
+  expect(mock.debtorQueries.some((query) => query.includes('page_size=25'))).toBe(true);
+
+  // The search narrows the debtors too (and their count).
+  await page.getByLabel('Buscar miembro por nombre o documento').fill('zzz');
+  await expect(page.getByRole('button', { name: 'Deben (0)' })).toBeVisible();
+  await expect(page.getByText('Nadie debe ventas pendientes.')).toBeVisible();
+  expect(mock.debtorQueries.some((query) => query.includes('q=zzz'))).toBe(true);
+  await page.getByLabel('Buscar miembro por nombre o documento').fill('');
+
+  // A row opens the member's file, where the pending sales are collected.
+  await table.getByText('Ana Quispe').click();
+  await expect(page.getByRole('status').filter({ hasText: 'Pendiente de cobro: S/ 12.50' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cobrar', exact: true })).toBeVisible();
+});
+
+test('members: without the sales module there is no "Deben" filter', async ({ page }) => {
+  await signedIn(page, []);
+  const mock = await mockProducts(page);
+  await signIn(page, '74455518', 'Clave12345');
+  await navigate(page, 'Miembros');
+  await expect(page.getByRole('button', { name: /^Todos/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Deben/ })).toHaveCount(0);
+  expect(mock.debtorQueries).toHaveLength(0);
 });
 
 test('quick sale: tap products, adjust, search a member and collect', async ({ page }) => {

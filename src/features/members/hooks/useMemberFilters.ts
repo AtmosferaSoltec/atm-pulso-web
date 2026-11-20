@@ -5,22 +5,25 @@ export type StatusFilter = MemberStatus | 'all';
 
 export const statusFilters: StatusFilter[] = ['all', 'active', 'expiring', 'expired', 'scheduled'];
 
+/** What the list shows: a membership status, or "debtors" (members who owe pending sales; only with the sales module). */
+export type MemberListFilter = StatusFilter | 'debtors';
+
 export interface MemberFilters {
   search: string;
   setSearch: (value: string) => void;
-  filter: StatusFilter;
-  setFilter: (value: StatusFilter) => void;
+  filter: MemberListFilter;
+  setFilter: (value: MemberListFilter) => void;
   page: number;
   setPage: (value: number) => void;
   pageSize: number;
   setPageSize: (value: number) => void;
-  reset: (filter?: StatusFilter) => void;
+  reset: (filter?: MemberListFilter) => void;
 }
 
 /** What the member list is filtered by. The server does the filtering and the counting. */
 export function useMemberFilters(): MemberFilters {
   const [search, setSearchValue] = useState('');
-  const [filter, setFilterValue] = useState<StatusFilter>('all');
+  const [filter, setFilterValue] = useState<MemberListFilter>('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSizeValue] = useState(25);
 

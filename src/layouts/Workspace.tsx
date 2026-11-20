@@ -7,7 +7,7 @@ import { enrollmentPages, pageDetails } from '@/config/pages';
 import { usePageRoute } from '@/hooks/usePageRoute';
 import { useAuth, useCurrentUser } from '@/store/authStore';
 import { Dashboard } from '@/features/dashboard';
-import { useMemberFilters, MembersPage, MemberForm, MemberSheet, MemberEditForm, type Member, type StatusFilter } from '@/features/members';
+import { useMemberFilters, MembersPage, MemberForm, MemberSheet, MemberEditForm, type Member, type MemberListFilter } from '@/features/members';
 import { AccessAlert, AccessPage, QuickAccessCheck, type AccessResult } from '@/features/access';
 import { PaymentsPage } from '@/features/payments';
 import { PlansPage } from '@/features/plans';
@@ -72,7 +72,7 @@ export function Workspace(): ReactElement {
     );
   }
 
-  function navigate(next: Page, status: StatusFilter = 'all'): void {
+  function navigate(next: Page, status: MemberListFilter = 'all'): void {
     goTo(next);
     setMobileOpen(false);
     filters.reset(status);

@@ -75,3 +75,8 @@
 .category-edit{grid-column:2/-1;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
 .qs-catalog{display:flex;flex-direction:column;gap:12px;min-width:0}
 @media(max-width:560px){.plan-card.product-row.has-buttons{grid-template-columns:38px minmax(0,1fr)}.plan-card.product-row.has-buttons .product-actions{grid-column:2/-1;justify-content:flex-start}.plan-card.product-row.retired{grid-template-columns:minmax(0,1fr)}.plan-card.product-row.retired .product-actions{grid-column:1/-1}}
+
+/* "Deben" on the members page: who owes pending sales. */
+.debtor-row{cursor:pointer}
+.debtor-row:hover td{background:#f8fafb}
+.debt-amount{display:block;color:#b5476b;font-weight:700}

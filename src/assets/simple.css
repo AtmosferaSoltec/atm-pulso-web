@@ -64,6 +64,7 @@
 .status-chip.expiring{color:#d19a2b}
 .status-chip.expired{color:#cf6b52}
 .status-chip.scheduled{color:#5d84b8}
+.status-chip.debtors{color:#b5476b}
 .status-chip:hover{background:#f5f9fa}
 .status-chip[aria-pressed=true]{background:var(--brand-soft,#eef5f7);border-color:currentColor}
 .status-chip[aria-pressed=true] .status-chip-name{color:#2f4a5b}

@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { Icon } from '@/components/ui/icon';
 import {
   statusFilters,
+  type MemberListFilter,
   type StatusFilter,
 } from '@/features/members/hooks/useMemberFilters';
 
@@ -14,13 +15,15 @@ const labels: Record<StatusFilter, string> = {
 };
 
 interface StatusFilterBarProps {
-  value: StatusFilter;
+  value: MemberListFilter;
   counts: Record<StatusFilter, number>;
-  onChange: (value: StatusFilter) => void;
+  /** How many members owe pending sales. Undefined hides the "Deben" filter (the gym has no sales module). */
+  debtors?: number;
+  onChange: (value: MemberListFilter) => void;
 }
 
 /** Colour-coded status filters: a dot and a count; the selected one also shows its name. */
-export function StatusFilterBar({ value, counts, onChange }: StatusFilterBarProps): ReactElement {
+export function StatusFilterBar({ value, counts, debtors, onChange }: StatusFilterBarProps): ReactElement {
   return (
     <div className="status-filters" role="group" aria-label="Filtrar miembros por estado">
       {statusFilters.map((id) => (
@@ -38,6 +41,20 @@ export function StatusFilterBar({ value, counts, onChange }: StatusFilterBarProp
           <b>{counts[id]}</b>
         </button>
       ))}
+      {debtors !== undefined && (
+        <button
+          type="button"
+          className="status-chip debtors"
+          aria-pressed={value === 'debtors'}
+          aria-label={`Deben (${debtors})`}
+          title="Deben: miembros con ventas pendientes de cobro"
+          onClick={() => onChange('debtors')}
+        >
+          <Icon name="clock" size={15} />
+          {value === 'debtors' && <span className="status-chip-name">Deben</span>}
+          <b>{debtors}</b>
+        </button>
+      )}
     </div>
   );
 }

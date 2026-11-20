@@ -2395,6 +2395,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales/debtors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Quick list of the members who owe pending sales, the oldest debt first.
+         * @description One row per member with at least one open pending sale (collected sales and paid sales never count). Ordered by `oldest_sold_at`
+         *     ascending, then by name, then by member id. Reach: like `/members/{id}/pending-sales` and `/sales/pending`, balances are the gym's
+         *     (the member directory is shared between branches), so admin and reception see the same gym-wide list, pending sales of any branch included.
+         *     `q` keeps the members whose name (ignoring case and accents) or document contains it; `meta.total` counts the matching debtors.
+         *     No grand total of money on purpose: totals live in `/sales/report`.
+         *     Errors: FEATURE_DISABLED (403, the gym has not switched `sales` on), VALIDATION_FAILED (400, `PAGINATION_INVALID` on `page`/`page_size`).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    page?: number;
+                    page_size?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A page of debtors. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["SalesDebtor"][];
+                            meta: components["schemas"]["Pagination"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sales/collections": {
         parameters: {
             query?: never;
@@ -4713,6 +4767,34 @@ export interface components {
             balance: string;
             pending_count: number;
             /** Format: date */
+            oldest_sold_on: string;
+        };
+        SalesDebtor: {
+            member: {
+                /** Format: uuid */
+                id: string;
+                full_name: string;
+                /** @enum {string} */
+                document_type: "dni" | "ce";
+                document_number: string;
+                phone: string;
+            };
+            /**
+             * @description Sum of the member's open pending sales.
+             * @example 36.00
+             */
+            balance: string;
+            /** @example 2 */
+            pending_count: number;
+            /**
+             * Format: date-time
+             * @description When the oldest open pending sale was made.
+             */
+            oldest_sold_at: string;
+            /**
+             * Format: date
+             * @description Its Lima date.
+             */
             oldest_sold_on: string;
         };
         MemberPending: {

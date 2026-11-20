@@ -5,5 +5,5 @@ export { MemberSheet } from '@/features/members/components/MemberSheet';
 export { MemberEditForm } from '@/features/members/components/MemberEditForm';
 export { MembersPage } from '@/features/members/components/MembersPage';
 export { whatsappLink } from '@/features/members/services/memberData';
-export { useMemberFilters, type MemberFilters, type StatusFilter } from '@/features/members/hooks/useMemberFilters';
+export { useMemberFilters, type MemberFilters, type MemberListFilter, type StatusFilter } from '@/features/members/hooks/useMemberFilters';
 export { useMemberList, useMemberDetail } from '@/features/members/hooks/useMembers';
