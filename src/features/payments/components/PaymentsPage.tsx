@@ -7,7 +7,7 @@ import { describeError } from '@/config/errorMessages';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Field } from '@/components/ui/field';
 import { Icon, type IconName } from '@/components/ui/icon';
-import { Button } from '@/components/ui/button';
+import { DownloadMenu } from '@/components/common/DownloadMenu';
 import { IconButton } from '@/components/ui/icon-button';
 import { Pagination } from '@/components/ui/pagination';
 import { OptionCards, type Option } from '@/components/ui/option-cards';
@@ -15,6 +15,7 @@ import { paymentMethodLabels, paymentMethodOptions } from '@/config/paymentMetho
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
 import { startOfMonth, todayInLima } from '@/utils/limaDate';
+import { downloadFileName, type DownloadFormat } from '@/utils/downloadFile';
 import type { PaymentMethod, PaymentRow } from '@/types/api.types';
 
 interface PaymentsPageProps {
@@ -72,10 +73,10 @@ export function PaymentsPage({ branchId, showSummary = true }: PaymentsPageProps
     if (from && value < from) setFrom(value);
   }
 
-  async function downloadCsv(): Promise<void> {
+  async function downloadPayments(format: DownloadFormat): Promise<void> {
     setDownloadError('');
     try {
-      await download('/payments/export', 'pagos.csv', paymentQuery({ branchId, from, to, method }));
+      await download('/payments/export', downloadFileName('pagos', todayInLima(), format), { ...paymentQuery({ branchId, from, to, method }), format });
     } catch (failure) {
       setDownloadError(describeError(failure));
     }
@@ -123,11 +124,7 @@ export function PaymentsPage({ branchId, showSummary = true }: PaymentsPageProps
       <section className="card">
         <div className="card-heading">
           <h2>Registro de pagos</h2>
-          {showSummary && (
-            <Button variant="secondary" title="Descargar los pagos filtrados en CSV" onClick={() => void downloadCsv()}>
-              <Icon name="download" size={16} /> Descargar
-            </Button>
-          )}
+          {showSummary && <DownloadMenu title="Descargar los pagos filtrados" onDownload={downloadPayments} />}
         </div>
         {downloadError && (
           <p className="error" role="alert">

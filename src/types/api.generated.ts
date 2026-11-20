@@ -1475,6 +1475,51 @@ export interface paths {
         };
         trace?: never;
     };
+    "/members/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the member directory as CSV, Excel or PDF.
+         * @description Admin only (reception gets 403, like the other downloads). Same filters as `GET /members`, no pagination.
+         *     Columns (the same in CSV and Excel): Tipo de documento, Documento, Nombre, Teléfono, Sede, Estado, Plan, Inicio, Fin, Días restantes,
+         *     Última boleta. The PDF adds the counts per status. More than 10,000 members is 413 EXPORT_TOO_LARGE; a `home_branch_id` that is not
+         *     a branch of the gym is 400 `BRANCH_INVALID`. File name `miembros-YYYY-MM-DD.<ext>`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description File format; anything else is 400 `FORMAT_INVALID`. */
+                    format?: "csv" | "xlsx" | "pdf";
+                    /** @description Name or document (contains). */
+                    q?: string;
+                    status?: "active" | "expiring" | "expired" | "scheduled";
+                    home_branch_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: components["responses"]["Download"];
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                413: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/members": {
         parameters: {
             query?: never;
@@ -2415,6 +2460,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the product sales of a period as CSV, Excel or PDF (admin).
+         * @description Needs the `sales` module (403 `FEATURE_DISABLED`). Admin only, like `/sales/report`, with its filters (period and branch, same defaults
+         *     and limits). One row per sale, newest first; columns (the same in CSV and Excel): Fecha, Hora, Sede, Miembro, Documento, Productos,
+         *     Unidades, Total, Estado, Medio de pago, Vendido por. The PDF adds the report's totals (sales, units, sold, collected, pending).
+         *     More than 10,000 sales is 413 EXPORT_TOO_LARGE. File name `ventas-YYYY-MM-DD.<ext>`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description File format; anything else is 400 `FORMAT_INVALID`. */
+                    format?: "csv" | "xlsx" | "pdf";
+                    from?: string;
+                    to?: string;
+                    branch_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: components["responses"]["Download"];
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                413: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sales/report": {
         parameters: {
             query?: never;
@@ -3163,14 +3252,21 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Download the filtered payments as CSV.
-         * @description Admin only (reception gets 403). Same filters as `/payments`, no pagination. UTF-8 with BOM, comma separated; columns
-         *     Boleta, Miembro, Documento, Plan, Importe, Medio de pago, Fecha. More than 10,000 rows is 413 EXPORT_TOO_LARGE. Cells that start with `= + - @` are prefixed with `'`.
+         * Download the filtered payments as CSV, Excel or PDF.
+         * @description Admin only (reception gets 403, whatever the format). Same filters as `/payments`, no pagination; the URL without `format` is
+         *     still the CSV. CSV and Excel have the same columns in the same order: Boleta, Miembro, Documento, Plan, Importe, Medio de pago, Fecha.
+         *     CSV: UTF-8 with BOM, comma separated, amounts and dates as the API's text; cells that start with `= + - @` are prefixed with `'`.
+         *     Excel: one sheet with a frozen, filterable header in the gym's colour, amounts as numbers (S/ with 2 decimals), dates as real dates
+         *     (dd/mm/yyyy) and a total row. PDF: A4 landscape report with the gym's letterhead (logo or monogram, name, colour), the applied
+         *     filters, the totals (count, sum, average, day passes), a table with a total row and "Página X de Y".
+         *     More than 10,000 rows is 413 EXPORT_TOO_LARGE. The file name is `pagos-YYYY-MM-DD.<ext>` (Lima date).
          *     Fetch it with the Bearer header and save the blob; never put the token in a URL.
          */
         get: {
             parameters: {
                 query?: {
+                    /** @description File format; anything else is 400 `FORMAT_INVALID`. */
+                    format?: "csv" | "xlsx" | "pdf";
                     from?: string;
                     to?: string;
                     branch_id?: string;
@@ -3185,15 +3281,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description The CSV file. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/csv": string;
-                    };
-                };
+                200: components["responses"]["Download"];
                 400: components["responses"]["ValidationFailed"];
                 401: components["responses"]["Unauthorized"];
                 403: components["responses"]["ApiError"];
@@ -3397,6 +3485,54 @@ export interface paths {
                 429: components["responses"]["ApiError"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/members/{id}/measurements/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * PDF of a member's measurements and progress (admin and reception).
+         * @description SENSITIVE health data. Exactly the same checks as `GET /members/{id}/measurements`: the `body_tracking` module (403 `FEATURE_DISABLED`),
+         *     the member in the token's gym (404 `MEMBER_NOT_FOUND`), the receptionist's access to the home branch (403 `BRANCH_NOT_ACCESSIBLE`),
+         *     and the same access-log row (`read`, `measurements`). Content: the gym letterhead, the member's name and document, the latest value of
+         *     each measure with its change since the first one, the weight over time, every measurement and the notes. A4 portrait,
+         *     "Página X de Y". File name `medidas-<member-name>-YYYY-MM-DD.pdf`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The PDF. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": string;
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4880,6 +5016,17 @@ export interface components {
         };
     };
     responses: {
+        /** @description The file, as an attachment (`Content-Disposition`) with `Cache-Control: no-store`. */
+        Download: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "text/csv": string;
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                "application/pdf": string;
+            };
+        };
         /** @description Error. The code says what happened (see the endpoint description). */
         ApiError: {
             headers: {

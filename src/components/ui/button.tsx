@@ -1,5 +1,5 @@
-import type { ButtonHTMLAttributes, ReactElement } from "react";
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+import type { ComponentPropsWithRef, ReactElement } from "react";
+interface ButtonProps extends ComponentPropsWithRef<"button"> {
   variant?: "primary" | "secondary" | "ghost";
 }
 export function Button({
