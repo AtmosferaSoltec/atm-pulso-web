@@ -21,12 +21,14 @@ const emptyCounts: MemberCounts = { all: 0, active: 0, expiring: 0, expired: 0, 
 interface MembersPageProps {
   filters: MemberFilters;
   showBranch: boolean;
+  /** The download is for the admin only (the API refuses reception). */
+  canDownload?: boolean;
   onSelect: (member: Member) => void;
   onEdit: (member: Member) => void;
   onRenew: (member: Member) => void;
 }
 
-export function MembersPage({ filters, showBranch, onSelect, onEdit, onRenew }: MembersPageProps): ReactElement {
+export function MembersPage({ filters, showBranch, canDownload = false, onSelect, onEdit, onRenew }: MembersPageProps): ReactElement {
   const search = useDebouncedValue(filters.search.trim());
   const list = useMemberList({
     search,
@@ -64,7 +66,7 @@ export function MembersPage({ filters, showBranch, onSelect, onEdit, onRenew }: 
           />
         </div>
         <StatusFilterBar value={filters.filter} counts={counts} onChange={filters.setFilter} />
-        <DownloadMenu title="Descargar los miembros filtrados" onDownload={downloadMembers} />
+        {canDownload && <DownloadMenu title="Descargar los miembros filtrados" onDownload={downloadMembers} />}
       </div>
       {downloadError && (
         <p className="error" role="alert">

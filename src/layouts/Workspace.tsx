@@ -157,6 +157,7 @@ export function Workspace(): ReactElement {
             <MembersPage
               filters={filters}
               showBranch={hasManyBranches}
+              canDownload={user.role === 'admin'}
               onSelect={(member) => setSelected({ member })}
               onEdit={setEditing}
               onRenew={openEnrollment}

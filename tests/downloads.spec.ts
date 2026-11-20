@@ -124,3 +124,31 @@ test('the member file offers only a PDF of the measurements', async ({ page }) =
   expect((await saved).suggestedFilename()).toBe(`medidas-jose-nanez-pena-${today}.pdf`);
   expect(asked.map((url) => url.pathname)).toEqual([`/api/v1/members/${MEMBER_ID}/measurements/pdf`]);
 });
+
+test('reception lists the members but gets no download', async ({ page }) => {
+  await mockBackends(page);
+  await mockDownloads(page);
+  await page.route(`${API}/api/v1/me`, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: CORS,
+      body: JSON.stringify({
+        data: {
+          id: '00000000-0000-4000-8000-000000000010',
+          document_type: 'dni',
+          document_number: '74455519',
+          full_name: 'Rita Recepción',
+          phone: null,
+          role: 'receptionist',
+          gym: { id: '00000000-0000-4000-8000-000000000001', name: 'Atlas Fitness', brand_color: '#17677b', logo_url: null, features: [] },
+          branches: [{ id: BRANCH_ID, name: 'Sede Central', gym_id: '00000000-0000-4000-8000-000000000001' }],
+        },
+      }),
+    }),
+  );
+  await signIn(page, '74455519', 'Clave12345');
+  await navigate(page, 'Miembros');
+  await expect(page.getByRole('button', { name: `Ver ficha de ${memberView.full_name}` })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Descargar', exact: true })).toHaveCount(0);
+});
