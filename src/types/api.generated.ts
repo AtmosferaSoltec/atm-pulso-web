@@ -472,6 +472,183 @@ export interface paths {
         };
         trace?: never;
     };
+    "/admin/gyms/{gym_id}/product-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A gym's product categories, with how many products each has (superadmin).
+         * @description Same order as `GET /product-categories`. `product_count` lets the console say how many products a deletion leaves without category. Unknown gym is 404 NOT_FOUND.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    gym_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The categories. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["AdminProductCategory"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /**
+         * Add many product categories to a gym at once (superadmin).
+         * @description Blank names are ignored; each name is trimmed, 1 to 40 characters (one too long fails the whole request with 400
+         *     CATEGORY_NAMES_INVALID, as does an empty list or more than 100 names). Names the gym already has, or repeated in the list,
+         *     are skipped ignoring case and returned in `skipped`. New ones go at the end, in the order sent. 201 when something was
+         *     created, 200 when everything was skipped. Works whether or not the gym has the `sales` module on.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    gym_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        names: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Nothing new. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["ProductCategoriesBulkResult"];
+                        };
+                    };
+                };
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["ProductCategoriesBulkResult"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/gyms/{gym_id}/product-categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a gym's product category (superadmin).
+         * @description Its products stay, without category.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    gym_id: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Rename or move a gym's product category (superadmin).
+         * @description Same rules as `PATCH /product-categories/{id}`.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    gym_id: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProductCategoryChanges"];
+                };
+            };
+            responses: {
+                /** @description The category. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["ProductCategory"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        trace?: never;
+    };
     "/admin/modules": {
         parameters: {
             query?: never;
@@ -1739,7 +1916,8 @@ export interface paths {
         /**
          * Add a product (admin).
          * @description `price` is text, 0.01 to 10000.00. Names are unique per gym ignoring case. Repeating the same `id` of the gym answers the stored product with 200.
-         *     Errors: PRODUCT_NAME_TAKEN (409), CONFLICT (409, the id belongs to another gym), VALIDATION_FAILED (400: PRODUCT_NAME_INVALID, PRODUCT_PRICE_INVALID, PRODUCT_POSITION_INVALID), FORBIDDEN (403, reception).
+         *     `category_id` is optional and must be a category of the same gym.
+         *     Errors: PRODUCT_NAME_TAKEN (409), CONFLICT (409, the id belongs to another gym), VALIDATION_FAILED (400: PRODUCT_NAME_INVALID, PRODUCT_PRICE_INVALID, PRODUCT_POSITION_INVALID, CATEGORY_INVALID), FORBIDDEN (403, reception).
          */
         post: {
             parameters: {
@@ -1798,12 +1976,40 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete a product that was never sold (admin).
+         * @description Only for products with no sales. A product that was sold (even once, even pending) answers 409 `PRODUCT_HAS_SALES`:
+         *     deactivate it instead with `PATCH` `is_active` false.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
         options?: never;
         head?: never;
         /**
          * Edit, reorder or deactivate a product (admin).
-         * @description Only the fields sent change. A product is never deleted (old sales keep their own photo of name and price); deactivate it with `is_active` false.
+         * @description Only the fields sent change. Deactivate a product ("dar de baja") with `is_active` false; a sold product can never be deleted.
          */
         patch: {
             parameters: {
@@ -1828,6 +2034,164 @@ export interface paths {
                     content: {
                         "application/json": {
                             data?: components["schemas"]["Product"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        trace?: never;
+    };
+    "/product-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The product categories of the gym (module `sales`).
+         * @description Any staff role. Ordered by `position`, then name.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The categories. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["ProductCategory"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+            };
+        };
+        put?: never;
+        /**
+         * Add a product category at the end of the list (admin).
+         * @description The name is trimmed (inner spaces collapsed), 1 to 40 characters, unique per gym ignoring case.
+         *     Errors: CATEGORY_NAME_TAKEN (409), VALIDATION_FAILED (400: CATEGORY_NAME_INVALID), FORBIDDEN (403, reception).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["ProductCategory"];
+                        };
+                    };
+                };
+                400: components["responses"]["ValidationFailed"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                409: components["responses"]["ApiError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/product-categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a product category (admin).
+         * @description Its products stay, without category (`category_id` null). CATEGORY_NOT_FOUND (404).
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["ApiError"];
+                404: components["responses"]["ApiError"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Rename or move a product category (admin).
+         * @description Only the fields sent change. To reorder, send the new `position` of each category that moved.
+         *     Errors: CATEGORY_NOT_FOUND (404), CATEGORY_NAME_TAKEN (409), VALIDATION_FAILED (400: CATEGORY_NAME_INVALID, CATEGORY_POSITION_INVALID).
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProductCategoryChanges"];
+                };
+            };
+            responses: {
+                /** @description The category. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["ProductCategory"];
                         };
                     };
                 };
@@ -3806,6 +4170,32 @@ export interface components {
             price: string;
             is_active: boolean;
             position: number;
+            /** Format: uuid */
+            category_id: string | null;
+            category: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
+        };
+        ProductCategory: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            position: number;
+        };
+        AdminProductCategory: components["schemas"]["ProductCategory"] & {
+            /** @description Products (active or not) in this category. */
+            product_count: number;
+        };
+        ProductCategoryChanges: {
+            name?: string;
+            position?: number;
+        };
+        ProductCategoriesBulkResult: {
+            created: components["schemas"]["ProductCategory"][];
+            /** @description Names not created because the gym had them or they were repeated (ignoring case). */
+            skipped: string[];
         };
         NewProduct: {
             /**
@@ -3823,12 +4213,22 @@ export interface components {
             is_active: boolean;
             /** @description Omit to put it last. */
             position?: number;
+            /**
+             * Format: uuid
+             * @description Optional; a category of the same gym.
+             */
+            category_id?: string | null;
         };
         ProductChanges: {
             name?: string;
             price?: string;
             is_active?: boolean;
             position?: number;
+            /**
+             * Format: uuid
+             * @description Absent keeps it; null clears it; otherwise a category of the same gym (CATEGORY_INVALID).
+             */
+            category_id?: string | null;
         };
         NewProductSale: {
             /**

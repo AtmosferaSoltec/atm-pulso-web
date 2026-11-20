@@ -2,7 +2,9 @@ import { useState, type ReactElement } from 'react';
 import { describeError } from '@/config/errorMessages';
 import { paymentMethodOptions } from '@/config/paymentMethods';
 import { MemberPicker, type PickedMember } from '@/features/sales/components/MemberPicker';
+import { useProductCategories } from '@/features/sales/hooks/useProductCategories';
 import { useProducts } from '@/features/sales/hooks/useProducts';
+import { NO_CATEGORY, filterByCategory } from '@/features/sales/services/categories';
 import { useSalesMutations } from '@/features/sales/hooks/useSales';
 import { addProduct, cartTotalCents, cartUnits, centsToText, changeQuantity, quantityOf, toSaleItems, type Cart } from '@/features/sales/services/cart';
 import type { PaymentMethod } from '@/types/api.types';
@@ -37,6 +39,8 @@ function rememberedMethod(): PaymentMethod {
  */
 export function QuickSalePage({ branchId, onDone }: QuickSalePageProps): ReactElement {
   const products = useProducts();
+  const categories = useProductCategories();
+  const [filter, setFilter] = useState('all');
   const { sell } = useSalesMutations();
   const [cart, setCart] = useState<Cart>([]);
   const [member, setMember] = useState<PickedMember | null>(null);
@@ -45,6 +49,18 @@ export function QuickSalePage({ branchId, onDone }: QuickSalePageProps): ReactEl
   const [saleId, setSaleId] = useState(() => crypto.randomUUID());
   const [error, setError] = useState('');
   const list = products.data ?? [];
+  // Filter chips only for categories that have something on sale, plus "Sin categoría" when some product has none.
+  const usedCategories = (categories.data ?? []).filter((category) => list.some((product) => product.category_id === category.id));
+  const filters =
+    usedCategories.length === 0
+      ? []
+      : [
+          { value: 'all', label: 'Todos' },
+          ...usedCategories.map((category) => ({ value: category.id, label: category.name })),
+          ...(list.some((product) => !product.category_id) ? [{ value: NO_CATEGORY, label: 'Sin categoría' }] : []),
+        ];
+  const activeFilter = filters.some((option) => option.value === filter) ? filter : 'all';
+  const shown = filterByCategory(list, activeFilter);
   const total = cartTotalCents(cart);
   const empty = cart.length === 0;
 
@@ -79,24 +95,27 @@ export function QuickSalePage({ branchId, onDone }: QuickSalePageProps): ReactEl
 
   return (
     <div className="quick-sale">
-      <section className="qs-products" aria-label="Productos">
-        {products.isError && (
-          <p className="error" role="alert">
-            {describeError(products.error)}
-          </p>
-        )}
-        {products.isSuccess && list.length === 0 && <p className="muted">No hay productos disponibles. El administrador los agrega en Productos.</p>}
-        {list.map((product) => {
-          const quantity = quantityOf(cart, product.id);
-          return (
-            <button key={product.id} type="button" className={`qs-product${quantity > 0 ? ' in-cart' : ''}`} onClick={() => setCart(addProduct(cart, product))}>
-              <span className="qs-product-name">{product.name}</span>
-              <span className="qs-product-price">{formatCurrency(product.price)}</span>
-              {quantity > 0 && <span className="qs-product-qty" aria-label={`${quantity} en la venta`}>{quantity}</span>}
-            </button>
-          );
-        })}
-      </section>
+      <div className="qs-catalog">
+        {filters.length > 0 && <OptionCards label="Categoría" variant="chip" options={filters} value={activeFilter} onChange={setFilter} />}
+        <section className="qs-products" aria-label="Productos">
+          {products.isError && (
+            <p className="error" role="alert">
+              {describeError(products.error)}
+            </p>
+          )}
+          {products.isSuccess && list.length === 0 && <p className="muted">No hay productos disponibles. El administrador los agrega en Productos.</p>}
+          {shown.map((product) => {
+            const quantity = quantityOf(cart, product.id);
+            return (
+              <button key={product.id} type="button" className={`qs-product${quantity > 0 ? ' in-cart' : ''}`} onClick={() => setCart(addProduct(cart, product))}>
+                <span className="qs-product-name">{product.name}</span>
+                <span className="qs-product-price">{formatCurrency(product.price)}</span>
+                {quantity > 0 && <span className="qs-product-qty" aria-label={`${quantity} en la venta`}>{quantity}</span>}
+              </button>
+            );
+          })}
+        </section>
+      </div>
       <aside className="card qs-cart" aria-label="Venta actual">
         <h2>
           <Icon name="cart" size={20} /> Venta

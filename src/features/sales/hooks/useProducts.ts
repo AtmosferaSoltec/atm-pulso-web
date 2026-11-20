@@ -19,16 +19,20 @@ export interface ProductInput {
   name: string;
   price: string;
   is_active?: boolean;
+  /** null leaves (or makes) the product without category. */
+  category_id?: string | null;
 }
 
 export function useProductMutations(): {
   create: UseMutationResult<Product, Error, ProductInput>;
   update: UseMutationResult<Product, Error, { id: string; changes: Partial<ProductInput> & { position?: number } }>;
+  remove: UseMutationResult<void, Error, string>;
 } {
   const queryClient = useQueryClient();
   const refresh = (): Promise<void> => queryClient.invalidateQueries({ queryKey: productsKey });
   return {
     create: useMutation({ mutationFn: (input: ProductInput) => api.post<Product>('/products', input), onSuccess: refresh }),
     update: useMutation({ mutationFn: ({ id, changes }) => api.patch<Product>(`/products/${id}`, changes), onSuccess: refresh }),
+    remove: useMutation({ mutationFn: (id: string) => api.delete<void>(`/products/${id}`), onSuccess: refresh }),
   };
 }

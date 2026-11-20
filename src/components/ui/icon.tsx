@@ -31,6 +31,8 @@ const paths = {
   chevron: "M9 5l7 7-7 7",
   chevronLeft: "M15 5l-7 7 7 7",
   tag: "M3 3h8l10 10-8 8L3 11z M7 7h.01",
+  archive: "M3 4h18v4H3z M5 8v12h14V8 M10 12h4",
+  trash: "M3 6h18 M8 6V4h8v2 M6 6l1 15h10l1-15 M10 11v6 M14 11v6",
   menu: "M3 6h18 M3 12h18 M3 18h18",
   grip: "M9 5h.01 M15 5h.01 M9 12h.01 M15 12h.01 M9 19h.01 M15 19h.01",
   shield: "M12 3l9 4v5c0 5-9 10-9 10S3 17 3 12V7z M8 12l3 3 5-6",

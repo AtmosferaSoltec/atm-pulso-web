@@ -53,3 +53,24 @@
 .pending-detail small,.purchase-history small{display:block;opacity:.75}
 .purchase-history{border:1px solid var(--border);border-radius:12px;padding:8px 14px}
 .purchase-history summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
+/* Products page: rows with visible actions, groups by category, retired products and categories. */
+.plan-card.product-row{grid-template-columns:38px minmax(0,1fr) auto}
+.plan-card.product-row.retired{grid-template-columns:minmax(0,1fr) auto;background:#faf9f9}
+.plan-card.product-row .plan-card-body strong{overflow-wrap:anywhere}
+.product-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.plan-card .product-actions .button{width:auto;padding:8px 12px;min-height:38px;font-size:12px}
+.product-actions small{font-size:12px;color:#6d696a}
+.product-group{display:flex;flex-direction:column;gap:8px}
+.product-group-title{font-size:13px;font-weight:700;color:#6d696a;letter-spacing:.2px}
+.products-retired{border-top:1px solid var(--border);padding-top:12px}
+.products-retired summary{cursor:pointer;font-weight:650;min-height:38px;display:flex;align-items:center;gap:8px;color:#4b4547;list-style:none}
+.products-retired summary::-webkit-details-marker{display:none}
+.products-retired summary::before{content:'';width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
+.products-retired[open] summary::before{transform:rotate(45deg)}
+.products-retired .plan-list{margin-top:8px}
+.plan-card.product-row.confirming .product-actions{grid-column:2/-1;justify-content:flex-start}
+.plan-card.product-row.retired.confirming .product-actions{grid-column:1/-1}
+.category-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.category-edit{grid-column:2/-1;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
+.qs-catalog{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media(max-width:560px){.plan-card.product-row.has-buttons{grid-template-columns:38px minmax(0,1fr)}.plan-card.product-row.has-buttons .product-actions{grid-column:2/-1;justify-content:flex-start}.plan-card.product-row.retired{grid-template-columns:minmax(0,1fr)}.plan-card.product-row.retired .product-actions{grid-column:1/-1}}

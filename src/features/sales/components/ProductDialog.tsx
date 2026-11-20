@@ -1,6 +1,8 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { describeError } from '@/config/errorMessages';
+import { useProductCategories } from '@/features/sales/hooks/useProductCategories';
 import { useProductMutations } from '@/features/sales/hooks/useProducts';
+import { NO_CATEGORY } from '@/features/sales/services/categories';
 import type { Product } from '@/types/api.types';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
@@ -14,15 +16,17 @@ interface ProductDialogProps {
   onClose: () => void;
 }
 
-/** Creates or edits a product of the catalog: name, price and whether it is offered. */
+/** Creates or edits a product of the catalog: name, price and category. "Dar de baja" lives on the list. */
 export function ProductDialog({ product, onClose }: ProductDialogProps): ReactElement {
   const { create, update } = useProductMutations();
+  const categories = useProductCategories();
   const [name, setName] = useState(product?.name ?? '');
   const [price, setPrice] = useState(product?.price ?? '');
-  const [active, setActive] = useState<'on' | 'off'>(product && !product.is_active ? 'off' : 'on');
+  const [category, setCategory] = useState<string>(product?.category_id ?? NO_CATEGORY);
   const [error, setError] = useState('');
   const [id] = useState(() => crypto.randomUUID());
   const saving = create.isPending || update.isPending;
+  const choices = categories.data ?? [];
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -35,7 +39,7 @@ export function ProductDialog({ product, onClose }: ProductDialogProps): ReactEl
       setError('Ingresa un precio válido (mayor que 0 y hasta 10 000).');
       return;
     }
-    const body = { name: name.trim(), price: amount.toFixed(2), is_active: active === 'on' };
+    const body = { name: name.trim(), price: amount.toFixed(2), category_id: category === NO_CATEGORY ? null : category };
     try {
       if (product) await update.mutateAsync({ id: product.id, changes: body });
       else await create.mutateAsync({ id, ...body });
@@ -54,18 +58,17 @@ export function ProductDialog({ product, onClose }: ProductDialogProps): ReactEl
         <Field label="Precio (S/)" required>
           <Input type="number" min="0.01" max="10000" step="0.01" required value={price} onChange={(event) => setPrice(event.target.value)} />
         </Field>
-        <Field label="Disponible" as="div">
-          <OptionCards
-            label="Disponible"
-            variant="chip"
-            options={[
-              { value: 'on', label: 'Sí' },
-              { value: 'off', label: 'No' },
-            ]}
-            value={active}
-            onChange={setActive}
-          />
-        </Field>
+        {choices.length > 0 && (
+          <Field label="Categoría" as="div" className="full">
+            <OptionCards
+              label="Categoría"
+              variant="chip"
+              options={[...choices.map((item) => ({ value: item.id, label: item.name })), { value: NO_CATEGORY, label: 'Sin categoría' }]}
+              value={category}
+              onChange={setCategory}
+            />
+          </Field>
+        )}
         {error && (
           <p role="alert" className="error full">
             {error}

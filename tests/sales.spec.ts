@@ -11,8 +11,9 @@ const lima = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima', year: 
 const day = (offset: number): string => lima.format(new Date(Date.now() + offset * 86_400_000));
 
 const MEMBER_ID = '00000000-0000-4000-8000-0000000000a1';
-const batido = { id: 'p1', name: 'Batido', price: '8.50', is_active: true, position: 0 };
-const agua = { id: 'p2', name: 'Agua', price: '2.00', is_active: true, position: 1 };
+const batidos = { id: 'c1', name: 'Batidos', position: 0 };
+const batido = { id: 'p1', name: 'Batido', price: '8.50', is_active: true, position: 0, category_id: 'c1', category: { id: 'c1', name: 'Batidos' } };
+const agua = { id: 'p2', name: 'Agua', price: '2.00', is_active: true, position: 1, category_id: null, category: null };
 const memberView = {
   id: MEMBER_ID,
   document_type: 'dni',
@@ -66,12 +67,14 @@ interface Mock {
   collections: Record<string, unknown>[];
   products: Record<string, unknown>[];
   amendments: Record<string, unknown>[];
+  patches: Record<string, unknown>[];
+  deletes: string[];
   /** Overrides what PATCH of a period answers. */
   amendError?: { status: number; code: string };
 }
 
 async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promise<Mock> {
-  const state: Mock = { sales: [], collections: [], products: [], amendments: [] };
+  const state: Mock = { sales: [], collections: [], products: [], amendments: [], patches: [], deletes: [] };
   const pendingSale = {
     id: 'sale-1',
     branch: { id: BRANCH_ID, name: 'Sede Central' },
@@ -96,6 +99,16 @@ async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promi
     const method = request.method();
     if (method === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     if (path === '/products' && method === 'GET') return json(route, 200, { data: [batido, agua, ...state.products] });
+    if (path === '/product-categories' && method === 'GET') return json(route, 200, { data: [batidos] });
+    if (path.startsWith('/products/') && method === 'PATCH') {
+      const body = request.postDataJSON() as Record<string, unknown>;
+      state.patches.push({ id: path.split('/')[2], ...body });
+      return json(route, 200, { data: { ...batido, ...body } });
+    }
+    if (path.startsWith('/products/') && method === 'DELETE') {
+      state.deletes.push(path.split('/')[2]);
+      return json(route, 409, { error: { code: 'PRODUCT_HAS_SALES', message: 'x' } });
+    }
     if (path === '/products' && method === 'POST') {
       const body = request.postDataJSON() as Record<string, unknown>;
       state.products.push({ ...body, position: 2, is_active: body.is_active ?? true });
@@ -298,7 +311,24 @@ test('products: the admin adds a product to the catalog', async ({ page }) => {
   await page.getByLabel('Nombre').fill('Gaseosa');
   await page.getByLabel('Precio (S/)').fill('3.5');
   await page.getByRole('button', { name: 'Guardar' }).click();
-  expect(mock.products[0]).toMatchObject({ name: 'Gaseosa', price: '3.50', is_active: true });
+  expect(mock.products[0]).toMatchObject({ name: 'Gaseosa', price: '3.50', is_active: true, category_id: null });
+});
+
+test('products: grouped by category, with a visible "Dar de baja"', async ({ page }) => {
+  await signedIn(page);
+  const mock = await mockProducts(page);
+  await signIn(page, '74455518', 'Clave12345');
+  await navigate(page, 'Productos');
+  await expect(page.getByRole('heading', { name: 'Batidos', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sin categoría', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Categorías', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Dar de baja Agua' }).click();
+  await expect.poll(() => mock.patches).toContainEqual({ id: 'p2', is_active: false });
+
+  await page.getByRole('button', { name: 'Editar Batido' }).click();
+  await page.getByRole('radio', { name: 'Sin categoría' }).click();
+  await page.getByRole('button', { name: 'Guardar' }).click();
+  await expect.poll(() => mock.patches).toContainEqual({ id: 'p1', name: 'Batido', price: '8.50', category_id: null });
 });
 
 test('the member file shows what is pending, the purchases, lists the periods and corrects one', async ({ page }) => {

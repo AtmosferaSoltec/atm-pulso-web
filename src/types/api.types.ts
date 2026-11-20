@@ -82,6 +82,7 @@ export type PaymentTotals = Schemas['PaymentTotals'];
 export type Dashboard = Schemas['Dashboard'];
 export type MembershipAmendment = Schemas['MembershipAmendment'];
 export type Product = Schemas['Product'];
+export type ProductCategory = Schemas['ProductCategory'];
 export type ProductSale = Schemas['ProductSale'];
 export type PendingBalance = Schemas['PendingBalance'];
 export type MemberPending = Schemas['MemberPending'];
