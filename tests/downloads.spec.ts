@@ -118,7 +118,7 @@ test('the member file offers only a PDF of the measurements', async ({ page }) =
   await page.getByRole('button', { name: 'Medidas y rutinas' }).click();
   const button = page.getByRole('button', { name: 'Descargar PDF' });
   await expect(button).toBeVisible();
-  if (shots) await page.locator('.bt-panel').screenshot({ path: `${shots}/body-pdf-button.png` });
+  if (shots) await page.locator('.member-section').filter({ hasText: 'Medidas y rutinas' }).screenshot({ path: `${shots}/body-pdf-button.png` });
   const saved = page.waitForEvent('download');
   await button.click();
   expect((await saved).suggestedFilename()).toBe(`medidas-jose-nanez-pena-${today}.pdf`);

@@ -116,7 +116,7 @@ test('without the module the member file has no health section and never asks fo
   const mock = await mockHealth(page);
   await signIn(page, '74455518', 'Clave12345');
   await openSection(page);
-  await expect(page.getByRole('heading', { name: 'Boleta de membresía' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Ana Quispe' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Medidas y rutinas' })).toHaveCount(0);
   expect(mock.health).toEqual([]);
 });

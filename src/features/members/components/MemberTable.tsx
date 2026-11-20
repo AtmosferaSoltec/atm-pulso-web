@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import type { Member } from '@/features/members/types/member.types';
-import { whatsappLink } from '@/features/members/services/memberData';
+import { memberStatusLabels as statusLabels, whatsappLink } from '@/features/members/services/memberData';
 import { IconButton } from '@/components/ui/icon-button';
 import { Icon } from '@/components/ui/icon';
 import { formatDate } from '@/utils/formatDate';
@@ -13,13 +13,6 @@ export function Avatar({ name }: { name: string }): ReactElement {
     </span>
   );
 }
-
-const statusLabels = {
-  active: 'Vigente',
-  expiring: 'Por vencer',
-  expired: 'Vencido',
-  scheduled: 'Por iniciar',
-} as const;
 
 function dueNote(member: Member): string {
   if (member.status === 'scheduled') return `Inicia ${formatDate(member.starts_on)}`;
