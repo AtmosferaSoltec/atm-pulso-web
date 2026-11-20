@@ -5,7 +5,7 @@ import { formatDate } from '@/utils/formatDate';
 export function reasonText(reason: string, endsOn?: string | null, expiringInDays?: number | null): string {
   switch (reason) {
     case 'MEMBERSHIP_VALID': {
-      const until = `Membresía vigente hasta el ${endsOn ? formatDate(endsOn) : '—'}.`;
+      const until = endsOn ? `Membresía vigente hasta el ${formatDate(endsOn)}.` : 'Membresía vigente.';
       if (expiringInDays === undefined || expiringInDays === null) return until;
       if (expiringInDays === 0) return `${until} Vence hoy.`;
       return `${until} Vence en ${expiringInDays} ${expiringInDays === 1 ? 'día' : 'días'}.`;
@@ -29,8 +29,9 @@ export function checkText(check: AccessCheck): string {
   return reasonText(check.reason, check.ends_on, check.expiring_in_days);
 }
 
+/** History rows repeat the date the check answered, without "Vence en N días" (that was relative to that day). */
 export function eventText(event: AccessEvent): string {
-  return reasonText(event.reason);
+  return reasonText(event.reason, event.ends_on);
 }
 
 /** "14:03" in Lima time. */

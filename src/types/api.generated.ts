@@ -1307,12 +1307,12 @@ export interface paths {
         };
         /**
          * List the shared member directory with status counts.
-         * @description Every role of the gym sees every member of the gym (all its branches). Counts ignore the status filter but respect q and home_branch_id.
+         * @description Every role of the gym sees every member of the gym (all its branches). Counts ignore the status filter but respect q and home_branch_id. Newest first; with `status=expiring` the soonest end comes first (fewest `days_remaining`), then by name. `q` ignores case and accents ("ramirez" finds "Ramírez").
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description Name or document (contains). */
+                    /** @description Name or document (contains; the name ignores case and accents). */
                     q?: string;
                     status?: "active" | "expiring" | "expired" | "scheduled";
                     home_branch_id?: string;
@@ -2497,7 +2497,7 @@ export interface paths {
                     from?: string;
                     /** @description Lima date */
                     to?: string;
-                    /** @description Name or document (contains). */
+                    /** @description Name or document (contains; the name ignores case and accents). */
                     q?: string;
                     page?: number;
                     page_size?: number;
@@ -4175,6 +4175,11 @@ export interface components {
             document_number: string | null;
             /** Format: uuid */
             member_id: string | null;
+            /**
+             * Format: date
+             * @description The date the check answered, as on the check itself. End of the membership for MEMBERSHIP_VALID, BRANCH_NOT_ALLOWED and MEMBERSHIP_EXPIRED; start date for MEMBERSHIP_NOT_STARTED; null otherwise.
+             */
+            ends_on: string | null;
         };
         DayPass: {
             /** Format: uuid */
