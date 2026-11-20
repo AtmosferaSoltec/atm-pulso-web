@@ -25,7 +25,7 @@ const messages: Record<string, string> = {
   CANNOT_MODIFY_SELF: 'No puedes modificar tu propia cuenta aquí.',
   BRANCH_NOT_ACCESSIBLE: 'No tienes acceso a esta sede.',
   ACCESS_BRANCHES_INVALID: 'Las sedes de acceso no son válidas.',
-  EXPORT_TOO_LARGE: 'Hay demasiados pagos para descargar. Acota las fechas.',
+  EXPORT_TOO_LARGE: 'Hay demasiados registros para descargar. Acota las fechas o usa un filtro.',
   DOCUMENT_NOT_FOUND: 'No se encontraron datos para este documento.',
   LOOKUP_UNAVAILABLE: 'La búsqueda no está disponible ahora. Escribe los datos a mano.',
   CONFLICT: 'Este registro ya existe.',

@@ -1,5 +1,7 @@
 import { useState, type ReactElement } from 'react';
+import { download } from '@/config/apiClient';
 import { describeError } from '@/config/errorMessages';
+import { DownloadMenu } from '@/components/common/DownloadMenu';
 import { useCatalog } from '@/features/gym';
 import { CollectDialog } from '@/features/sales/components/CollectDialog';
 import { usePendingBalances, useSalesReport } from '@/features/sales/hooks/useSales';
@@ -12,6 +14,7 @@ import { OptionCards, type Option } from '@/components/ui/option-cards';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
 import { startOfMonth, todayInLima } from '@/utils/limaDate';
+import { downloadFileName, type DownloadFormat } from '@/utils/downloadFile';
 import '@/features/sales/sales.css';
 
 interface SalesPageProps {
@@ -48,10 +51,26 @@ export function SalesPage({ branchId, showReport, onDone }: SalesPageProps): Rea
   const [groupBy, setGroupBy] = useState<'day' | 'month'>('day');
   const [branchFilter, setBranchFilter] = useState('all');
   const [collecting, setCollecting] = useState<PendingBalance | null>(null);
+  const [downloadError, setDownloadError] = useState('');
   const report = useSalesReport({ from, to, groupBy, branchId: branchFilter === 'all' ? undefined : branchFilter }, showReport);
   const pendings = usePendingBalances();
   const totals = report.data?.totals;
   const owed = (pendings.data ?? []).reduce((sum, row) => sum + Math.round(Number(row.balance) * 100), 0) / 100;
+
+  /** Every sale of the report's period and branch, one row each. */
+  async function downloadSales(format: DownloadFormat): Promise<void> {
+    setDownloadError('');
+    try {
+      await download('/sales/export', downloadFileName('ventas', todayInLima(), format), {
+        from,
+        to,
+        branch_id: branchFilter === 'all' ? undefined : branchFilter,
+        format,
+      });
+    } catch (failure) {
+      setDownloadError(describeError(failure));
+    }
+  }
 
   function changeFrom(value: string): void {
     setFrom(value);
@@ -77,7 +96,13 @@ export function SalesPage({ branchId, showReport, onDone }: SalesPageProps): Rea
         <section className="card">
           <div className="card-heading">
             <h2>Ventas de productos</h2>
+            <DownloadMenu title="Descargar las ventas del periodo" onDownload={downloadSales} />
           </div>
+          {downloadError && (
+            <p className="error" role="alert">
+              {downloadError}
+            </p>
+          )}
           <div className="payments-filters">
             <div className="filter-row">
               <div className="date-range">
