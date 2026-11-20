@@ -67,6 +67,8 @@ interface Mock {
   collections: Record<string, unknown>[];
   /** Paths that received a voucher upload. */
   voucherUploads: string[];
+  /** Voucher files requested (GET /vouchers/{id}/file). */
+  voucherFiles: string[];
   products: Record<string, unknown>[];
   amendments: Record<string, unknown>[];
   patches: Record<string, unknown>[];
@@ -76,7 +78,7 @@ interface Mock {
 }
 
 async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promise<Mock> {
-  const state: Mock = { sales: [], collections: [], voucherUploads: [], products: [], amendments: [], patches: [], deletes: [] };
+  const state: Mock = { sales: [], collections: [], voucherUploads: [], voucherFiles: [], products: [], amendments: [], patches: [], deletes: [] };
   const pendingSale = {
     id: 'sale-1',
     branch: { id: BRANCH_ID, name: 'Sede Central' },
@@ -96,7 +98,10 @@ async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promi
   };
   const paidSale = { ...pendingSale, id: 'sale-9', status: 'paid', was_pending: false, method: 'yape_plin', member: null, sold_on: day(0), voucher_count: 1 };
   const collectedSale = { ...pendingSale, id: 'sale-8', status: 'paid', method: 'transfer', collection_id: 'col-1', collected_at: new Date().toISOString() };
-  const voucher = { id: 'v-1', content_type: 'application/pdf', size_bytes: 12, created_at: new Date().toISOString() };
+  const daysFromNow = (n: number): string => new Date(Date.now() + n * 86_400_000).toISOString();
+  // The sale's photo is past the retention period: its file was deleted.
+  const voucher = { id: 'v-1', content_type: 'image/jpeg', size_bytes: 12, created_at: daysFromNow(-100), expires_at: daysFromNow(-10), expired: true };
+  const uploaded = { id: 'v-2', content_type: 'application/pdf', size_bytes: 14, created_at: daysFromNow(0), expires_at: daysFromNow(90), expired: false };
   let owing = options.owed ?? true;
   await page.route(`${API}/**`, async (route) => {
     const request = route.request();
@@ -129,10 +134,14 @@ async function mockProducts(page: Page, options: { owed?: boolean } = {}): Promi
       return json(route, 200, { data: [paidSale, collectedSale, pendingSale], meta: { page: 1, page_size: 10, total: 3 } });
     }
     if (path === '/sales/sale-9/vouchers' && method === 'GET') return json(route, 200, { data: [voucher] });
-    if (path === '/sales/collections/col-1/vouchers' && method === 'GET') return json(route, 200, { data: [] });
+    if (path === '/sales/collections/col-1/vouchers' && method === 'GET') return json(route, 200, { data: state.voucherUploads.length > 0 ? [uploaded] : [] });
     if (path.endsWith('/vouchers') && method === 'POST') {
       state.voucherUploads.push(path);
-      return json(route, 201, { data: { ...voucher, id: 'v-2', content_type: 'image/png' } });
+      return json(route, 201, { data: uploaded });
+    }
+    if (path.startsWith('/vouchers/') && path.endsWith('/file')) {
+      state.voucherFiles.push(path);
+      return route.fulfill({ status: 200, headers: { ...CORS, 'Content-Type': 'application/pdf' }, body: '%PDF-1.4 proof' });
     }
     if (path === '/sales/pending') {
       return json(route, 200, { data: owing ? [{ member: pendingSale.member, balance: '12.50', pending_count: 1, oldest_sold_on: day(-1) }] : [] });
@@ -282,7 +291,7 @@ test('sales: the report totals and the pending sales of each member, with Cobrar
   await expect(page.getByText('No hay ventas pendientes de cobro.')).toBeVisible();
 });
 
-test('sales: the list of the period opens the proofs of a sale or of its collection', async ({ page }) => {
+test('sales: the list of the period opens the proof of a sale or of its collection', async ({ page }) => {
   await signedIn(page);
   const mock = await mockProducts(page);
   await signIn(page, '74455518', 'Clave12345');
@@ -290,19 +299,35 @@ test('sales: the list of the period opens the proofs of a sale or of its collect
   const list = page.getByRole('table', { name: 'Ventas', exact: true });
   await expect(list).toContainText('Yape/Plin');
   await expect(list).toContainText('Pendiente');
-  await expect(list.getByRole('button', { name: /^Comprobantes \(1\) · venta del/ })).toBeVisible();
+  await expect(list.getByRole('button', { name: /^Ver comprobante · venta del/ })).toBeVisible();
   // A pending sale has no clip; one collected later opens its collection.
   await expect(list.getByRole('button', { name: /comprobante/i })).toHaveCount(2);
 
-  await list.getByRole('button', { name: /^Comprobantes \(1\)/ }).click();
-  await expect(page.getByRole('heading', { name: /^Comprobantes · venta del/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Abrir comprobante 1' })).toBeVisible();
+  // The sale's voucher expired: shown muted with its date, its file is never requested, and no second one is taken.
+  await list.getByRole('button', { name: /^Ver comprobante · venta del/ }).click();
+  await expect(page.getByRole('heading', { name: /^Comprobante · venta del/ })).toBeVisible();
+  const expired = page.getByRole('img', { name: /^Comprobante 1 vencido\. Se borró el / });
+  await expect(expired).toBeVisible();
+  await expect(expired).toContainText('Vencido');
+  await expect(page.getByRole('button', { name: 'Abrir comprobante 1' })).toHaveCount(0);
+  await expect(page.getByText('Este pago ya tiene su comprobante.')).toBeVisible();
+  await expect(page.locator('input[type=file]')).toHaveCount(0);
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  expect(mock.voucherFiles).toEqual([]);
 
+  // The collection has none: a PDF over 2 MB is refused here; a light one is uploaded, and then it is the only one.
   await list.getByRole('button', { name: /^Agregar comprobante · cobro de la venta/ }).click();
-  await expect(page.getByText('Aún no hay comprobantes.')).toBeVisible();
-  await page.locator('input[type=file]').setInputFiles({ name: 'yape.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 proof') });
+  await expect(page.getByText('Aún no hay comprobante.')).toBeVisible();
+  const input = page.locator('input[type=file]');
+  await expect(input).not.toHaveAttribute('multiple');
+  await input.setInputFiles({ name: 'grande.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(2 * 1024 * 1024 + 1, 0x25) });
+  await expect(page.getByRole('alert')).toContainText('«grande.pdf» pesa más de 2 MB');
+  expect(mock.voucherUploads).toEqual([]);
+  await input.setInputFiles({ name: 'yape.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 proof') });
   await expect.poll(() => mock.voucherUploads).toEqual(['/sales/collections/col-1/vouchers']);
+  await expect(page.getByRole('button', { name: 'Abrir comprobante 1' })).toContainText(/Se borra el /);
+  await expect(page.getByText('Este pago ya tiene su comprobante.')).toBeVisible();
+  await expect(page.locator('input[type=file]')).toHaveCount(0);
 });
 
 test('reception sees the pending sales and sells, but has no report and no catalog', async ({ page }) => {

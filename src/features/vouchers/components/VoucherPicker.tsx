@@ -15,14 +15,14 @@ function Preview({ file }: { file: File }): ReactElement {
   return url ? <img src={url} alt="" /> : <Icon name="file" size={22} />;
 }
 
-/** Optional proofs of payment chosen before the sale is saved; they upload right after it. Up to five. */
+/** The optional proof of payment chosen before the sale is saved; it uploads right after it. Only one. */
 export function VoucherPicker({ files, onChange }: VoucherPickerProps): ReactElement {
   const [problem, setProblem] = useState('');
 
   function add(picked: File[]): void {
     const room = MAX_VOUCHERS - files.length;
     const fresh = picked.filter((file) => !files.some((kept) => kept.name === file.name && kept.size === file.size));
-    if (fresh.length > room) setProblem(`Máximo ${MAX_VOUCHERS} comprobantes por pago.`);
+    if (fresh.length > room) setProblem('Solo se adjunta un comprobante por pago.');
     else setProblem('');
     onChange([...files, ...fresh.slice(0, Math.max(room, 0))]);
   }

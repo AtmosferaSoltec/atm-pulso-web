@@ -3,7 +3,7 @@ import { describeError } from '@/config/errorMessages';
 import { Dialog } from '@/components/ui/dialog';
 import type { PaymentMethod } from '@/types/api.types';
 import { useUploadVoucher, useVouchers } from '@/features/vouchers/hooks/useVouchers';
-import { MAX_VOUCHERS } from '@/features/vouchers/services/voucherFile';
+import { MAX_VOUCHERS, VoucherFileError } from '@/features/vouchers/services/voucherFile';
 import type { VoucherOwner } from '@/features/vouchers/services/voucherOwner';
 import { VoucherDropzone } from '@/features/vouchers/components/VoucherDropzone';
 import { VoucherThumb } from '@/features/vouchers/components/VoucherThumb';
@@ -16,7 +16,10 @@ interface VouchersDialogProps {
   onClose: () => void;
 }
 
-/** The proofs of payment of a receipt, product sale or collection: see them, and add more (up to five) even after the sale. */
+/**
+ * The proof of payment of a receipt, product sale or collection: see it, or add it even after the sale. Only one per
+ * payment (older payments may show several). Files expire after the retention period and are then shown as such.
+ */
 export function VouchersDialog({ owner, label, method, onClose }: VouchersDialogProps): ReactElement {
   const list = useVouchers(owner);
   const upload = useUploadVoucher(owner);
@@ -27,19 +30,19 @@ export function VouchersDialog({ owner, label, method, onClose }: VouchersDialog
 
   async function add(files: File[]): Promise<void> {
     setProblem('');
-    for (const file of files.slice(0, room)) {
+    for (const file of files.slice(0, Math.max(room, 0))) {
       try {
         await upload.mutateAsync(file);
       } catch (failure) {
-        setProblem(describeError(failure));
+        setProblem(failure instanceof VoucherFileError ? failure.message : describeError(failure));
         return;
       }
     }
-    if (files.length > room) setProblem(`Máximo ${MAX_VOUCHERS} comprobantes por pago.`);
+    if (files.length > room) setProblem('Solo se adjunta un comprobante por pago.');
   }
 
   return (
-    <Dialog title={`Comprobantes · ${label}`} onClose={onClose}>
+    <Dialog title={`Comprobante · ${label}`} onClose={onClose}>
       {method === 'cash' && <p className="muted">Los pagos en efectivo no llevan comprobante.</p>}
       {list.isError && (
         <p role="alert" className="error">
@@ -47,21 +50,21 @@ export function VouchersDialog({ owner, label, method, onClose }: VouchersDialog
         </p>
       )}
       {list.isPending && <p className="muted">Cargando…</p>}
-      {method !== 'cash' && !list.isPending && vouchers.length === 0 && <p className="muted">Aún no hay comprobantes.</p>}
+      {method !== 'cash' && !list.isPending && vouchers.length === 0 && <p className="muted">Aún no hay comprobante.</p>}
       <div className="voucher-grid">
         {vouchers.map((voucher, index) => (
           <VoucherThumb key={voucher.id} voucher={voucher} index={index} />
         ))}
       </div>
       {canAdd && <VoucherDropzone onFiles={(files) => void add(files)} onProblem={setProblem} disabled={upload.isPending} />}
-      {!canAdd && method !== 'cash' && <p className="muted">Se alcanzó el máximo de {MAX_VOUCHERS} comprobantes.</p>}
+      {!canAdd && method !== 'cash' && !list.isPending && <p className="muted">Este pago ya tiene su comprobante.</p>}
       {upload.isPending && <p className="muted">Subiendo…</p>}
       {problem && (
         <p role="alert" className="error">
           {problem}
         </p>
       )}
-      <p className="muted voucher-note">Una vez subido, un comprobante no se puede borrar: es la prueba del pago.</p>
+      <p className="muted voucher-note">Una vez subido, el comprobante no se puede cambiar: es la prueba del pago. El archivo se borra automáticamente pasado un tiempo.</p>
     </Dialog>
   );
 }

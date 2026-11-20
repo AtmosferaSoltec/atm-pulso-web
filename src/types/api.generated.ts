@@ -2693,8 +2693,9 @@ export interface paths {
         put?: never;
         /**
          * Attach a proof of payment (photo or PDF) to a receipt's payment.
-         * @description Optional and never for cash. The body is the file itself (not JSON): PNG, JPEG, WebP or PDF, at most 10 MB, checked by its content.
-         *     Up to 5 per payment (a payment split in several transfers). Vouchers cannot be edited or deleted: they are evidence.
+         * @description Optional and never for cash. The body is the file itself (not JSON): PNG, JPEG, WebP or PDF, at most 2 MB, checked by its content
+         *     (clients shrink photos first: long side 1280 px, JPEG). Exactly one per payment (409 VOUCHER_LIMIT_REACHED for a second).
+         *     Vouchers cannot be edited or deleted by people; their files are deleted after the retention period (see `Voucher.expires_at`).
          *     Needs access to that branch.
          *     Answers 503 STORAGE_UNAVAILABLE when no object store is configured.
          */
@@ -2810,7 +2811,7 @@ export interface paths {
         /**
          * Attach a proof of payment (photo or PDF) to a product sale paid on the spot.
          * @description Same rules as the payments' vouchers: optional and never for cash; the body is the file itself (not JSON): PNG, JPEG, WebP or PDF,
-         *     at most 10 MB, checked by its content. Up to 5 per sale; immutable (no edit, no delete). Needs access to the sale's branch and the
+         *     at most 2 MB, checked by its content. Exactly one per sale; immutable (no edit, no delete); the file expires like the payments'. Needs access to the sale's branch and the
          *     gym's `sales` module (403 FEATURE_DISABLED). The file is read with `GET /vouchers/{id}/file`.
          *     Answers 503 STORAGE_UNAVAILABLE when no object store is configured.
          */
@@ -2925,7 +2926,7 @@ export interface paths {
         /**
          * Attach a proof of payment (photo or PDF) to a collection of pending sales.
          * @description Same rules as the payments' vouchers: optional and never for cash; the body is the file itself (not JSON): PNG, JPEG, WebP or PDF,
-         *     at most 10 MB, checked by its content. Up to 5 per collection; immutable (no edit, no delete). Needs access to the collection's branch and the
+         *     at most 2 MB, checked by its content. Exactly one per collection; immutable (no edit, no delete); the file expires like the payments'. Needs access to the collection's branch and the
          *     gym's `sales` module (403 FEATURE_DISABLED). The file is read with `GET /vouchers/{id}/file`.
          *     Answers 503 STORAGE_UNAVAILABLE when no object store is configured.
          */
@@ -3009,7 +3010,8 @@ export interface paths {
          * @description Any voucher: of a receipt's payment, of a product sale or of a collection of pending sales. Private: only with a valid token and
          *     within the reach of the branch where that money was received. The vouchers of product sales also need the gym's `sales` module
          *     (403 FEATURE_DISABLED). The web fetches it with the token and shows it from the received bytes (an `<img src>` cannot send the token).
-         *     The answer is cacheable only by the browser (`private`).
+         *     The answer is cacheable only by the browser (`private`). An `expired` voucher answers 410 VOUCHER_EXPIRED: its file was deleted
+         *     after the retention period (do not request it; show the voucher as expired).
          */
         get: {
             parameters: {
@@ -3038,6 +3040,15 @@ export interface paths {
                 401: components["responses"]["Unauthorized"];
                 403: components["responses"]["ApiError"];
                 404: components["responses"]["ApiError"];
+                /** @description VOUCHER_EXPIRED (the file was deleted after the retention period; the voucher row remains). */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 /** @description STORAGE_UNAVAILABLE. */
                 503: {
                     headers: {
@@ -4367,6 +4378,13 @@ export interface components {
             size_bytes: number;
             /** Format: date-time */
             created_at: string;
+            /**
+             * Format: date-time
+             * @description When the file is deleted from storage (`created_at` + VOUCHER_RETENTION_DAYS); null when files are kept forever.
+             */
+            expires_at: string | null;
+            /** @description The file was deleted (or is past `expires_at`). `GET /vouchers/{id}/file` answers 410 VOUCHER_EXPIRED; the row stays. */
+            expired: boolean;
         };
         /**
          * @description The modules of a gym in a fixed order: the optional ones the platform superadmin switched on, plus the base ones (`kiosk`), which every gym has. When sent to the admin route, base modules are ignored.
@@ -4976,7 +4994,7 @@ export interface components {
         PaymentRow: {
             /** Format: uuid */
             id: string;
-            /** @description How many proofs of payment are attached. */
+            /** @description How many proofs of payment are attached (one at most since the one-voucher rule; older payments may have up to 5). Expired vouchers still count. */
             voucher_count: number;
             /** Format: date */
             paid_on: string;

@@ -210,7 +210,7 @@ export function MemberSheet({ member, receiptId, onClose, onRenew, onEdit, branc
           </Button>
         )}
         {data && data.payment.method !== 'cash' && (
-          <IconButton icon="clip" label="Comprobantes de pago" onClick={() => setVouchersOpen(true)} />
+          <IconButton icon="clip" label="Comprobante de pago" onClick={() => setVouchersOpen(true)} />
         )}
         <Button onClick={() => window.print()} disabled={!data}>
           <Icon name="print" size={16} /> Imprimir boleta

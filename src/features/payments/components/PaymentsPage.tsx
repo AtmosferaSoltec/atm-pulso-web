@@ -221,7 +221,7 @@ export function PaymentsPage({ branchId, showSummary = true }: PaymentsPageProps
                         <IconButton
                           icon="clip"
                           className={row.voucher_count > 0 ? 'has-vouchers' : ''}
-                          label={row.voucher_count > 0 ? `Comprobantes de ${row.receipt.number} (${row.voucher_count})` : `Agregar comprobante a ${row.receipt.number}`}
+                          label={row.voucher_count > 0 ? `Ver comprobante de ${row.receipt.number}` : `Agregar comprobante a ${row.receipt.number}`}
                           onClick={() => setViewing(row)}
                         />
                       )}

@@ -7,15 +7,17 @@ interface VoucherDropzoneProps {
   onFiles: (files: File[]) => void;
   onProblem: (message: string) => void;
   disabled?: boolean;
+  /** Whether several files may be chosen at once (false: one voucher per payment). */
+  multiple?: boolean;
 }
 
 /** Drop a file, choose it, or paste a copied image (Ctrl+V): the three ways to get a photo from WhatsApp Web. */
-export function VoucherDropzone({ onFiles, onProblem, disabled = false }: VoucherDropzoneProps): ReactElement {
+export function VoucherDropzone({ onFiles, onProblem, disabled = false, multiple = false }: VoucherDropzoneProps): ReactElement {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
 
   function take(list: FileList | File[] | null): void {
-    const files = Array.from(list ?? []);
+    const files = Array.from(list ?? []).slice(0, multiple ? undefined : 1);
     if (files.length === 0) return;
     const valid: File[] = [];
     for (const file of files) {
@@ -38,7 +40,7 @@ export function VoucherDropzone({ onFiles, onProblem, disabled = false }: Vouche
     window.addEventListener('paste', onPaste);
     return () => window.removeEventListener('paste', onPaste);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disabled, onFiles, onProblem]);
+  }, [disabled, multiple, onFiles, onProblem]);
 
   function onDrop(event: DragEvent<HTMLDivElement>): void {
     event.preventDefault();
@@ -60,7 +62,7 @@ export function VoucherDropzone({ onFiles, onProblem, disabled = false }: Vouche
         ref={input}
         type="file"
         accept={VOUCHER_ACCEPT}
-        multiple
+        multiple={multiple}
         hidden
         onChange={(event) => {
           take(event.target.files);

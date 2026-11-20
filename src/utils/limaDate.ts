@@ -9,3 +9,8 @@ export function todayInLima(now: Date = new Date()): string {
 export function startOfMonth(date: string): string {
   return `${date.slice(0, 7)}-01`;
 }
+
+/** The Lima date (YYYY-MM-DD) of an instant sent by the API (ISO 8601). */
+export function limaDateOf(instant: string): string {
+  return lima.format(new Date(instant));
+}

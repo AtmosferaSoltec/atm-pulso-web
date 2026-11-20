@@ -20,7 +20,7 @@ export function SaleVouchersButton({ sale }: { sale: ProductSale }): ReactElemen
       <IconButton
         icon="clip"
         className={sale.voucher_count > 0 ? 'has-vouchers' : ''}
-        label={sale.voucher_count > 0 ? `Comprobantes (${sale.voucher_count}) · ${label}` : `Agregar comprobante · ${label}`}
+        label={sale.voucher_count > 0 ? `Ver comprobante · ${label}` : `Agregar comprobante · ${label}`}
         onClick={() => setOpen(true)}
       />
       {open && <VouchersDialog owner={owner} label={label} method={method} onClose={() => setOpen(false)} />}
