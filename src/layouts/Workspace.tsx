@@ -4,10 +4,11 @@ import { Topbar } from '@/components/common/Topbar';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { enrollmentPages, pageDetails } from '@/config/pages';
+import { documentTitle, DEFAULT_TITLE } from '@/config/documentTitle';
 import { usePageRoute } from '@/hooks/usePageRoute';
 import { useAuth, useCurrentUser } from '@/store/authStore';
 import { Dashboard } from '@/features/dashboard';
-import { useMemberFilters, MembersPage, MemberForm, MemberSheet, MemberEditForm, type Member, type MemberListFilter } from '@/features/members';
+import { useMemberFilters, MembersPage, MemberForm, MemberPage, MemberEditForm, type Member, type MemberListFilter } from '@/features/members';
 import { AccessAlert, AccessPage, QuickAccessCheck, type AccessResult } from '@/features/access';
 import { PaymentsPage } from '@/features/payments';
 import { PlansPage } from '@/features/plans';
@@ -17,14 +18,14 @@ import type { Page } from '@/types/navigation.types';
 import type { Sale } from '@/types/api.types';
 import { ProfileDialog } from '@/features/auth';
 import { TeamPage } from '@/features/team';
-import { brandTheme, brandFavicon } from '@/features/branding';
+import { brandTheme } from '@/features/branding';
 import { useCatalog, gymTitle } from '@/features/gym';
 
 export function Workspace(): ReactElement {
   const user = useCurrentUser();
   const { logout, tenants, switchGym } = useAuth();
   const { gyms, branches, branchLabel } = useCatalog();
-  const { page, goTo } = usePageRoute(user);
+  const { page, memberId, goTo, openMember } = usePageRoute(user);
 
   const availableBranches = branches.filter((branch) => branch.accessible);
   const [branchId, setBranchId] = useState(availableBranches[0]?.id ?? '');
@@ -39,7 +40,8 @@ export function Workspace(): ReactElement {
   const [renewing, setRenewing] = useState<Member | undefined>();
   const [renewingPlanId, setRenewingPlanId] = useState<string | undefined>();
   const [editing, setEditing] = useState<Member | null>(null);
-  const [selected, setSelected] = useState<{ member: Member; receiptId?: string } | null>(null);
+  /** The receipt just issued: the member's page opens with it on screen. */
+  const [issued, setIssued] = useState<{ memberId: string; receiptId: string } | null>(null);
   const [toast, setToast] = useState('');
   const [accessAlert, setAccessAlert] = useState<AccessResult | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -51,15 +53,13 @@ export function Workspace(): ReactElement {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
+  // The tab is always Pulso's (title and favicon), whatever the gym: the gym's branding lives inside the app.
   useEffect(() => {
-    document.title = `${brandName} · ${pageDetails[page].name}`;
-    const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (icon && gym) icon.href = brandFavicon(brandName, gym.brand_color);
+    document.title = documentTitle(pageDetails[page].name);
     return () => {
-      document.title = 'Pulso · Administración de gimnasios';
-      if (icon) icon.href = '/favicon.svg';
+      document.title = DEFAULT_TITLE;
     };
-  }, [brandName, gym, page]);
+  }, [page]);
 
   if (!branch || !gym) {
     return (
@@ -72,7 +72,14 @@ export function Workspace(): ReactElement {
     );
   }
 
+  /** Opens a member's page from a list (the receipt just issued is only for the page right after a sale). */
+  function viewMember(id: string): void {
+    setIssued(null);
+    openMember(id);
+  }
+
   function navigate(next: Page, status: MemberListFilter = 'all'): void {
+    setIssued(null);
     goTo(next);
     setMobileOpen(false);
     filters.reset(status);
@@ -87,14 +94,14 @@ export function Workspace(): ReactElement {
   function openEnrollment(member?: Member, planId?: string): void {
     setRenewing(member);
     setRenewingPlanId(planId);
-    setSelected(null);
     setRegistering(true);
   }
 
   function saved(sale: Sale, voucherFailures: number): void {
     const renewal = !!renewing;
     closeEnrollment();
-    setSelected({ member: sale.member, receiptId: sale.receipt.id });
+    setIssued({ memberId: sale.member.id, receiptId: sale.receipt.id });
+    openMember(sale.member.id);
     const done = renewal ? 'Renovación y pago registrados.' : 'Miembro y pago registrados.';
     setToast(voucherFailures > 0 ? `${done} No se pudo subir ${voucherFailures === 1 ? 'un comprobante' : `${voucherFailures} comprobantes`}: súbelos desde Pagos.` : done);
   }
@@ -102,7 +109,6 @@ export function Workspace(): ReactElement {
   function changeBranch(id: string): void {
     if (!availableBranches.some((item) => item.id === id)) return;
     setBranchId(id);
-    setSelected(null);
     setEditing(null);
     setAccessAlert(null);
     closeEnrollment();
@@ -137,6 +143,7 @@ export function Workspace(): ReactElement {
           <QuickAccessCheck branchId={branch.id} hidden={page === 'access'} onResult={setAccessAlert} />
         </Topbar>
         <main>
+          {!(page === 'members' && memberId) && (
           <div className="page-heading">
             <h1>{pageDetails[page].title}</h1>
             {enrollmentPages.includes(page) && (
@@ -145,20 +152,36 @@ export function Workspace(): ReactElement {
               </Button>
             )}
           </div>
+          )}
           {page === 'dashboard' && (
             <Dashboard
               branchId={branch.id}
-              onSelect={(member) => setSelected({ member })}
+              onSelect={(member) => viewMember(member.id)}
               onEdit={setEditing}
               onRenew={openEnrollment}
             />
           )}
-          {page === 'members' && (
+          {page === 'members' && memberId && (
+            <MemberPage
+              key={`${memberId}:${issued?.memberId === memberId ? issued.receiptId : ''}`}
+              memberId={memberId}
+              branchId={branch.id}
+              receiptId={issued?.memberId === memberId ? issued.receiptId : undefined}
+              onBack={() => {
+                setIssued(null);
+                goTo('members');
+              }}
+              onEdit={setEditing}
+              onRenew={openEnrollment}
+              onNotify={setToast}
+            />
+          )}
+          {page === 'members' && !memberId && (
             <MembersPage
               filters={filters}
               showBranch={hasManyBranches}
               canDownload={user.role === 'admin'}
-              onSelect={(member) => setSelected({ member })}
+              onOpen={viewMember}
               onEdit={setEditing}
               onRenew={openEnrollment}
             />
@@ -176,27 +199,12 @@ export function Workspace(): ReactElement {
         </main>
       </div>
       {registering && <MemberForm member={renewing} planId={renewingPlanId} branchId={branch.id} onSaved={saved} onClose={closeEnrollment} />}
-      {selected && (
-        <MemberSheet
-          member={selected.member}
-          receiptId={selected.receiptId}
-          branchId={branch.id}
-          onNotify={setToast}
-          onClose={() => setSelected(null)}
-          onRenew={openEnrollment}
-          onEdit={(member) => {
-            setSelected(null);
-            setEditing(member);
-          }}
-        />
-      )}
       {editing && (
         <MemberEditForm
           member={editing}
           onClose={() => setEditing(null)}
-          onSaved={(member) => {
+          onSaved={() => {
             setEditing(null);
-            setSelected({ member });
             setToast('Datos del miembro actualizados.');
           }}
         />

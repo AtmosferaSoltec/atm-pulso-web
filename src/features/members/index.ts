@@ -1,7 +1,7 @@
 export type { Member, MemberStatus } from '@/features/members/types/member.types';
 export { MemberTable, Avatar } from '@/features/members/components/MemberTable';
 export { MemberForm } from '@/features/members/components/MemberForm';
-export { MemberSheet } from '@/features/members/components/MemberSheet';
+export { MemberPage } from '@/features/members/components/MemberPage';
 export { MemberEditForm } from '@/features/members/components/MemberEditForm';
 export { MembersPage } from '@/features/members/components/MembersPage';
 export { whatsappLink } from '@/features/members/services/memberData';

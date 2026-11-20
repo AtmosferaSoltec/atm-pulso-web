@@ -6,3 +6,11 @@ export function whatsappLink(member: Pick<Member, 'phone' | 'full_name' | 'plan_
   const text = `¡Hola, ${firstName}! Te saludamos del gimnasio. Tu membresía ${member.plan_label.toLowerCase()} vence el ${member.ends_on}. ¿Deseas renovar tu membresía?`;
   return `https://wa.me/51${member.phone}?text=${encodeURIComponent(text)}`;
 }
+
+/** The status chip of a member, as shown in the list and in the member's page. */
+export const memberStatusLabels = {
+  active: 'Vigente',
+  expiring: 'Por vencer',
+  expired: 'Vencido',
+  scheduled: 'Por iniciar',
+} as const;

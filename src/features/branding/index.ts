@@ -1,2 +1,2 @@
 export { GymBrand } from '@/features/branding/components/GymBrand';
-export { brandTheme, brandFavicon } from '@/features/branding/services/brandTheme';
+export { brandTheme } from '@/features/branding/services/brandTheme';

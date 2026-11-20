@@ -1,6 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { api, download } from '@/config/apiClient';
+import { download } from '@/config/apiClient';
 import { describeError } from '@/config/errorMessages';
 import { DownloadMenu } from '@/components/common/DownloadMenu';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -14,7 +13,7 @@ import { useHasFeature } from '@/features/gym';
 import { DebtorsTable, useDebtors } from '@/features/sales';
 import type { MemberFilters, StatusFilter } from '@/features/members/hooks/useMemberFilters';
 import type { Member } from '@/features/members/types/member.types';
-import type { MemberCounts, MemberDetail } from '@/types/api.types';
+import type { MemberCounts } from '@/types/api.types';
 import { downloadFileName, type DownloadFormat } from '@/utils/downloadFile';
 import { todayInLima } from '@/utils/limaDate';
 
@@ -26,12 +25,13 @@ interface MembersPageProps {
   showBranch: boolean;
   /** The download is for the admin only (the API refuses reception). */
   canDownload?: boolean;
-  onSelect: (member: Member) => void;
+  /** Opens the member's page. */
+  onOpen: (memberId: string) => void;
   onEdit: (member: Member) => void;
   onRenew: (member: Member) => void;
 }
 
-export function MembersPage({ filters, showBranch, canDownload = false, onSelect, onEdit, onRenew }: MembersPageProps): ReactElement {
+export function MembersPage({ filters, showBranch, canDownload = false, onOpen, onEdit, onRenew }: MembersPageProps): ReactElement {
   const search = useDebouncedValue(filters.search.trim());
   const salesOn = useHasFeature('sales');
   const showingDebtors = salesOn && filters.filter === 'debtors';
@@ -49,22 +49,6 @@ export function MembersPage({ filters, showBranch, canDownload = false, onSelect
   );
   const counts: Record<StatusFilter, number> = list.data?.meta.counts ?? emptyCounts;
   const [downloadError, setDownloadError] = useState('');
-  const [openError, setOpenError] = useState('');
-  const queryClient = useQueryClient();
-
-  /** A debtor row carries a short member: the file needs the full one (shared cache with the sheet). */
-  async function openDebtor(memberId: string): Promise<void> {
-    setOpenError('');
-    try {
-      const member = await queryClient.fetchQuery({
-        queryKey: ['members', 'detail', memberId],
-        queryFn: () => api.get<MemberDetail>(`/members/${memberId}`),
-      });
-      onSelect(member);
-    } catch (failure) {
-      setOpenError(describeError(failure));
-    }
-  }
 
   /** The same filters as the list on screen (search and status), every page. */
   async function downloadMembers(format: DownloadFormat): Promise<void> {
@@ -110,14 +94,9 @@ export function MembersPage({ filters, showBranch, canDownload = false, onSelect
           {describeError(showingDebtors ? debtors.error : list.error)}
         </p>
       )}
-      {openError && (
-        <p className="error" role="alert">
-          {openError}
-        </p>
-      )}
       {showingDebtors ? (
         <>
-          <DebtorsTable debtors={debtors.data?.data ?? []} loading={debtors.isPending} onSelect={(id) => void openDebtor(id)} />
+          <DebtorsTable debtors={debtors.data?.data ?? []} loading={debtors.isPending} onSelect={onOpen} />
           {debtors.data && debtors.data.meta.total > PAGE_SIZES[0] && (
             <Pagination
               page={filters.page}
@@ -133,7 +112,7 @@ export function MembersPage({ filters, showBranch, canDownload = false, onSelect
         <MemberTable
           members={list.data?.data ?? []}
           loading={list.isPending}
-          onSelect={onSelect}
+          onSelect={(member) => onOpen(member.id)}
           onEdit={onEdit}
           onRenew={onRenew}
           showBranch={showBranch}
