@@ -21,7 +21,7 @@ async function call<T>(request: APIRequestContext, jwt: string, method: 'get' | 
 }
 
 async function signIn(page: Page, dni: string): Promise<void> {
-  await page.goto('/');
+  await page.goto('/app/');
   await page.getByLabel('DNI', { exact: true }).fill(dni);
   await page.locator('input[autocomplete="current-password"]').fill(PASSWORD);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
@@ -146,7 +146,7 @@ test('sales, pending sales and the membership rules against the live stack', asy
 
   // 6. Mobile layout of the quick sale.
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/#sell');
+  await page.goto('/app/#sell');
   await page.getByRole('heading', { name: 'Venta rápida' }).waitFor();
   await page.locator('.qs-product', { hasText: 'Agua' }).click({ force: true });
   await page.screenshot({ path: `${SHOTS}/09-vender-movil.png`, fullPage: true });

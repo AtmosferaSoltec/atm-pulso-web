@@ -1,5 +1,5 @@
 /** The kiosk is a route of its own, outside the workspace: no sidebar, no navigation. */
-export const KIOSK_PATH = '/kiosk';
+export const KIOSK_PATH = '/app/kiosk';
 
 export function isKioskPath(pathname: string): boolean {
   return pathname.replace(/\/+$/, '') === KIOSK_PATH;
@@ -18,5 +18,5 @@ export function openKiosk(): void {
 
 /** Leaves the kiosk for the normal web. Only called after the exit PIN was accepted. */
 export function leaveKiosk(): void {
-  go('/');
+  go(import.meta.env.BASE_URL);
 }

@@ -65,7 +65,7 @@ export function LoginPage(): ReactElement {
         </div>
         <footer className="login-footer">
           <span>Desarrollado por</span>
-          <img src="/brand/atmosfera-logo.png" alt="Atmósfera Soluciones Tecnológicas" />
+          <img src={`${import.meta.env.BASE_URL}brand/atmosfera-logo.png`} alt="Atmósfera Soluciones Tecnológicas" />
         </footer>
       </section>
       <section className="login-form-panel">

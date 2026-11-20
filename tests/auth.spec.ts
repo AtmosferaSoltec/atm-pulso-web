@@ -49,7 +49,7 @@ test('with several gyms the selector switches the session through a refresh', as
 
 test('a foreign document signs in: the field takes letters and sends the number as `document`', async ({ page }) => {
   const { logins } = await mockBackends(page);
-  await page.goto('/');
+  await page.goto('/app/');
   const field = page.getByLabel('Documento', { exact: true });
   await expect(field).toHaveAttribute('placeholder', 'Ingresa tu documento');
   await field.fill('ab-123 456');

@@ -21,7 +21,7 @@ async function signIn(page: Page, dni: string): Promise<void> {
       await route.fulfill({ response });
     });
   }
-  await page.goto('/');
+  await page.goto('/app/');
   await page.getByLabel('DNI', { exact: true }).fill(dni);
   await page.locator('input[autocomplete="current-password"]').fill(PASSWORD);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();

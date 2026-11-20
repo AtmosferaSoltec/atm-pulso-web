@@ -22,7 +22,7 @@ RUN pnpm build
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runner
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY deploy/security-headers.inc /etc/nginx/security-headers.inc
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html/app
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

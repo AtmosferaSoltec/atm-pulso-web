@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 export async function signIn(page: Page, document: string, password: string): Promise<void> {
-  await page.goto('/');
+  await page.goto('/app/');
   await page.getByLabel('Documento', { exact: true }).fill(document);
   await page.locator('input[autocomplete="current-password"]').fill(password);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();

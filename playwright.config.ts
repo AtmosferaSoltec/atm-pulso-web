@@ -13,7 +13,7 @@ export default defineConfig({
   use: { baseURL: 'http://127.0.0.1:4175', headless: true, viewport: { width: 1440, height: 1000 }, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   webServer: {
     command: 'pnpm dev --host 127.0.0.1 --port 4175 --strictPort',
-    url: 'http://127.0.0.1:4175',
+    url: 'http://127.0.0.1:4175/app/',
     reuseExistingServer: false,
     env: { VITE_API_URL: API_URL, VITE_AUTH_API_URL: AUTH_URL },
   },

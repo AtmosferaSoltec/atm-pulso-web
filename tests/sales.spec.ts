@@ -217,7 +217,7 @@ test('without the sales module the sales screens do not exist', async ({ page })
   await expect(nav.getByRole('button', { name: 'Ventas', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Configuración', exact: true }).click();
   await expect(nav.getByRole('button', { name: 'Productos', exact: true })).toHaveCount(0);
-  await page.goto('/#sell');
+  await page.goto('/app/#sell');
   await expect(page.getByRole('heading', { name: 'Venta rápida' })).toHaveCount(0);
 });
 

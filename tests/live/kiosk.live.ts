@@ -26,7 +26,7 @@ async function typeDigits(page: Page, digits: string): Promise<void> {
 
 test('kiosk against the live stack: set PIN, enrol, allowed, denied, expired, exit', async ({ page, request }) => {
   // 1. Admin sets the exit PIN from the web and enrols a test member from the web.
-  await signIn(page, '/', '10000001');
+  await signIn(page, '/app/', '10000001');
   const nav = page.getByRole('navigation', { name: 'Navegación principal' });
   await nav.getByRole('button', { name: 'Configuración', exact: true }).click();
   await nav.getByRole('button', { name: 'Quiosco', exact: true }).click();
@@ -66,7 +66,7 @@ test('kiosk against the live stack: set PIN, enrol, allowed, denied, expired, ex
   for (const size of SIZES) {
     const tablet = await page.context().browser()!.newContext({ viewport: { width: size.width, height: size.height } });
     const screen = await tablet.newPage();
-    await signIn(screen, '/kiosk', '10000002');
+    await signIn(screen, '/app/kiosk', '10000002');
     const branchPicker = screen.getByRole('heading', { name: '¿En qué sede está este quiosco?' });
     await expect(branchPicker.or(screen.getByTestId('kiosk-display'))).toBeVisible({ timeout: 20_000 });
     if (await branchPicker.isVisible()) await screen.locator('.kiosk-branch-list button').first().click();

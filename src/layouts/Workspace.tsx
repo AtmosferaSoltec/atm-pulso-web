@@ -57,7 +57,7 @@ export function Workspace(): ReactElement {
     if (icon && gym) icon.href = brandFavicon(brandName, gym.brand_color);
     return () => {
       document.title = 'Pulso · Administración de gimnasios';
-      if (icon) icon.href = '/favicon.svg';
+      if (icon) icon.href = `${import.meta.env.BASE_URL}favicon.svg`;
     };
   }, [brandName, gym, page]);
 
